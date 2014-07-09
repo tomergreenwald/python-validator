@@ -1,0 +1,2 @@
+building upon versionless ecma of python to which has some dependence since the 3.0 branch,
+ build or get webkit,pywebkit(the bindings),blender,gimp,pygimpfu(the bindings) and a server of your choice (my preference is mod_wsgi (python) and apache) of course this is only recommendation but the results cannot be beat. 

@@ -1,0 +1,46 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html><head><title>Python: module TinyFeatures</title>
+</head><body bgcolor="#f0f0f8">
+
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="heading">
+<tr bgcolor="#7799ee">
+<td valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial">&nbsp;<br><big><big><strong>TinyFeatures</strong></big></big></font></td
+><td align=right valign=bottom
+><font color="#ffffff" face="helvetica, arial"><a href=".">index</a><br><a href="file:/home/cgroza/Projects/gEcrit/bin/TinyFeatures.py">/home/cgroza/Projects/gEcrit/bin/TinyFeatures.py</a></font></td></tr></table>
+    <p><tt>#&nbsp;-*-&nbsp;coding:&nbsp;utf-8&nbsp;-*-</tt></p>
+<p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#aa55cc">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Modules</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#aa55cc"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><table width="100%" summary="list"><tr><td width="25%" valign=top><a href="os.html">os</a><br>
+</td><td width="25%" valign=top><a href="wx.html">wx</a><br>
+</td><td width="25%" valign=top></td><td width="25%" valign=top></td></tr></table></td></tr></table><p>
+<table width="100%" cellspacing=0 cellpadding=2 border=0 summary="section">
+<tr bgcolor="#eeaa77">
+<td colspan=3 valign=bottom>&nbsp;<br>
+<font color="#ffffff" face="helvetica, arial"><big><strong>Functions</strong></big></font></td></tr>
+    
+<tr><td bgcolor="#eeaa77"><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</tt></td><td>&nbsp;</td>
+<td width="100%"><dl><dt><a name="-AutoIndent"><strong>AutoIndent</strong></a>(event, text_id)</dt><dd><tt>AutoIndent<br>
+&nbsp;<br>
+Responsible&nbsp;for&nbsp;the&nbsp;autoindentation&nbsp;feature.</tt></dd></dl>
+ <dl><dt><a name="-Expand"><strong>Expand</strong></a>(text_id, line, doExpand, force<font color="#909090">=False</font>, visLevels<font color="#909090">=0</font>, level<font color="#909090">=-1</font>)</dt><dd><tt>Expand<br>
+&nbsp;<br>
+Expands&nbsp;the&nbsp;provided&nbsp;line&nbsp;in&nbsp;argument&nbsp;line.</tt></dd></dl>
+ <dl><dt><a name="-FoldAll"><strong>FoldAll</strong></a>(text_id)</dt><dd><tt>FoldAll<br>
+&nbsp;<br>
+Folds&nbsp;all&nbsp;the&nbsp;code&nbsp;when&nbsp;given&nbsp;the&nbsp;command.</tt></dd></dl>
+ <dl><dt><a name="-OnMarginClick"><strong>OnMarginClick</strong></a>(evt, text_id)</dt><dd><tt>OnMarginClick<br>
+&nbsp;<br>
+Responsible&nbsp;for&nbsp;the&nbsp;interaction&nbsp;of&nbsp;the&nbsp;user&nbsp;with<br>
+code&nbsp;folding.</tt></dd></dl>
+ <dl><dt><a name="-OnUpdateUI"><strong>OnUpdateUI</strong></a>(evt, text_id)</dt><dd><tt>OnUpdateUI<br>
+&nbsp;<br>
+Responsible&nbsp;for&nbsp;the&nbsp;bad&nbsp;brace&nbsp;check&nbsp;feature.</tt></dd></dl>
+</td></tr></table>
+</body></html>

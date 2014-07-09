@@ -1,0 +1,67 @@
+working-notes.embedded-build-systems.txt
+
+2013-01-24 tc@DinkumSoftware.com Initial
+
+buildroot       "makefile" based
+                config programs (a la kernel) for kernel, root filesystem, busybox
+
+open-embedded   "bitbake"  based
+                looks like board specific
+
+
+angstrom        sits on open-embedded
+                  Targets small systems.
+                  Has an on-line builder
+                  Seemed to target specific boards
+                  looks like there own package system (.ipk?)
+
+SHR             sits on open-embedded
+                  SHR is a GNU/Linux based operating system for smartphones
+                  and similar mobile devices
+
+Yocto Project   sits on open-embedded
+                sits on Poky which sits on open-embedded
+                calls out ubuntu (not debian)
+                python based
+                Seems like the cat's meow.
+                Generates an SDK that plugs into Eclipse
+                they fix what source goes into the build.
+                Has an emulator (GEMU)
+
+Poky 
+     is a reference system for the Yocto Project, showing how the tools work together.
+     It includes BitBake, openembedded-core, and several other components that anyone
+     can use to start developing with embedded Linux. Poky as a build system is tested
+     by the Yocto Project teams before each release. When you download and use the Yocto
+     Project build system, you are actually downloading Poky and using it to create a
+     distribution that by default is also named Poky
+     (You can, of course, name your distribution anything you like.)
+
+
+http://www.emdebian.org/
+     uses stag Stag is a framework designed to use the Debian GNU/Linux package management
+               system for embedded development. last updated in 2006
+     Grip  a distribution
+
+     Crush cross toolchains under debian
+     Baked 
+     Suppose to be a "small" version of debian
+     last news in sept 2012
+     http://www.emdebian.org/emdebian/flavours.html
+     Get the feeling not real active.
+
+Forums:
+    embedded:
+        http://www.ucdot.org/
+        http://www.linuxfordevices.com/
+
+    open source search:
+        http://freecode.com/
+
+    generic linux:
+        http://www.linuxtoday.com/
+
+
+2013-02-01 tc@DinkumSoftware.com 
+nice list of embedded linux boards.
+http://socialcompare.com/en/comparison/low-cost-arm-boards

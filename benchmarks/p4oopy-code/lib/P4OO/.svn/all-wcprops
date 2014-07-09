@@ -1,0 +1,137 @@
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/p/p4oopy/code/!svn/ver/24/trunk/lib/P4OO
+END
+_Error.py
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/p/p4oopy/code/!svn/ver/2/trunk/lib/P4OO/_Error.py
+END
+_Set.py
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/p/p4oopy/code/!svn/ver/5/trunk/lib/P4OO/_Set.py
+END
+_P4ToDB.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/p/p4oopy/code/!svn/ver/2/trunk/lib/P4OO/_P4ToDB.py
+END
+Group.py
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/p/p4oopy/code/!svn/ver/6/trunk/lib/P4OO/Group.py
+END
+Branch.py
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/p/p4oopy/code/!svn/ver/6/trunk/lib/P4OO/Branch.py
+END
+_Connection.py
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/p/p4oopy/code/!svn/ver/4/trunk/lib/P4OO/_Connection.py
+END
+Workspace.py
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/p/p4oopy/code/!svn/ver/6/trunk/lib/P4OO/Workspace.py
+END
+_OrderedSet.py
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/p/p4oopy/code/!svn/ver/5/trunk/lib/P4OO/_OrderedSet.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/p/p4oopy/code/!svn/ver/11/trunk/lib/P4OO/__init__.py
+END
+_Base.py
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/p/p4oopy/code/!svn/ver/15/trunk/lib/P4OO/_Base.py
+END
+Job.py
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/p/p4oopy/code/!svn/ver/6/trunk/lib/P4OO/Job.py
+END
+Depot.py
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/p/p4oopy/code/!svn/ver/6/trunk/lib/P4OO/Depot.py
+END
+User.py
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/p/p4oopy/code/!svn/ver/22/trunk/lib/P4OO/User.py
+END
+Client.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/p/p4oopy/code/!svn/ver/18/trunk/lib/P4OO/Client.py
+END
+Label.py
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/p/p4oopy/code/!svn/ver/12/trunk/lib/P4OO/Label.py
+END
+File.py
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/p/p4oopy/code/!svn/ver/22/trunk/lib/P4OO/File.py
+END
+Counter.py
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/p/p4oopy/code/!svn/ver/19/trunk/lib/P4OO/Counter.py
+END
+Changelist.py
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/p/p4oopy/code/!svn/ver/6/trunk/lib/P4OO/Changelist.py
+END
+p4Config.yml
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/p/p4oopy/code/!svn/ver/24/trunk/lib/P4OO/p4Config.yml
+END
+_P4Python.py
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/p/p4oopy/code/!svn/ver/23/trunk/lib/P4OO/_P4Python.py
+END
+_SpecObj.py
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/p/p4oopy/code/!svn/ver/18/trunk/lib/P4OO/_SpecObj.py
+END
+Change.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/p/p4oopy/code/!svn/ver/18/trunk/lib/P4OO/Change.py
+END

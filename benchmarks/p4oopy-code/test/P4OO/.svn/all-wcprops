@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/p/p4oopy/code/!svn/ver/11/trunk/test/P4OO
+END
+BranchSet.py
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/p/p4oopy/code/!svn/ver/3/trunk/test/P4OO/BranchSet.py
+END
+_Base.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/p/p4oopy/code/!svn/ver/11/trunk/test/P4OO/_Base.py
+END
+_Set.py
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/p/p4oopy/code/!svn/ver/11/trunk/test/P4OO/_Set.py
+END
+Branch.py
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/p/p4oopy/code/!svn/ver/3/trunk/test/P4OO/Branch.py
+END
+_P4Python.py
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/p/p4oopy/code/!svn/ver/11/trunk/test/P4OO/_P4Python.py
+END
+_SpecObj.py
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/p/p4oopy/code/!svn/ver/3/trunk/test/P4OO/_SpecObj.py
+END

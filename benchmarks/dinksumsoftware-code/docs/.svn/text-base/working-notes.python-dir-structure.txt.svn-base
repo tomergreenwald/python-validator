@@ -1,0 +1,585 @@
+
+working-notes.python-dir-structure.txt
+
+2013-01-17 tc@DinkumSoftware.com 
+
+Trying to come up with a directory structure for python code.
+
+I want to run in multiple environments:
+    1. from "checked out" svn development tree
+    1a
+        a given project can have:
+            multiple executables
+            multiple packages
+        a given package can have:
+            multiple modules
+
+    2. suitable for packaging by whichever is the python
+       packaging scheme "da jour".  Need to pick which one I am using
+       choices:
+           distutils
+           http://peak.telecommunity.com/DevCenter/setuptools
+
+
+    3. suitable for packaging  by debian/fedora
+    4. scales to support multiple "projects" and
+       allow code to be shared between them
+    5. IDE friendlessness (eclipse?)
+    6. How handle other foss stuff?
+
+
+<todo>checkout
+    http://sphinx-doc.org/   documentation generator
+        uses python package index
+        easy_install
+
+
+2013-01-25 tc@DinkumSoftware.com 
+Back to it
+
+Example(s) to handle:
+
+       project: example-single-src-file
+           executable: single_src_exe[.py?]
+           code:       single_src_module.py
+
+       project: example-dual-src-file
+           executable: single_dual_exe[.py?]
+           code:       dual_src_module_a.py
+                       dual_src_module_b.py
+           
+       project example-with-test
+           executable: example_with_test_exe.py
+           code:       dual_src_module_a.py
+                       dual_src_module_b.py
+           testcode:   test_example_with_test.py
+                       test_dual_src_module_a.py
+                       test_dual_src_module_b.py
+
+
+google: python directory structure
+1http://stackoverflow.com/questions/193161/what-is-the-best-project-structure-for-a-python-application
+
+Above is good write up.
+Try to follow his advice below.
+
+   <todo> maybe follow up on find his _preamble scripts.
+<todo definitiely!>
+Chris, the solution Twisted takes is to have the scripts understand
+their placement in the project and do the sys.path mangling
+themselves. This used to be duplicated in each script, but we recently
+refactored this. You can find the new version here: . The _preamble
+module (which you can find in the same directory) has all the logic
+for figuring out what to add to sys.path. As a bonus, we don't install
+_preamble.py, so the import fails after Twisted has been installed -
+exactly what you want, since an installed Twisted has no need for
+sys.path management. I won't say that this is perfect solution, but in
+practice it seems to be working okay for us.
+
+
+The second option is what Twisted itself has decided to do. The
+decision was made about ten years ago, and so now we're mostly just
+carrying history along with us. I'm not sure we'd choose to do the
+same thing again, if we had to make the decision today. Anyhow, the
+option is to do the messing around inside the script. You can see how
+we implemented this in these two files:
+http://twistedmatrix.com/trac/browser/trunk/bin/manhole and
+http://twistedmatrix.com/trac/browser/trunk/bin/_preamble.py
+
+<done> checkout PIP about naming stuff.
+       I think it's on paper at the house.
+
+
+Per web page above
+
+example-single-src-file/
+    README.txt
+    setup.py
+    bin/
+       single_src_exe.py
+    single_src_module.py
+
+
+example-dual-src-file/
+    README.txt
+    setup.py
+    bin/
+      single_dual_exe.py
+    example_dual_src_file/
+        __init__.py
+        dual_src_module_a.py
+        dual_src_module_b.py
+           
+
+example-with-test/
+    README.txt
+    setup.py
+    bin/
+        example_with_test_exe.py
+    example_with_test/
+        __init__.py
+        dual_src_module_a.py
+        dual_src_module_b.py
+        test/
+            __init__.py
+            test_example_with_test.py   # should match package name
+            test_dual_src_module_a.py
+            test_dual_src_module_b.py
+
+
+Twisted opinion on various packagers
+
+There are a lot of issues with setuptools (eg, unmaintained) and
+distribute (eg, planned abandonment). I also generally don't recommend
+pip. It can be a tolerable fallback, but it's not a replacement for
+proper packaging (eg, it often does not correctly install things, and
+sometimes it catastrophically fails to correctly uninstall them).
+
+
+http://jcalderone.livejournal.com/39794.html
+This is same as prior stackoverflow post.
+Not sure where next layout came from.
+
+
+Project/                      Project name
+|-- bin/
+|   |-- project               exe matches project name, 2 exes?
+|
+|-- project/                  Package name, matches project name
+|   |-- test/
+|   |   |-- __init__.py
+|   |   |-- test_main.py
+|   |   
+|   |-- __init__.py
+|   |-- main.py               interesting thought. 2 exes?
+|
+|-- setup.py
+|-- README
+
+
+comparing to prior (twisted)
+    Assumes 
+
+    Project name must match executable name
+    project name must match executable name
+
+Some interesting ideas here, but I think we need to support:
+    a given project can have:
+        multiple executables
+        multiple packages
+    a given package can have:
+        multiple modules
+
+
+http://docs.python.org/2/tutorial/modules.html#packages
+
+sound/                          Top-level package
+      __init__.py               Initialize the sound package
+      formats/                  Subpackage for file format conversions
+              __init__.py
+              wavread.py
+              wavwrite.py
+              aiffread.py
+              aiffwrite.py
+              auread.py
+              auwrite.py
+              ...
+      effects/                  Subpackage for sound effects
+              __init__.py
+              echo.py
+              surround.py
+              reverse.py
+              ...
+      filters/                  Subpackage for filters
+              __init__.py
+              equalizer.py
+              vocoder.py
+              karaoke.py
+              ...
+
+__init__.py package requirement?  the __all__ variable?
+
+
+The only solution is for the package author to provide an explicit
+index of the package. The import statement uses the following
+convention: if a package’s __init__.py code defines a list named
+__all__, it is taken to be the list of module names that should be
+imported when from package import * is encountered. It is up to the
+package author to keep this list up-to-date when a new version of the
+package is released. Package authors may also decide not to support
+it, if they don’t see a use for importing * from their package. For
+example, the file sounds/effects/__init__.py could contain the
+following code:
+
+Note that in general the practice of importing * from a module or
+package is frowned upon, since it often causes poorly readable
+code. However, it is okay to use it to save typing in interactive
+sessions.
+
+       what does:
+           import sound/effects    (A package) do?
+           I think it just executes the __init__.py which could
+           do further imports.
+
+http://guide.python-distribute.org/
+http://guide.python-distribute.org/creation.html
+From python.org folks.....
+
+    They use python package index 
+    This is distutils
+
+TowelStuff/
+    LICENSE.txt
+    README.txt
+    setup.py
+    towelstuff/
+        __init__.py
+
+
+They claim:
+    setuptools early version
+    distutils  (riddled with bugs, avournd until python 3.3)
+    Distribute replacement for setuptools
+    distutils2 (shows up in in python 3.3, replates setuptools and distutils)
+
+    http://guide.python-distribute.org/future.html
+    * setup.py gone!
+    * distutils gone!
+    * distribute gone!
+    * pip and virtualenv here to stay!
+    * eggs ... gone!
+
+Lets normal user set up site-packages dir
+where user can "install" python.
+    virtualenv
+
+back to
+http://guide.python-distribute.org/creation.html
+TowelStuff/             Project Name -and- distribution Name (the downloaded tgz or zip)
+    bin/
+    CHANGES.txt
+    docs/
+    LICENSE.txt
+    MANIFEST.in
+    README.txt          written in reST
+    setup.py
+    towelstuff/
+        __init__.py
+        location.py
+        utils.py
+        test/
+            __init__.py
+            test_location.py
+            test_utils.py
+
+Interesting.....
+http://guide.python-distribute.org/creation.html
+    uses scripts=['bin/stowe-towels.py','bin/wash-towels.py']
+    so use - rather than _ in executables.... I like that.
+    It means it can never be a python module... but that's ok
+    because it ISN't a python module.
+    They also use *.py extension.  That's ok by me.  other site
+    said needed for windoze.
+
+
+Seems like the PyPi seems a reasonable place to publish.
+But more on that later....
+Getting a little saturated today.
+
+Set up a project (which I'll maintain with emacs)
+    1. That is simple, but useful enough to publish.
+    2. only uses stuff in std library
+    3. multiple executables
+    4. multiple modules
+           a. one is a class
+           b. one is not a class
+    5. all with test code.
+
+Start with what exists.. human readable timestamp.
+
+Project:human-readable-timestamp
+EXES:    timestamp_human_readable.py
+         timestamp_files_human_readable.py
+
+PACKAGE: human_readable_timestamp
+
+MODULES: timestamp_human_readable_main.py    
+         timestamp_files_human_readable_main.py
+
+         human_readable_timestamp.py    ; the class definition
+
+2013-01-27 tc@DinkumSoftware.com 
+
+Ok... assuming one does a
+      cd project-dir
+How can I run the test code?
+
+    <todo> complete this...
+    cd <wherever>
+    .../package-dir/test/test_modulename.py
+              Assuming a #!/usr/bin/env python 
+              and a      chmod ugo+x test_modulename.py
+
+    cd <wherever>
+    python    .../package_dir/test/test_modulename.py
+
+    cd project-dir/package_dir
+    python -m test.test_modulename
+
+
+    python -m unittest ???? <todo> sort this out
+
+    python -m unittest discover ???  # requires python 2.7?
+
+
+2013-01-27 tc@DinkumSoftware.com 
+
+Got lost in the test code.
+Get simplier example to work.
+
+              
+python-example-project/
+|-- bin
+|   `-- example_bin.py
+`-- example_package
+    |-- __init__.py
+    `-- example_module.py
+
+
+PEP 338 -- Executing modules as scripts 
+http://www.python.org/dev/peps/pep-0338/
+
+http://www.python.org/dev/peps/pep-0328/
+relative imports, the . notation
+
+guido's view on main()'s
+http://www.artima.com/weblogs/viewpost.jsp?thread=4829
+
+Ok I got an example main running.
+I elected to:
+    alter the sys.path in the main via site.addsitedir()
+    I REQUIRE bin/foo.py imports example_package.foo_main
+    which must define a main()
+    and it assumes directory structure of:
+        project-dir/
+            bin/
+               foo.py
+            example_package/
+               foo_main.py
+
+to run from interpreter.
+   cd project-dir
+   python
+   from example_package.example_exe_main import main
+   main(["arg0", "arg1", "arg2"])
+
+Ok.. back to test code.
+tomorrow.
+
+reflect if I want to:
+    import module_under_test --or--               <<<--------
+    import example_package.module_under_test
+
+also... change the bin stuff to just alter sys.path directly.
+No need to muck with addsitedir.
+
+2013-01-28 tc@DinkumSoftware.com 
+
+Ok did the above and test code works.
+do a few code cleanups (like don't offer utc=UTC(),
+make user do a UTC().
+
+What next....
+
+write timestamp_human_readable.py
+write timestamp_files_human_readable.py  .... spec called out before extension?
+      ls *.foo
+          a.foo
+          b.foo
+          c.foo
+      timestamp_files_human_readable.py  *.foo
+          <timestamp>.a.foo
+          <timestamp>.b.foo
+          <timestamp>.c.foo
+
+2013-01-30 tc@DinkumSoftware.com 
+
+Start with timestamp_human_readable.py
+
+hum....
+ should  executable:  foo.py  invoke  ../package/foo_main.py  -or-
+                                      ../package/main_foo.py
+currently it is foo_main
+
+I think the later.  Then all the programs show up together as main_<whatever>.py
+                                      
+<done> think about - in bin names instead of _
+ yes.... I really do like this better.
+         Use - in script names.
+         Leave .py on for windows.
+         Could strip it off on linux installation if desired.
+           
+
+<todo> think about example_exe.py  sys.exit(main(sys.argv))
+
+2013-01-31 tc@DinkumSoftware.com
+
+got timestamp_human_readable.py working.
+
+It failed because the package name was same as module name.
+under stand this.... <todo>
+
+relative imports...
+http://www.python.org/dev/peps/pep-0328/#guido-s-decision
+
+It's too hard to create project-dirs manually to run these experiments.
+So time to make an exe (python naturally) that:
+
+    creates project directory
+    creates python script (exe)
+    creates python module 
+
+make-dinkum-project.py  type=python                     future
+                        project=<project name>
+                        package=<package name>
+                        script=<script name>
+                        module=<module name>
+
+
+project:  dinkum-project
+package:  dinkum_project_pkg
+module:   dinkum_project
+              make()
+          main_make_dinkum_project
+              main()
+
+make-dinkum-project.py project-dir ... project-dir
+   where project-dir is a filepath whose basename is the
+   project name.
+
+make (project_dir=    reqd
+      package=        optional, created from project_name
+      module=)        optional, created from project_name
+
+
+2013-02-01 tc@DinkumSoftware.com 
+
+Initial dinkum-project make-{project-dir,package-dir} work
+
+
+Had a question on how to handle errors with a reason.
+
+One choice:
+
+    legal, why = is_something()
+    if not legal :
+       raise ErrorSomething(why)
+
+
+   def is_something() :
+       if is_ok :
+          return (True, None)
+       else :
+          return (False, "some reason or the other")
+
+
+
+2nd choice:
+    class ErrorSomething(SomeException) :  pass
+    def is_something() :
+        if not ok :
+           raise ErrorSomething("some reason or the other")
+
+
+    a. is_something()      # and let caller deal with exception
+          --or--
+
+       try:
+           is_something
+       except ErrorSomething, excpt:
+           raise ErrorAnother ("stuff about me:" + why)
+
+
+I think the Exception based stuff reads better.
+So I converted the dinkum-project code.
+
+I still have quite figured out what I want to specify for make_xxx arguments,
+but charge ahead.  next:
+    make_python_module_file(package_dir, module_name    )
+
+    make_python_script_file(project_dir, script_basename)
+
+
+Check out "lore" for documentation.  Twisted uses it.
+maybe not... Migrate Twisted's documentation from Lore to Sphinx. 
+Also "buildbot" looks like a nice build system... python and twised both use it.
+<todo> check this out
+
+2013-02-02 tc@DinkumSoftware.com 
+
+rethink again... only directory is project directory
+and go (more specific, less specific, project directory)
+
+x    make_project_dir( project-dir )
+                      where basename is project-name
+x    make_python_package_dirs( package_name, project_dir)
+x    make_python_module_file(module_name, package_name, project_dir)
+     make_python_script(script_name, package_name, project_dir)
+
+2013-02-04 tc@DinkumSoftware.com 
+
+<todo> refactor the test code into other modules.
+
+knocked off make_python_package_dirs() with test code
+
+2013-02-16 tc@DinkumSoftware.com pre-cruise during school vacation week.
+
+wrote make_python_module_file(module_name, package_name, project_dir)
+it needs more test code.
+
+2013-02-17 tc@DinkumSoftware.com Somewhere in conn....On train to NYC
+
+made a module.
+     still need to make test_module
+
+2013-03-03 tc@DinkumSoftware.com 
+
+made test_module
+
+Query: should I require a module to be in a package?
+maybe yes, maybe no.
+        yes==> more regular
+        no ==> less confusing for small projects
+
+     project-dir/
+       bin/
+           bar.py
+       foo.py
+       main_bar.py
+       test/
+           test_foo.py
+           test_bar.py
+
+-or-
+    project/         ; the project dir
+       project/      ; the default package dir
+           foo.py
+           test/
+               test_foo.py
+       bin/
+           bar.py
+         
+
+<done> sort this out
+       I'm leaning no,
+         but anything I want to publish ought to be in
+         a dinkum_<package> of some sort to not contaminate namespace.
+       So the answer is YES, must be in a package
+<todo>   default to project-name with - ==> _
+         no _ in project name
+
+<todo> make test dir a package dir, i.e. with __init__.py
+       test as package dir
+
+then make a script.
+
