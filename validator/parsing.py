@@ -29,7 +29,7 @@ class ObjectRepr(object):
         self.attributes = {}
         self.static_methods = {}
         self.static_vars = {}
-        self.simple = None
+        self.simple = None      # This is just tmp! should use attributes and methods only
 
     def __repr__(self):
         return '<Object %s: %s, attributes: %s, simple: %s>' % (self.name, self.simple, self.attributes, self.simple)
