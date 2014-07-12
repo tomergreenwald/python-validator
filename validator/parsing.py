@@ -1,272 +1,209 @@
-__author__ = 'Oded'
-
 import ast
-
-
-class ClassRepresentation(object):
-    def __init__(self, name, base):
-        self.name = name
-        self.base = base
-        self.methods = []
-        self.attributes = {}
-
-    def __repr__(self):
-        return '<Class %s, base: %s, methods: %s, attributes: %s>' % \
-               (self.name, 'none' if self.base is None else self.base.name, self.methods, self.attributes)
-
-    def inherit(self, other):
-        for m in other.methods:
-            self.methods.append(m)
-        for a, t in other.attributes.iteritems():
-            self.attributes[a] = t
-
-
-class AttributeVisitor(ast.NodeVisitor):
-    def visit_Str(self, node):
-        return 'str'
-
-    def visit_Num(self, node):
-        return 'num'
-
-    def visit_Name(self, node):
-        if node.id is 'None':
-            return 'NoneType'
-        else:
-            return 'bool'
-
-    def visit_List(self, node):
-        return 'list'
-
-    def visit_Tuple(self, node):
-        return 'tuple'
-
-    def visit_Call(self, node):
-        if node.func.id is 'set':
-            raise Exception('Set is not supported')
-        if node.func.id not in class_dict.keys():
-            raise Exception('Class not found') # Maybe should be object?
-        return class_dict[node.func.id]
-
-
-class InitVisitor(ast.NodeVisitor):
-    current_class = None
-
-    def visit_Expr(self, node):
-        try:
-            if node.value.func.attr is '__init__':
-                try:
-                    if node.value.func.value.func.id is 'super':
-                        InitVisitor.current_class.inherit(class_dict[node.value.func.value.args[0].id].base)
-                except AttributeError as e:
-                    pass
-
-                try:
-                    if node.value.func.value.id in class_dict:
-                        InitVisitor.current_class.inherit(class_dict[node.value.func.value.id])
-                except AttributeError as e:
-                    pass
-        except Exception as e:
-            raise Exceptio__author__ = 'Oded'
-
-import ast
-
 
 class MethodRepresentation(object):
-    def __init__(self, name):
+    def __init__(self, name, code):
         self.name = name
-        self.arguments = {}
+        self.code = code
+        self.arguments = []
 
     def __repr__(self):
         return '<Method %s, arguments: %s>' % (self.name, self.arguments)
 
 
 class ClassRepresentation(object):
-    def __init__(self, name, base):
+    def __init__(self, name, base=None):
         self.name = name
         self.base = base
-        self.methods = []
-        self.static_methods = []
-        self.attributes = {}
-
-        if self.name is not 'object':
-            self.inherit(class_dict['object'])
+        self.methods = {}
+        self.static_methods = {}
+        self.static_vars = {}
 
     def __repr__(self):
-        return '<Class %s, base: %s, methods: %s, static_methos: %s, attributes: %s>' % \
-               (self.name, 'none' if self.base is None else self.base.name, self.methods, self.static_methods, self.attributes)
+        return '<Class %s, base: %s, methods: %s, static_methos: %s, static_vars: %s' % \
+               (self.name, self.base, self.methods, self.static_methods, self.static_vars)
 
-    def inherit(self, other):
-        for m in other.methods:
-            self.methods.append(m)
-        for a, t in other.attributes.iteritems():
-            self.attributes[a] = t
+class ObjectRepr(object):
+    def __init__(self, name=None):
+        self.name = name
+        self.methods = {}
+        self.attributes = {}
+        self.static_methods = {}
+        self.static_vars = {}
+        self.simple = None
+
+    def __repr__(self):
+        return '<Object %s: %s, attributes: %s, simple: %s>' % (self.name, self.simple, self.attributes, self.simple)
+
+    def inherit(self, super_class, args, kwargs):
+        for m in super_class.methods:
+            if m not in self.methods:
+                self.methods[m] = super_class.methods[m]
+        call_function(classes[super_class.name].methods['__init__'], [self] + args, kwargs)
 
 
-class AttributeVisitor(ast.NodeVisitor):
+class AssignVisitor(ast.NodeVisitor):
+    """
+    Handle assign calls. Adds to the object the relavent methods and attributes
+    """
+    def __init__(self, obj):
+        super(AssignVisitor, self).__init__()
+        self.obj = obj
+
     def visit_Str(self, node):
-        return 'str'
+        self.obj.simple = 'str'
 
     def visit_Num(self, node):
-        return 'num'
+        self.obj.simple = 'num'
 
     def visit_Name(self, node):
         if node.id is 'None':
-            return 'NoneType'
+            self.obj.simple = 'NoneType'
         if node.id in ['True', 'False']:
-            return 'bool'
-        return node.id
+            self.obj.simple = 'bool'
+        self.obj.simple = node.id
 
     def visit_List(self, node):
-        return 'list'
+        self.obj.simple = 'list'
 
     def visit_Tuple(self, node):
-        return 'tuple'
+        self.obj.simple = 'tuple'
 
     def visit_Dict(self, node):
-        return 'dict'
+        self.obj.simple = 'dict'
 
     def visit_Call(self, node):
         if node.func.id is 'set':
-            return 'set'
+            self.obj.simple = 'set'
 
-        if node.func.id not in class_dict.keys():
-            raise Exception('Class not found') # Maybe should be object?
-        return class_dict[node.func.id]
+        if node.func.id not in classes:
+            raise Exception('Class not found') # Maybe should be top?
+        init_object(self.obj, classes[node.func.id], node.args, node.keywords)
+        # node.func.id can be in functions or something like that
 
 
-class ClassVisitor(ast.NodeVisitor):
-    current_class = None
+class CallFunction(ast.NodeVisitor):
+    def __init__(self, method, args, kwargs):
+        super(CallFunction, self).__init__()
+        self.varz = {}
+
+        for i in xrange(len(args)):
+            self.varz[method.arguments[i].name] = args[i]
+        # Handle kwargs
+        # Should replace the parameters with the right values by changing the tree
 
     def visit_FunctionDef(self, node):
-        m = MethodRepresentation(node.name)
-
-        args = [a.id for a in node.args.args]
-        if len(args) > 0 and args[0] is 'self':
-            static = False
-            args = args[1:]
-        else:
-            static = True
-
-        defaults = node.args.defaults
-        for i in xrange(len(args) - len(defaults)):
-            m.arguments[args[i]] = None
-        for i in xrange(len(defaults)):
-            m.arguments[args[-len(defaults):][i]] = AttributeVisitor().visit(defaults[i])
-
-        if not static:
-            self.current_class.methods.append(m)
-        else:
-            self.current_class.static_methods.append(m)
-
         self.generic_visit(node)
 
     def visit_Assign(self, node):
-        if node.targets[0].value.id is 'self':
-            self.current_class.attributes[node.targets[0].attr]=AttributeVisitor().visit(node.value)
+        handle_assign(node, self.varz)
 
     def visit_Expr(self, node):
         try:
             if node.value.func.attr is '__init__':
                 try:
                     if node.value.func.value.func.id is 'super':
-                        self.current_class.inherit(class_dict[node.value.func.value.args[0].id].base)
-                except AttributeError as e:
+                        self.varz['self'].inherit(classes[classes[node.value.func.value.args[0].id].base],
+                                                  node.value.args, node.value.keywords)
+                except:
                     pass
 
                 try:
-                    if node.value.func.value.id in class_dict:
-                        self.current_class.inherit(class_dict[node.value.func.value.id])
-                except AttributeError as e:
-                    pass
-        except Exception as e:
-            raise Exception('Not a standart ctor')
+                    if node.value.func.value.id in classes:
+                        self.varz['self'].inherit(classes[node.value.func.value.id],
+                                                  node.value.args, node.value.keywords)
+                except Exception as e:
+                    print e
+        except:
+            pass
 
 
-class ProgramVisitor(ast.NodeVisitor):
+class ClassDefVisitor(ast.NodeVisitor):
+    """
+    Handles class definitions. Creates new class in classes dictionary and set it's name,
+    super class, methods and statics
+    """
+    def __init__(self):
+        super(ClassDefVisitor, self).__init__()
+        self.clazz = None
+
     def visit_ClassDef(self, node):
-        if node.name in class_dict:
-            raise Exception('Double definition of class %s' % node.name)
-        if len(node.bases) is not 1:
-            raise Exception('Multiple inheritance does not supported (%s)' % node.name)
-
-        class_dict[node.name] = ClassRepresentation(node.name, class_dict[node.bases[0].id])
-        visitor = ClassVisitor()
-        ClassVisitor.current_class = class_dict[node.name]
-        visitor.visit(node)
-
-
-class_dict = {}
-
-
-def get_defined_classes(code):
-    class_dict['object'] = ClassRepresentation('object', None)
-    class_dict['Excption'] = ClassRepresentation('Exception', class_dict['object'])
-
-    ast_tree = ast.parse(code)
-    ProgramVisitor().visit(ast_tree)
-
-    for c in class_dict.values():
-        c.methods = list(set(c.methods))
-
-    return class_dict
-
-def get_parsed_code(code):
-    raise NotImplementedError()
-
-get_defined_classes(code)
-
-for n, c in class_dict.items():
-    print cn('Not a standart ctor')
-
-
-class ClassVisitor(ast.NodeVisitor):
-    current_class = None
-
-    def visit_FunctionDef(self, node):
-        if node.name is '__init__':
-            for child_node in node.body:
-                visitor = InitVisitor()
-                InitVisitor.current_class = ClassVisitor.current_class
-                visitor.visit(child_node)
-        else:
-            self.current_class.methods.append(node.name)
+        self.clazz = ClassRepresentation(node.name, node.bases[0].id)
+        classes[node.name] = self.clazz
         self.generic_visit(node)
 
+    def visit_FunctionDef(self, node):
+        m = MethodRepresentation(node.name, node)
+
+        args = [a.id for a in node.args.args]
+        defaults = node.args.defaults
+        for i in xrange(len(args) - len(defaults)):
+            obj = ObjectRepr(args[i])
+            obj.simple = object
+            m.arguments.append(obj)
+        for i in xrange(len(defaults)):
+            obj = ObjectRepr(args[-len(defaults):][i])
+            AssignVisitor(obj).visit(defaults[i])
+            m.arguments.append(obj)
+
+        if len(args) > 0 and args[0] is 'self':
+            self.clazz.methods[node.name] = m
+        else:
+            self.clazz.static_methods[node.name] = m
+
     def visit_Assign(self, node):
-        if node.targets[0].value.id is 'self':
-            self.current_class.attributes[node.targets[0].attr]=AttributeVisitor().visit(node.value)
+        handle_assign(node, self.clazz.static_vars)
 
 
 class ProgramVisitor(ast.NodeVisitor):
+    """
+    Should visit all the program
+    """
     def visit_ClassDef(self, node):
-        if node.name in class_dict:
-            raise Exception('Double definition of class %s' % node.name)
         if len(node.bases) is not 1:
             raise Exception('Multiple inheritance does not supported (%s)' % node.name)
+        ClassDefVisitor().visit(node)
 
-        class_dict[node.name] = ClassRepresentation(node.name, class_dict[node.bases[0].id])
-        visitor = ClassVisitor()
-        ClassVisitor.current_class = class_dict[node.name]
-        visitor.visit(node)
-
-
-class_dict = {}
+    def visit_Assign(self, node):
+        handle_assign(node, varz)
 
 
-def get_defined_classes(code):
-    class_dict['object'] = ClassRepresentation('object', None)
-    class_dict['Excption'] = ClassRepresentation('Exception', class_dict['object'])
-
-    ast_tree = ast.parse(code)
-    ProgramVisitor().visit(ast_tree)
-
-    for c in class_dict.values():
-        c.methods = list(set(c.methods))
-
-    return class_dict
-
-def get_class_attributes(class_name):   # FOR TOMER
+def init_object(obj, clazz, args, kwargs):
     """
-    Return the requested class attributes
+    Called when init an object.
+    It append the relevant statics and calls to the init method
     """
-    raise NotImplementedError()
+    obj.static_methods = clazz.static_methods
+    obj.static_vars = clazz.static_vars
+    obj.methods = clazz.methods
+    call_function(obj.methods['__init__'], [obj] + args, kwargs)
+
+
+def call_function(method, args, kwargs):
+    CallFunction(method, args, kwargs).visit(method.code)
+
+
+def handle_assign(node, context):
+    """
+    Handles assign - creates the relavent object and connects it to the context.
+    """
+    if len(node.targets) is not 1:
+        raise Exception('Multiple targets does not supported (%s)' % node.name)
+
+    obj = ObjectRepr()
+    assign_visitor = AssignVisitor(obj)
+    assign_visitor.visit(node.value)
+
+    if isinstance(node.targets[0], ast.Attribute):
+        obj.name = node.targets[0].attr
+        context[node.targets[0].value.id].attributes[obj.name] = obj
+    else:
+        obj.name = node.targets[0].id
+        context[node.targets[0].id] = obj
+
+
+classes = {}
+varz = {}
+
+ast_tree = ast.parse(code)
+visitor = ProgramVisitor()
+visitor.visit(ast_tree)
