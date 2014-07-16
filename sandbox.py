@@ -89,32 +89,34 @@ class AttributeVisitor(ast.NodeVisitor):
     
     
 class InitVisitor(ast.NodeVisitor):
-    current_class = None
-    base_class = None
-    
+
+    def __init__(self, current_class, base_class):
+        self.current_class = current_class
+        self.base_class = base_class
+
     def visit_Expr(self, node):
         try:
             if node.value.func.value.func.id is 'super':
-                inharite_methods_and_attributes(InitVisitor.current_class, InitVisitor.base_class)
+                inharite_methods_and_attributes(self.current_class, self.base_class)
         except Exception as e:
             print e
         try:
-            if node.value.func.value.id is InitVisitor.base_class.name:
-                inharite_methods_and_attributes(InitVisitor.current_class, InitVisitor.base_class)
+            if node.value.func.value.id is self.base_class.name:
+                inharite_methods_and_attributes(self.current_class, self.base_class)
         except:
             pass
 
 
 class ClassVisitor(ast.NodeVisitor):
-    current_class = None
-    base_class = None
+
+    def __init__(self, current_class, base_class):
+        self.current_class = current_class
+        self.base_class = base_class
     
     def visit_FunctionDef(self, node):
         if node.name is '__init__':
             for child_node in node.body:
-                visitor = InitVisitor()
-                InitVisitor.current_class = ClassVisitor.current_class
-                InitVisitor.base_class = ClassVisitor.base_class
+                visitor = InitVisitor(self.current_class, self.base_class)
                 visitor.visit(child_node)
         else:
             self.current_class.methods.append(node.name)
@@ -133,9 +135,7 @@ class ProgramVisitor(ast.NodeVisitor):
             raise Exception('Multiple inheritance is not supported (%s)' % node.name)
         
         clazz = ClassRepresentation(node.name)
-        visitor = ClassVisitor()
-        ClassVisitor.current_class = clazz
-        ClassVisitor.base_class = class_dict[node.bases[0].id]
+        visitor = ClassVisitor(clazz, class_dict[node.bases[0].id])
         visitor.visit(node)
         class_dict[node.name] = clazz
     
