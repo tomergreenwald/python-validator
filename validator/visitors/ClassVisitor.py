@@ -20,5 +20,5 @@ class ClassVisitor(NodeVisitor):
 
     def visit_Assign(self, node):
         if node.targets[0].value.id is 'self':
-            self.current_class.attributes[node.targets[0].attr]=AttributeVisitor(self.class_dict).visit(node.value)
+            self.current_class.attributes[node.targets[0].attr] = AttributeVisitor(self.class_dict).visit(node.value)
         #FIXME: what do we do if the assignment is not to self?
