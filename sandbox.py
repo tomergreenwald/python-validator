@@ -154,29 +154,3 @@ for c in class_dictionary.values():
 
 for c in class_dictionary.values():
     print c
-
-# <codecell>
-
-class A(object):
-    def __init__(self):
-        self.x = 5
-        
-    def a(self):
-        pass
-
-class B(A):
-    def __init__(self):
-        super(B, self).__init__()
-        self.y = 3
-
-# <codecell>
-
-b = B()
-
-# <codecell>
-
-dir({})
-
-# <codecell>
-
-
