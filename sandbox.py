@@ -127,6 +127,10 @@ class ClassVisitor(ast.NodeVisitor):
 class ProgramVisitor(ast.NodeVisitor):
 
     def __init__(self, class_dict):
+        """
+        Class constructor.
+        :param class_dict: Dictionary between class names and their ClassRepresentation.
+        """
         self.class_dict = class_dict
 
     def visit_ClassDef(self, node):
@@ -145,20 +149,20 @@ class ProgramVisitor(ast.NodeVisitor):
         clazz = ClassRepresentation(node.name)
         visitor = ClassVisitor(clazz, self.class_dict[node.bases[0].id])
         visitor.visit(node)
-        class_dict[node.name] = clazz
+        self.class_dict[node.name] = clazz
     
 
 
 ast_tree = ast.parse(code)
 #FIXME: this initialization seems wrong but if we remove it exceptions are thrown because it is required
-class_dict = {'object': ClassRepresentation('object'), 'Excption': ClassRepresentation('Exception')}
-program_visitor = ProgramVisitor(class_dict)
+class_dictionary = {'object': ClassRepresentation('object'), 'Excption': ClassRepresentation('Exception')}
+program_visitor = ProgramVisitor(class_dictionary)
 program_visitor.visit(ast_tree)
 
-for c in class_dict.values():
+for c in class_dictionary.values():
     c.methods = list(set(c.methods))
 
-for c in class_dict.values():
+for c in class_dictionary.values():
     print c
 
 # <codecell>
