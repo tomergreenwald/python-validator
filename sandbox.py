@@ -1,13 +1,4 @@
-
 import ast
-import util
-
-
-
-from ast import *
-
-
-
 
 code = """
 class A(object):
