@@ -16,7 +16,8 @@ class InitVisitor(NodeVisitor):
         try:
             if node.value.func.value.id is self.base_class.name:
                 inharite_methods_and_attributes(self.current_class, self.base_class)
-        except:
+        except Exception as e:
+            #FIXME: we are shwdowing an error here
             pass
 
     def visit_Assign(self, node):
