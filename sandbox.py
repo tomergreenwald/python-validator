@@ -130,7 +130,7 @@ class ProgramVisitor(ast.NodeVisitor):
         if node.name in class_dict:
             raise DoubleDefinitionException(node.name)
         if len(node.bases) is not 1:
-            raise Exception('Multiple inheritance does not supported (%s)' % node.name)
+            raise Exception('Multiple inheritance is not supported (%s)' % node.name)
         
         clazz = ClassRepresentation(node.name)
         visitor = ClassVisitor()
