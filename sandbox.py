@@ -125,6 +125,10 @@ class ClassVisitor(ast.NodeVisitor):
         
 
 class ProgramVisitor(ast.NodeVisitor):
+
+    def __init__(self, class_dict):
+        self.class_dict = class_dict
+
     def visit_ClassDef(self, node):
         """
         Visitor function used by the NodeVisitor as a callback function which
@@ -133,24 +137,22 @@ class ProgramVisitor(ast.NodeVisitor):
         :raise Exception: If the current ClassDef was already declared (and
         parsed) or has multiple inheritance an exception will be thrown.
         """
-        if node.name in class_dict:
+        if node.name in self.class_dict:
             raise Exception('Multiple definitions per class are not supported (%s)' % node.name)
         if len(node.bases) is not 1:
             raise Exception('Multiple inheritance is not supported (%s)' % node.name)
         
         clazz = ClassRepresentation(node.name)
-        visitor = ClassVisitor(clazz, class_dict[node.bases[0].id])
+        visitor = ClassVisitor(clazz, self.class_dict[node.bases[0].id])
         visitor.visit(node)
         class_dict[node.name] = clazz
     
 
-class_dict = {}
-
-class_dict['object'] = ClassRepresentation('object')
-class_dict['Excption'] = ClassRepresentation('Exception')
 
 ast_tree = ast.parse(code)
-ProgramVisitor().visit(ast_tree)
+class_dict = {'object': ClassRepresentation('object'), 'Excption': ClassRepresentation('Exception')}
+program_visitor = ProgramVisitor(class_dict)
+program_visitor.visit(ast_tree)
 
 for c in class_dict.values():
     c.methods = list(set(c.methods))
