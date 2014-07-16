@@ -1,9 +1,14 @@
 import ast
 
 code = """
+
+def cc():
+    return "cc"
+
 class A(object):
     def __init__(self):
         self.x = 5
+        self.c = cc()
         
 class B(A):
     def __init__(self):
@@ -36,6 +41,14 @@ class ClassRepresentation(object):
     
     
 class AttributeVisitor(ast.NodeVisitor):
+
+    def __init__(self, class_dict):
+        """
+        Class constructor.
+        :param class_dict: Dictionary between class names and their ClassRepresentation.
+        """
+        self.class_dict = class_dict
+
     def visit_Str(self, node):
         return 'str'
     
@@ -57,9 +70,11 @@ class AttributeVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         if node.func.id is 'set':
             raise Exception('Set is not supported')
-        if node.func.id not in class_dict.keys():
-            raise Excpetion()
-        return class_dict[node.func.id]
+        if node.func.id not in self.class_dict.keys():
+            return
+            #raise Exception()
+            #FIXME: the call does not have to be to a class, it can be to a method too
+        return self.class_dict[node.func.id]
     
     
 class InitVisitor(ast.NodeVisitor):
@@ -86,9 +101,10 @@ class InitVisitor(ast.NodeVisitor):
 
 class ClassVisitor(ast.NodeVisitor):
 
-    def __init__(self, current_class, base_class):
+    def __init__(self, current_class, base_class, class_dict):
         self.current_class = current_class
         self.base_class = base_class
+        self.class_dict = class_dict
     
     def visit_FunctionDef(self, node):
         if node.name is '__init__':
@@ -101,7 +117,7 @@ class ClassVisitor(ast.NodeVisitor):
         
     def visit_Assign(self, node):
         if node.targets[0].value.id is 'self':
-            self.current_class.attributes[node.targets[0].attr]=AttributeVisitor().visit(node.value)
+            self.current_class.attributes[node.targets[0].attr]=AttributeVisitor(self.class_dict).visit(node.value)
         #FIXME: what do we do if the assignment is not to self?
         
 
@@ -128,7 +144,7 @@ class ProgramVisitor(ast.NodeVisitor):
             raise Exception('Multiple inheritance is not supported (%s)' % node.name)
         
         clazz = ClassRepresentation(node.name)
-        visitor = ClassVisitor(clazz, self.class_dict[node.bases[0].id])
+        visitor = ClassVisitor(clazz, self.class_dict[node.bases[0].id], self.class_dict)
         visitor.visit(node)
         self.class_dict[node.name] = clazz
     
