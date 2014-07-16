@@ -122,6 +122,7 @@ class ClassVisitor(ast.NodeVisitor):
     def visit_Assign(self, node):
         if node.targets[0].value.id is 'self':
             self.current_class.attributes[node.targets[0].attr]=AttributeVisitor().visit(node.value)
+        #FIXME: what do we do if the assignment is not to self?
         
 
 class ProgramVisitor(ast.NodeVisitor):
