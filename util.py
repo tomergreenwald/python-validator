@@ -41,3 +41,28 @@ def parseprint(code, filename="<string>", mode="exec", **kwargs):
     """Parse some code from a string and pretty-print it."""
     node = parse(code, mode=mode)   # An ode to the code
     print(dump(node, **kwargs))
+
+
+def inharite_methods_and_attributes(clazz, base):
+    for m in base.methods:
+        clazz.methods.append(m)
+    for a, t in base.attributes.iteritems():
+        clazz.attributes[a] = t
+
+
+class ClassRepresentation(object):
+    def __init__(self, name):
+        self.name = name
+        self.methods = []
+        self.attributes = {}
+
+    def __repr__(self):
+        return '<Class %s, methods: %s, attributes: %s>' % (self.name, self.methods, self.attributes)
+
+
+class MultipleNameDefenition(Exception):
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        return 'Validator does not support multiple definitons with the same name (%s)' % self.name
