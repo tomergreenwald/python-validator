@@ -102,6 +102,8 @@ class InitVisitor(ast.NodeVisitor):
                 inharite_methods_and_attributes(self.current_class, self.base_class)
         except:
             pass
+    def visit_Assign(self, node):
+        #TODO implement me
 
 
 class ClassVisitor(ast.NodeVisitor):
