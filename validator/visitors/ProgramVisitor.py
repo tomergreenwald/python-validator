@@ -1,5 +1,6 @@
 from ast import NodeVisitor
-from util import ClassRepresentation
+
+from validator.util import ClassRepresentation
 from validator.visitors.ClassVisitor import ClassVisitor
 
 

@@ -1,6 +1,6 @@
 import ast
 
-from util import ClassRepresentation
+from validator.util import ClassRepresentation
 from validator.visitors.ProgramVisitor import ProgramVisitor
 
 

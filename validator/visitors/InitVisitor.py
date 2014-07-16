@@ -1,5 +1,6 @@
 from ast import NodeVisitor
-from util import inharite_methods_and_attributes
+
+from validator.util import inharite_methods_and_attributes
 
 
 class InitVisitor(NodeVisitor):
