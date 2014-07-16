@@ -1,4 +1,7 @@
 from ast import *
+from validator.ClassRepresentation import ClassRepresentation
+from validator.exceptions import MultipleNameDefinition
+
 
 def dump(node, annotate_fields=True, include_attributes=False, indent='  '):
     """
@@ -48,21 +51,3 @@ def inharite_methods_and_attributes(clazz, base):
         clazz.methods.append(m)
     for a, t in base.attributes.iteritems():
         clazz.attributes[a] = t
-
-
-class ClassRepresentation(object):
-    def __init__(self, name):
-        self.name = name
-        self.methods = []
-        self.attributes = {}
-
-    def __repr__(self):
-        return '<Class %s, methods: %s, attributes: %s>' % (self.name, self.methods, self.attributes)
-
-
-class MultipleNameDefenition(Exception):
-    def __init__(self, name):
-        self.name = name
-
-    def __str__(self):
-        return 'Validator does not support multiple definitons with the same name (%s)' % self.name
