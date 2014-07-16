@@ -103,6 +103,7 @@ class InitVisitor(ast.NodeVisitor):
         except:
             pass
     def visit_Assign(self, node):
+        pass
         #TODO implement me
 
 
