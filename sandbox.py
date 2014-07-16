@@ -22,7 +22,7 @@ class B(A):
 
 ast_tree = ast.parse(code)
 #FIXME: this initialization seems wrong but if we remove it exceptions are thrown because it is required
-class_dictionary = {'object': ClassRepresentation('object'), 'Excption': ClassRepresentation('Exception')}
+class_dictionary = {'object': ClassRepresentation('object'), 'Exception': ClassRepresentation('Exception')}
 program_visitor = ProgramVisitor(class_dictionary)
 program_visitor.visit(ast_tree)
 
