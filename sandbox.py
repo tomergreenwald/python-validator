@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
-
-# <codecell>
 
 import ast
 import util
 
-# <codecell>
+
 
 from ast import *
 
-# <codecell>
+
 
 
 code = """
@@ -23,16 +19,6 @@ class B(A):
         super(B, self).__init__()
         A.__init__(self)
 """
-
-# <codecell>
-
-util.parseprint(code)
-
-# <codecell>
-
-tree = ast.parse(code)
-
-# <codecell>
 
 def inharite_methods_and_attributes(clazz, base):
     for m in base.methods:
