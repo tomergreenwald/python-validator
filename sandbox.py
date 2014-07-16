@@ -129,6 +129,13 @@ class ClassVisitor(ast.NodeVisitor):
 
 class ProgramVisitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
+        """
+        Visitor function used by the NodeVisitor as a callback function which
+        is called for every ClassDef instance it encounters.
+        :param node: ClassDef node to handle.
+        :raise Exception: If the current ClassDef was already declared (and
+        parsed) or has multiple inheritance an exception will be thrown.
+        """
         if node.name in class_dict:
             raise DoubleDefinitionException(node.name)
         if len(node.bases) is not 1:
