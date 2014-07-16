@@ -13,9 +13,6 @@ from ast import *
 # <codecell>
 
 
-class DoubleDefinitionException(Exception):
-    pass
-
 code = """
 class A(object):
     def __init__(self):
@@ -137,7 +134,7 @@ class ProgramVisitor(ast.NodeVisitor):
         parsed) or has multiple inheritance an exception will be thrown.
         """
         if node.name in class_dict:
-            raise DoubleDefinitionException(node.name)
+            raise Exception('Multiple definitions per class are not supported (%s)' % node.name)
         if len(node.bases) is not 1:
             raise Exception('Multiple inheritance is not supported (%s)' % node.name)
         
