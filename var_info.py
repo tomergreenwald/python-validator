@@ -4,6 +4,8 @@ MUST_HAVE = 1
 MUST_NOT_HAVE = 2
 TOTAL_ATTR_TYPES = 3
 
+STATES_INV = {0: 'MAY_HAVE', 1: 'MUST_HAVE', 2: 'MUST_NOT_HAVE'}
+
 def lattice_lub(p0, p1):
     """
     returns the lub of two primitive information
@@ -109,4 +111,6 @@ class VariableInfo(object):
                 updated = True
         
         return updated
-        
+    
+    def __repr__(self):
+        return '\n'.join(['%s: %s' %(x,STATES_INV[y]) for (x,y) in self.attributes.items()])
