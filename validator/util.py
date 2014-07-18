@@ -1,4 +1,7 @@
 from ast import *
+from validator.ClassRepresentation import ClassRepresentation
+from validator.exceptions import MultipleNameDefinition
+
 
 def dump(node, annotate_fields=True, include_attributes=False, indent='  '):
     """
@@ -41,3 +44,10 @@ def parseprint(code, filename="<string>", mode="exec", **kwargs):
     """Parse some code from a string and pretty-print it."""
     node = parse(code, mode=mode)   # An ode to the code
     print(dump(node, **kwargs))
+
+
+def inharite_methods_and_attributes(clazz, base):
+    for m in base.methods:
+        clazz.methods.append(m)
+    for a, t in base.attributes.iteritems():
+        clazz.attributes[a] = t
