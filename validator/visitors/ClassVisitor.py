@@ -19,6 +19,7 @@ class ClassVisitor(NodeVisitor):
         self.generic_visit(node)
 
     def visit_Assign(self, node):
+        #TODO: split multiple assignments to separate assignments with temporary variables.
         #we do not handle multiple targets since we assume that the ast was preprocessed and every multiple assignment
         #was split into separate assignments with temporary variables.
         node_targets = node.targets[0]
