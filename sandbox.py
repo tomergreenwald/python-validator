@@ -10,9 +10,11 @@ def cc():
     return "cc"
 
 class A(object):
-    def __init__(self):
+    def __init__(self, param):
         self.x = 5
         self.c = cc()
+        a = 'a'
+        param.p = 6
         
 class B(A):
     def __init__(self):
