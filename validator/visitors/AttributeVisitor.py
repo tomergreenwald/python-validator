@@ -34,4 +34,5 @@ class AttributeVisitor(NodeVisitor):
             return
             #raise Exception()
             #FIXME: the call does not have to be to a class, it can be to a method too
+            #FIXME: We do not identify calls to methods we haven't parsed yet
         return self.class_dict[node.func.id]
