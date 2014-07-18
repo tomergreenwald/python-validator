@@ -1,7 +1,7 @@
 import ast
 
 from validator.util import ClassRepresentation
-from validator.visitors.ProgramVisitor import ProgramVisitor
+from validator.visitors2.ProgramVisitor import ProgramVisitor
 
 
 code = """

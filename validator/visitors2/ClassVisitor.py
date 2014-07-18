@@ -1,6 +1,6 @@
 from ast import NodeVisitor
-from validator.visitors.AttributeVisitor import AttributeVisitor
-from validator.visitors.InitVisitor import InitVisitor
+from validator.visitors2.AttributeVisitor import AttributeVisitor
+from validator.visitors2.InitVisitor import InitVisitor
 
 
 class ClassVisitor(NodeVisitor):
