@@ -15,6 +15,10 @@ class A(object):
         self.c = cc()
         a = 'a'
         param.p = 6
+        self.f = foo()
+
+    def foo():
+        return 'bar'
         
 class B(A):
     def __init__(self):
