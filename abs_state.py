@@ -5,6 +5,12 @@ logging.basicConfig(level = logging.DEBUG)
 
 from var_info import VariableInfo
     
+class VarNotInState(Exception):
+    """
+    when asking something about a variable which is not in the abstract state at all
+    """
+    pass
+    
 class AbstractState(object):
     """
     This class represents the abstract state for a set of variables (which means the abstract state for the whole program)
@@ -30,6 +36,11 @@ class AbstractState(object):
         self.seeds = dict()
         self.need_to_update = set()
         
+    def query(self, var, attr):
+        if var not in self.vars_set:
+            raise VarNotInState()
+        return self.vars_info[var].get_attribute_info(attr)
+    
     def set_var(self, var, var_info):
         """
         call this when you know some VariableInfo about var
