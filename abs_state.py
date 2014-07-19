@@ -3,7 +3,7 @@ from copy import copy, deepcopy
 import logging
 logging.basicConfig(level = logging.DEBUG)
 
-from var_info import VariableInfo, MUST_HAVE, MUST_NOT_HAVE, MAY_HAVE
+from var_info import VariableInfo
     
 class AbstractState(object):
     """
@@ -13,11 +13,16 @@ class AbstractState(object):
     def __init__(self):
         """
         we have the following members:
-            vars_info: a mapping between each variable to an VariableInfo object
+            vars_info: a mapping between each variable to an VariableInfo 
+                       object
             vars_set: a set of all variables in vars_info, only for convenience
-            seeded_by: for every variable, a list of the variables it can be seeded from (e.g. if x=y, then x is seeded by y)
-            seeds: for every variable, a list of variables which is seeds (e.g. if x=y, then y seeds x. if y=z, then y stops to seed x)
-            need_to_update: nodes that needs to propagate their info to their sons in the graph
+            seeded_by: for every variable, a list of the variables it can be 
+                       seeded from (e.g. if x=y, then x is seeded by y)
+            seeds: for every variable, a list of variables which is seeds 
+                   (e.g. if x=y, then y seeds x. if y=z, then y stops to seed x)
+            need_to_update: nodes that needs to propagate their info to their 
+                            sons in the graph. actually, all the objects that
+                            their ref-count is more than 1
         """
         self.vars_info = dict()
         self.vars_set = set()
@@ -25,15 +30,19 @@ class AbstractState(object):
         self.seeds = dict()
         self.need_to_update = set()
         
-    def add_var(self, var, var_info):
+    def set_var(self, var, var_info):
         """
         call this when you know some VariableInfo about var
         """
-        # TODO do we need to copy var_info?
+        if var in self.vars_set:
+            self.clear_seeds(var0)
+        else:        
+            self.vars_set.add(var)
+            self.seeds[var] = set()
+            self.seeded_by[var] = set()
+        
+        # TODO do we really need to copy var_info?
         self.vars_info[var] = deepcopy(var_info)
-        self.vars_set.add(var)
-        self.seeds[var] = set()
-        self.seeded_by[var] = set()
     
     def clear_seeds(self, v):
         """
@@ -82,7 +91,18 @@ class AbstractState(object):
         
         self.vars_info[var0] = VariableInfo()
         
-        
+    def set_var_to_const(self, var0, val0):
+        """
+        call this function when a by-value assignment is done, such as x = 5
+        we base this function on dir(val0), so we expect val0 to consist of a 
+        known type during analysis time
+        """
+        vi = VariableInfo.generate_var_info(val0)
+        if var0 not in self.vars_set:
+            self.set_var(var0, vi)
+        else:
+            self.clear_seeds(var0) # this also calls flush_all_seeds
+            self.vars_info[var0] = vi
     
     # def update_var(self, var, expression):
     
@@ -143,19 +163,19 @@ an example about how to analyse this code:
     v3 = v
 
 vi = VariableInfo()
-vi.add_attribute('x', MUST_HAVE)
+vi.add_attribute('x')
 vi2 = VariableInfo()
-vi2.add_attribute('x', MUST_HAVE)
-vi2.add_attribute('y', MUST_HAVE)
+vi2.add_attribute('x')
+vi2.add_attribute('y')
 vi3 = VariableInfo()
-vi3.add_attribute('z', MUST_HAVE)
-vi3.add_attribute('w', MUST_HAVE)
-vi3.add_attribute('x', MUST_HAVE)
+vi3.add_attribute('z')
+vi3.add_attribute('w')
+vi3.add_attribute('x')
 
 a = AbstractState()
-a.add_var('v', vi)
-a.add_var('v2', vi2)
-a.add_var('v3', vi3)
+a.set_var('v', vi)
+a.set_var('v2', vi2)
+a.set_var('v3', vi3)
 
 a.set_var_to_var('v2', 'v3')
 a.set_var_to_var('v3', 'v')
