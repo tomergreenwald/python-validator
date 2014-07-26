@@ -34,8 +34,30 @@ def should_call_simpler(node):
             and (isinstance(node.value.func.value, _ast.Attribute) or isinstance(node.value.func.value, _ast.Call)))
 
 
+def should_call_args_simpler(node):
+    if not isinstance(node.value, _ast.Call):
+        return False
+    for a in node.value.args:
+        if not isinstance(a, _ast.Name):
+            return True
+    return False
+
+
 def should_target_simpler(node):
     return isinstance(node, _ast.Assign) and not isinstance(node.targets[0], _ast.Name)
+
+
+def call_args_simpler(node):
+    new_nodes = []
+    for a, index in zip(node.value.args, xrange(len(node.value.args))):
+        if not isinstance(a, _ast.Name):
+            tmp_var_name = random_tmp_var()
+            new_nodes.append(ast.Assign(
+                                        targets=[ast.Name(id=tmp_var_name, ctx=Store())],
+                                        value=a
+                                        ))
+            node.value.args[index] = ast.Name(id=tmp_var_name, ctx=Load())
+    return new_nodes + [node]
 
 
 def assign_tuple_simpler(node):
@@ -124,6 +146,10 @@ def simple(node):
         should_simple_again = True
         return arth_simpler(node)
 
+    if should_call_args_simpler(node):
+        should_simple_again = True
+        return call_args_simpler(node)
+
     return node
 
 
@@ -156,5 +182,4 @@ def make_simple(code):
         should_simple_again = False
         visitor = CodeSimpler()
         visitor.visit(ast_tree)
-        should_simple_again = False
-        return codegen.to_source(ast_tree)
+    return codegen.to_source(ast_tree)
