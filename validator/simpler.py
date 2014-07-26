@@ -15,6 +15,10 @@ def random_tmp_var():
     return 'a' + str(uuid.uuid4()).replace('-', '')
 
 
+def should_assign_tuple_simpler(node):
+    return isinstance(node, _ast.Assign) and isinstance(node.targets[0], _ast.Tuple)
+
+
 def should_arth_simpler(node):
     return isinstance(node.value, _ast.BinOp) and (not isinstance(node.value.left, _ast.Name)
                                                    or not isinstance(node.value.right, _ast.Name))
@@ -32,6 +36,18 @@ def should_call_simpler(node):
 
 def should_target_simpler(node):
     return isinstance(node, _ast.Assign) and not isinstance(node.targets[0], _ast.Name)
+
+
+def assign_tuple_simpler(node):
+    tmp_var_name = random_tmp_var()
+
+    return_nodes = [ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=node.value)]
+    for v, index in zip(node.targets[0].elts, xrange(len(node.targets[0].elts))):
+        return_nodes.append(ast.Assign(targets=[ast.Name(id=v.id, ctx=Store())],
+                                       value=Subscript(value=Name(id=tmp_var_name, ctx=Load()), slice=Index(value=Num(n=index))),
+                                       ctx=Load()
+                                       ))
+    return return_nodes
 
 
 def call_simpler(node):
@@ -88,6 +104,10 @@ def arth_simpler(node):
 def simple(node):
     global should_simple_again
 
+    if should_assign_tuple_simpler(node):
+        should_simple_again = True
+        return assign_tuple_simpler(node)
+
     if should_target_simpler(node):
         should_simple_again = True
         return targets_simpler(node)
@@ -136,5 +156,5 @@ def make_simple(code):
         should_simple_again = False
         visitor = CodeSimpler()
         visitor.visit(ast_tree)
-
-    return codegen.to_source(ast_tree)
+        should_simple_again = False
+        return codegen.to_source(ast_tree)
