@@ -75,6 +75,7 @@ class AssignVisitor(ast.NodeVisitor):
         if node.func.id is 'set':
             self.obj.simple = 'set'
 
+        #FIXME: we do not support call for regular functions (that are not constructors)
         if node.func.id not in classes and node.func.id not in functions:
             raise Exception('Class or function not found %s' % (node.func.id) ) # Maybe should be top?
         init_object(self.obj, classes[node.func.id], node.args, node.keywords)
