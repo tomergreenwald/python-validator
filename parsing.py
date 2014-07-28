@@ -75,8 +75,8 @@ class AssignVisitor(ast.NodeVisitor):
         if node.func.id is 'set':
             self.obj.simple = 'set'
 
-        if node.func.id not in classes:
-            raise Exception('Class not found') # Maybe should be top?
+        if node.func.id not in classes and node.func.id not in functions:
+            raise Exception('Class or function not found %s' % (node.func.id) ) # Maybe should be top?
         init_object(self.obj, classes[node.func.id], node.args, node.keywords)
         # node.func.id can be in functions or something like that
 
@@ -116,6 +116,22 @@ class CallFunction(ast.NodeVisitor):
         except:
             pass
 
+class FunctionDefVisitor(ast.NodeVisitor):
+    def visit_FunctionDef(self, node):
+        m = MethodRepresentation(node.name, node)
+
+        args = [a.id for a in node.args.args]
+        defaults = node.args.defaults
+        for i in xrange(len(args) - len(defaults)):
+            obj = ObjectRepr(args[i])
+            obj.simple = object
+            m.arguments.append(obj)
+        for i in xrange(len(defaults)):
+            obj = ObjectRepr(args[-len(defaults):][i])
+            AssignVisitor(obj).visit(defaults[i])
+            m.arguments.append(obj)
+
+        functions[node.name] = m
 
 class ClassDefVisitor(ast.NodeVisitor):
     """
@@ -163,6 +179,9 @@ class ProgramVisitor(ast.NodeVisitor):
             raise Exception('Multiple inheritance does not supported (%s)' % node.name)
         ClassDefVisitor().visit(node)
 
+    def visit_FunctionDef(self, node):
+        FunctionDefVisitor().visit(node)
+
     def visit_Assign(self, node):
         handle_assign(node, varz)
 
@@ -202,6 +221,7 @@ def handle_assign(node, context):
 
 
 classes = {}
+functions = {}
 varz = {}
 
 ast_tree = ast.parse(code)
