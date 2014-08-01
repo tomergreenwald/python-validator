@@ -34,8 +34,6 @@ else:
 
 if 1==2:
     aa = 1
-else:
-    e = 2
 """
 ast_tree = ast.parse(code)
 visitor = ProgramVisitor()
