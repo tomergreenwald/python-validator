@@ -3,7 +3,6 @@ import ast
 
 from validator.representation.ClassRepresentation import ClassRepresentation
 from validator.representation.MethodRepresentation import MethodRepresentation
-from abs_state import AbstractState
 
 #FIXME: varz global is not share
 __author__ = 'Tomer'
@@ -11,7 +10,6 @@ __author__ = 'Tomer'
 classes = {}
 functions = {}
 varz = {}
-abstract_state = AbstractState()
 
 
 def get_node_name(node):
@@ -34,14 +32,11 @@ class AssignVisitor(ast.NodeVisitor):
         super(AssignVisitor, self).__init__()
         self.obj = obj
 
-    def visit_Attribute(self, node):
-        abstract_state.set_var_to_var(self.obj.name, get_node_name(node))
-
     def visit_Str(self, node):
-        abstract_state.set_var_to_const(self.obj.name, node.s)
+        self.obj.simple = 'str'
 
     def visit_Num(self, node):
-        abstract_state.set_var_to_const(self.obj.name, node.n)
+        self.obj.simple = 'num'
 
     def visit_Name(self, node):
         if node.id is 'None':
