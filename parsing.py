@@ -23,6 +23,19 @@ v2 = v3
 a_list = (a,b,c, 's')
 a_tuple = [a,b,c, 's']
 a_dict = {1:1}
+
+if True:
+    e = 5
+    p = 8
+elif 5==5:
+    e = 6
+else:
+    e = 7
+
+if 1==2:
+    aa = 1
+else:
+    e = 2
 """
 ast_tree = ast.parse(code)
 visitor = ProgramVisitor()
