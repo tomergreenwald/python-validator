@@ -185,12 +185,13 @@ class ProgramVisitor(ast.NodeVisitor):
         handle_assign(node, self.abstract_state)
 
     def visit_If(self, node):
-        true_state = self.abstract_state.clone()
-        false_state = self.abstract_state.clone()
-        self.asses_list(node.body, true_state)
-        self.asses_list(node.orelse, false_state)
-        true_state.lub(false_state)
-        self.abstract_state = true_state
+        if len(node.orelse) == 0:
+            self.asses_list(node.body, self.abstract_state)
+        else:
+            orelse_state = self.abstract_state.clone()
+            self.asses_list(node.body, self.abstract_state)
+            self.asses_list(node.orelse, orelse_state)
+            self.abstract_state.lub(orelse_state)
 
 
     def asses_list(self, entries, abstract_state):
