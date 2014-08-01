@@ -199,6 +199,11 @@ class ProgramVisitor(ast.NodeVisitor):
 
 
     def asses_list(self, entries, abstract_state):
+        """
+        Generates a ProgramVisitor and runs it through the given set of entries while updating the given AbstractState.
+        :param entries: A list of entries to process.
+        :param abstract_state: AbstractState to initialize the ProgramVisitor with.
+        """
         visitor = ProgramVisitor(abstract_state)
         for entry in entries:
             visitor.visit(entry)
