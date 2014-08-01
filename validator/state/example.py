@@ -1,10 +1,8 @@
 import os
 import sys
-os.chdir(r'D:\school\verify\project2\python-validator\validator')
-sys.path.append(r'D:\school\verify\project2\python-validator\validator')
 
-from state import AbstractState
-from state.exceptions import *
+from validator.state import AbstractState
+from validator.state.exceptions import *
 
 def wrap_check_attr(aa, vv, at):
     print 'checking var %s attr %s ...' %(vv, at),
