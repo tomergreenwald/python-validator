@@ -191,7 +191,8 @@ class AbstractState(object):
     def lub(self, other):
         """
         we take the union of both graphes (seeded_by)
-        
+        modified self:
+            self = lub(self, other)
         """
         other_vars = other.vars_set.difference(self.vars_set)
         common_vars = self.vars_set.intersection(other.vars_set)
