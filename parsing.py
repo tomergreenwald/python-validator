@@ -2,10 +2,6 @@ import ast
 
 from validator.visitors.Visitors import ProgramVisitor
 
-
-
-
-
 classes = {}
 functions = {}
 varz = {}
