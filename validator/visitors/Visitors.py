@@ -11,11 +11,6 @@ __author__ = 'Tomer'
 classes = {}
 functions = {}
 varz = {}
-abstract_state = AbstractState()
-abstract_state.set_var_to_const('True', True)
-abstract_state.set_var_to_const('False', False)
-abstract_state.set_var_to_const('None', None)
-
 
 def get_node_name(node):
     """
@@ -33,30 +28,31 @@ class AssignVisitor(ast.NodeVisitor):
     """
     Handle assign calls. Adds to the object the relavent methods and attributes
     """
-    def __init__(self, obj):
+    def __init__(self, obj, abstract_state):
         super(AssignVisitor, self).__init__()
         self.obj = obj
+        self.abstract_state = abstract_state
 
     def visit_Attribute(self, node):
-        abstract_state.set_var_to_var(self.obj.name, get_node_name(node))
+        self.abstract_state.set_var_to_var(self.obj.name, get_node_name(node))
 
     def visit_Str(self, node):
-        abstract_state.set_var_to_const(self.obj.name, node.s)
+        self.abstract_state.set_var_to_const(self.obj.name, node.s)
 
     def visit_Num(self, node):
-        abstract_state.set_var_to_const(self.obj.name, node.n)
+        self.abstract_state.set_var_to_const(self.obj.name, node.n)
 
     def visit_Name(self, node):
-        abstract_state.set_var_to_var(self.obj.name, node.id)
+        self.abstract_state.set_var_to_var(self.obj.name, node.id)
 
     def visit_List(self, node):
-        abstract_state.set_var_to_const(self.obj.name, node.elts)
+        self.abstract_state.set_var_to_const(self.obj.name, node.elts)
 
     def visit_Tuple(self, node):
-        abstract_state.set_var_to_const(self.obj.name, node.elts)
+        self.abstract_state.set_var_to_const(self.obj.name, node.elts)
 
     def visit_Dict(self, node):
-        abstract_state.set_var_to_const(self.obj.name, node)
+        self.abstract_state.set_var_to_const(self.obj.name, node)
 
     def visit_Call(self, node):
         if node.func.id is 'set':
@@ -159,8 +155,18 @@ class ClassDefVisitor(ast.NodeVisitor):
     def visit_Assign(self, node):
         handle_assign(node, self.clazz.static_vars)
 
+def initialize_abstract_state(abstract_state):
+    abstract_state.set_var_to_const('True', True)
+    abstract_state.set_var_to_const('False', False)
+    abstract_state.set_var_to_const('None', None)
+
 
 class ProgramVisitor(ast.NodeVisitor):
+
+    def __init__(self):
+        self.abstract_state = AbstractState()
+        initialize_abstract_state(self.abstract_state)
+
     """
     Should visit all the program
     """
@@ -173,7 +179,7 @@ class ProgramVisitor(ast.NodeVisitor):
         FunctionDefVisitor().visit(node)
 
     def visit_Assign(self, node):
-        handle_assign(node, varz)
+        handle_assign(node, self.abstract_state)
 
 
 class ObjectRepr(object):
@@ -210,7 +216,7 @@ def init_object(obj, clazz, args, kwargs):
     call_function(obj.methods['__init__'], [obj] + args, kwargs)
 
 
-def handle_assign(node, context):
+def handle_assign(node, abstract_state):
     """
     Handles assign - creates the relavent object and connects it to the context.
     """
@@ -219,6 +225,6 @@ def handle_assign(node, context):
 
     obj = ObjectRepr()
     obj.name = get_node_name(node.targets[0])
-    assign_visitor = AssignVisitor(obj)
+    assign_visitor = AssignVisitor(obj, abstract_state)
     assign_visitor.visit(node.value)
 
