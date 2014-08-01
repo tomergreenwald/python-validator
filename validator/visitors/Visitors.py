@@ -163,9 +163,12 @@ def initialize_abstract_state(abstract_state):
 
 class ProgramVisitor(ast.NodeVisitor):
 
-    def __init__(self):
-        self.abstract_state = AbstractState()
-        initialize_abstract_state(self.abstract_state)
+    def __init__(self, abstract_state=None):
+        if abstract_state is None:
+            self.abstract_state = AbstractState()
+            initialize_abstract_state(self.abstract_state)
+        else:
+            self.abstract_state = abstract_state
 
     """
     Should visit all the program
