@@ -1,16 +1,16 @@
 import ast
 
-
 from validator.representation.ClassRepresentation import ClassRepresentation
 from validator.representation.MethodRepresentation import MethodRepresentation
 from validator.state.abs_state import AbstractState
 
-#FIXME: varz global is not share
+# FIXME: varz global is not share
 __author__ = 'Tomer'
 
 classes = {}
 functions = {}
 varz = {}
+
 
 def get_node_name(node):
     """
@@ -24,10 +24,12 @@ def get_node_name(node):
         return node.attr
     return node.id
 
+
 class AssignVisitor(ast.NodeVisitor):
     """
     Handle assign calls. Adds to the object the relavent methods and attributes
     """
+
     def __init__(self, obj, abstract_state):
         super(AssignVisitor, self).__init__()
         self.obj = obj
@@ -60,7 +62,7 @@ class AssignVisitor(ast.NodeVisitor):
 
         #FIXME: we do not support call for regular functions (that are not constructors)
         if node.func.id not in classes and node.func.id not in functions:
-            raise Exception('Class or function not found %s' % (node.func.id) ) # Maybe should be top?
+            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
         init_object(self.obj, classes[node.func.id], node.args, node.keywords)
         # node.func.id can be in functions or something like that
 
@@ -72,8 +74,8 @@ class CallFunction(ast.NodeVisitor):
 
         for i in xrange(len(args)):
             self.varz[method.arguments[i].name] = args[i]
-        # Handle kwargs
-        # Should replace the parameters with the right values by changing the tree
+            # Handle kwargs
+            # Should replace the parameters with the right values by changing the tree
 
     def visit_FunctionDef(self, node):
         self.generic_visit(node)
@@ -124,6 +126,7 @@ class ClassDefVisitor(ast.NodeVisitor):
     Handles class definitions. Creates new class in classes dictionary and set it's name,
     super class, methods and statics
     """
+
     def __init__(self):
         super(ClassDefVisitor, self).__init__()
         self.clazz = None
@@ -155,6 +158,7 @@ class ClassDefVisitor(ast.NodeVisitor):
     def visit_Assign(self, node):
         handle_assign(node, self.clazz.static_vars)
 
+
 def initialize_abstract_state(abstract_state):
     abstract_state.set_var_to_const('True', True)
     abstract_state.set_var_to_const('False', False)
@@ -162,7 +166,6 @@ def initialize_abstract_state(abstract_state):
 
 
 class ProgramVisitor(ast.NodeVisitor):
-
     def __init__(self, abstract_state=None):
         if abstract_state is None:
             self.abstract_state = AbstractState()
@@ -173,6 +176,7 @@ class ProgramVisitor(ast.NodeVisitor):
     """
     Should visit all the program
     """
+
     def visit_ClassDef(self, node):
         if len(node.bases) is not 1:
             raise Exception('Multiple inheritance does not supported (%s)' % node.name)
@@ -207,7 +211,7 @@ class ObjectRepr(object):
         self.attributes = {}
         self.static_methods = {}
         self.static_vars = {}
-        self.simple = None      # This is just tmp! should use attributes and methods only
+        self.simple = None  # This is just tmp! should use attributes and methods only
 
     def __repr__(self):
         return '<Object %s: %s, attributes: %s, simple: %s>' % (self.name, self.simple, self.attributes, self.simple)
