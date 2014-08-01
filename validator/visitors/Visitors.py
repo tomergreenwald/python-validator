@@ -44,11 +44,7 @@ class AssignVisitor(ast.NodeVisitor):
         abstract_state.set_var_to_const(self.obj.name, node.n)
 
     def visit_Name(self, node):
-        if node.id is 'None':
-            self.obj.simple = 'NoneType'
-        if node.id in ['True', 'False']:
-            self.obj.simple = 'bool'
-        self.obj.simple = node.id
+        abstract_state.set_var_to_var(self.obj.name, node.id)
 
     def visit_List(self, node):
         self.obj.simple = 'list'
