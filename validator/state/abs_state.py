@@ -204,7 +204,7 @@ class AbstractState(object):
             self.seeds[v] = set(other.seeds[v])
         
         for v in common_vars:
-            self.vars_info[v] = self.vars_info[v].lub_update(other.vars_info[v])
+            self.vars_info[v].lub_update(other.vars_info[v])
             self.seeded_by[v].update(other.seeded_by[v])
             self.seeds[v].update(other.seeds[v])
     
