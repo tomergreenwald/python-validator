@@ -1,5 +1,5 @@
 from ast import *
-from validator.ClassRepresentation import ClassRepresentation
+from validator.representation.ClassRepresentation import ClassRepresentation
 from validator.exceptions import MultipleNameDefinition
 
 
