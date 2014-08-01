@@ -1,3 +1,5 @@
+from exceptions import VerifierError, VerifierWarning
+
 class LatticeElement(object):
     L_BOTOM = -1
     L_MAY_HAVE = 0
@@ -14,11 +16,20 @@ class LatticeElement(object):
                 return v
         return 'UNKNOWN_ELEMENT'
     
+    def __repr__(self):
+        return self.get_element_name()
+    
     def get_element_enum(self):
         """
         we want to associate each element with a number
         """
         return self.val
+    
+    def is_legal(self):
+        if self.val == LatticeElement.L_MAY_HAVE:
+            raise VerifierWarning("Attribute might not exist")
+        elif self.val == LatticeElement.L_MUST_NOT_HAVE or self.val == LatticeElement.L_BOTOM:
+            raise VerifierError("Attribute does not exist")
     
     @staticmethod
     def lub(p0, p1):
