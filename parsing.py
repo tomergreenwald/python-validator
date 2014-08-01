@@ -7,6 +7,10 @@ functions = {}
 varz = {}
 
 code = """
+#I would like True/False/None to be regular variables. So someone should register them to the abstract state before the
+#ProgramVisitor runs
+#a = True
+#b = None
 v = 5
 v2 = 'a'
 v2.v = v
