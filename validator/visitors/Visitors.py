@@ -12,6 +12,9 @@ classes = {}
 functions = {}
 varz = {}
 abstract_state = AbstractState()
+abstract_state.set_var_to_const('True', True)
+abstract_state.set_var_to_const('False', False)
+abstract_state.set_var_to_const('None', None)
 
 
 def get_node_name(node):
