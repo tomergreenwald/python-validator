@@ -20,6 +20,9 @@ v3.a = 5
 v3.b = 'b'
 v3.v = v
 v2 = v3
+a_list = (a,b,c, 's')
+a_tuple = [a,b,c, 's']
+a_dict = {1:1}
 """
 ast_tree = ast.parse(code)
 visitor = ProgramVisitor()

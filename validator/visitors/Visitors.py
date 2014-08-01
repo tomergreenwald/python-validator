@@ -50,13 +50,13 @@ class AssignVisitor(ast.NodeVisitor):
         abstract_state.set_var_to_var(self.obj.name, node.id)
 
     def visit_List(self, node):
-        self.obj.simple = 'list'
+        abstract_state.set_var_to_const(self.obj.name, node.elts)
 
     def visit_Tuple(self, node):
-        self.obj.simple = 'tuple'
+        abstract_state.set_var_to_const(self.obj.name, node.elts)
 
     def visit_Dict(self, node):
-        self.obj.simple = 'dict'
+        abstract_state.set_var_to_const(self.obj.name, node)
 
     def visit_Call(self, node):
         if node.func.id is 'set':
