@@ -47,7 +47,7 @@ class AbstractState(object):
         """
         return a copy of the abstract state
         """
-        return copy.deepcopy(self)
+        return deepcopy(self)
     
     def query(self, var, attr):
         if var not in self.vars_set:
