@@ -55,5 +55,5 @@ class LatticeElement(object):
             return p0
         
         # This is the case for this lattice. if the lattice is changed, this function should be updated more carefully
-        return LatticeElement.L_MAY_HAVE
+        return LatticeElement(LatticeElement.L_MAY_HAVE)
         
