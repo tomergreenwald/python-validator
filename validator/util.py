@@ -1,6 +1,4 @@
 from ast import *
-from validator.representation.ClassRepresentation import ClassRepresentation
-from validator.exceptions import MultipleNameDefinition
 
 
 def dump(node, annotate_fields=True, include_attributes=False, indent='  '):
