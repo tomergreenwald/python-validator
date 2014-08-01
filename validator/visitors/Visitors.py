@@ -3,7 +3,7 @@ import ast
 
 from validator.representation.ClassRepresentation import ClassRepresentation
 from validator.representation.MethodRepresentation import MethodRepresentation
-from abs_state import AbstractState
+from validator.state.abs_state import AbstractState
 
 #FIXME: varz global is not share
 __author__ = 'Tomer'
