@@ -30,31 +30,31 @@ class AssignVisitor(ast.NodeVisitor):
     Handle assign calls. Adds to the object the relavent methods and attributes
     """
 
-    def __init__(self, obj, abstract_state):
+    def __init__(self, name, abstract_state):
         super(AssignVisitor, self).__init__()
-        self.obj = obj
+        self.name = name
         self.abstract_state = abstract_state
 
     def visit_Attribute(self, node):
-        self.abstract_state.set_var_to_var(self.obj.name, get_node_name(node))
+        self.abstract_state.set_var_to_var(self.name, get_node_name(node))
 
     def visit_Str(self, node):
-        self.abstract_state.set_var_to_const(self.obj.name, node.s)
+        self.abstract_state.set_var_to_const(self.name, node.s)
 
     def visit_Num(self, node):
-        self.abstract_state.set_var_to_const(self.obj.name, node.n)
+        self.abstract_state.set_var_to_const(self.name, node.n)
 
     def visit_Name(self, node):
-        self.abstract_state.set_var_to_var(self.obj.name, node.id)
+        self.abstract_state.set_var_to_var(self.name, node.id)
 
     def visit_List(self, node):
-        self.abstract_state.set_var_to_const(self.obj.name, node.elts)
+        self.abstract_state.set_var_to_const(self.name, node.elts)
 
     def visit_Tuple(self, node):
-        self.abstract_state.set_var_to_const(self.obj.name, node.elts)
+        self.abstract_state.set_var_to_const(self.name, node.elts)
 
     def visit_Dict(self, node):
-        self.abstract_state.set_var_to_const(self.obj.name, node)
+        self.abstract_state.set_var_to_const(self.name, node)
 
     def visit_Call(self, node):
         if node.func.id is 'set':
@@ -250,8 +250,6 @@ def handle_assign(node, abstract_state):
     if len(node.targets) is not 1:
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
-    obj = ObjectRepr()
-    obj.name = get_node_name(node.targets[0])
-    assign_visitor = AssignVisitor(obj, abstract_state)
+    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state)
     assign_visitor.visit(node.value)
 
