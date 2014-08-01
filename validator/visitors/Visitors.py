@@ -11,6 +11,19 @@ classes = {}
 functions = {}
 varz = {}
 
+
+def get_node_name(node):
+    """
+    Generates the fully qualified name for a given node. If the node contains a 'value' attribute then it is a complex
+    node and we need to generate its name recursively. Otherwise it either has an 'attr' value or an 'id' value which
+    are the node's name (depends on whether the node represents an attribute or a variable).
+    """
+    if hasattr(node, 'value'):
+        return get_node_name(node.value) + '.' + node.attr
+    if hasattr(node, 'attr'):
+        return node.attr
+    return node.id
+
 class AssignVisitor(ast.NodeVisitor):
     """
     Handle assign calls. Adds to the object the relavent methods and attributes
@@ -201,12 +214,7 @@ def handle_assign(node, context):
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
     obj = ObjectRepr()
+    obj.name = get_node_name(node.targets[0])
     assign_visitor = AssignVisitor(obj)
     assign_visitor.visit(node.value)
 
-    if isinstance(node.targets[0], ast.Attribute):
-        obj.name = node.targets[0].attr
-        context[node.targets[0].value.id].attributes[obj.name] = obj
-    else:
-        obj.name = node.targets[0].id
-        context[node.targets[0].id] = obj
