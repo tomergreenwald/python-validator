@@ -51,3 +51,5 @@ a.set_var_to_var('z', 'x')
 
 wrap_check_attr(a, 'y', 'n')
 wrap_check_attr(a, 'z', 'n')
+
+# a.set_var_to_var('z', 'w')

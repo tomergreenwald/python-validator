@@ -123,6 +123,13 @@ class AbstractState(object):
         logging.debug('set var %s to %s' %(var0, var1))
         if var1 not in self.vars_set:
             raise VarNotInState('Setting a variable to a variable not in the state')
+            
+        if var0 not in self.vars_set:
+            self.vars_set.add(var0)
+            self.seeds[var0] = set()
+            self.seeded_by[var0] = set()
+        
+            
         self._clear_seeds(var0) # this also calls _flush_all_seeds
         
         self._add_dependency(var0, var1)
