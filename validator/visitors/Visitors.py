@@ -184,6 +184,20 @@ class ProgramVisitor(ast.NodeVisitor):
     def visit_Assign(self, node):
         handle_assign(node, self.abstract_state)
 
+    def visit_If(self, node):
+        true_state = self.abstract_state.clone()
+        false_state = self.abstract_state.clone()
+        self.asses_list(node.body, true_state)
+        self.asses_list(node.orelse, false_state)
+        true_state.lub(false_state)
+        self.abstract_state = true_state
+
+
+    def asses_list(self, entries, abstract_state):
+        visitor = ProgramVisitor(abstract_state)
+        for entry in entries:
+            visitor.visit(entry)
+
 
 class ObjectRepr(object):
     def __init__(self, name=None):
