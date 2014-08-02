@@ -37,7 +37,7 @@ if 1==2:
 
 def func1(arg1, arg2, def1 = 1, def2 = None):
     i = 1
-1==1
+#1==1
 #func1(a)
 a1 = func1(2, 1, def2 = 'stringy')
 """
