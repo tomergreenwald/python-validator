@@ -38,7 +38,7 @@ def evaluate_function(function, args, keywords, abstract_state):
         if not found:
             default = function.args.defaults[i]
             register_assignment(abstract_state, default, keyword.arg)
-    i = 1
+    assess_list(function.body, abstract_state)
 
 class AssignVisitor(ast.NodeVisitor):
     """
