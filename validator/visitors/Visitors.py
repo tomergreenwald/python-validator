@@ -162,4 +162,3 @@ def handle_assign(node, abstract_state):
 
     assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state)
     assign_visitor.visit(node.value)
-
