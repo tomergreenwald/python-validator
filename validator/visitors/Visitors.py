@@ -153,7 +153,7 @@ class ProgramVisitor(ast.NodeVisitor):
         FunctionDefVisitor(self.functions).visit(node)
 
     def visit_Expr(self, node):
-        i = 1
+        raise Exception('Expr visit is not supported yet')
 
 
     def visit_Assign(self, node):
