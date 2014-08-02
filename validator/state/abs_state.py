@@ -70,7 +70,7 @@ class AbstractState(object):
         call this when you know some VariableInfo about var
         """
         if var in self.vars_set:
-            self._clear_seeds(var0)
+            self._clear_seeds(var)
         else:        
             self.vars_set.add(var)
             self.seeds[var] = set()
