@@ -21,7 +21,7 @@ def register_assignment(abstract_state, from_var ,to_var_name):
         abstract_state.set_var_to_var(to_var_name, from_var.id)
     else:
         abstract_state.set_var_to_const(to_var_name, getattr(from_var, from_var._fields[0]))
-        
+
 def evaluate_function(function, args, keywords, abstract_state):
     arguments = []
     for i in xrange(len(args)):
@@ -65,42 +65,42 @@ class AssignVisitor(ast.NodeVisitor):
         Handles string node.
         :param node: String Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.s)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Num(self, node):
         """
         Handles number node.
         :param node: Number Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.n)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Name(self, node):
         """
         Handles name node (It means that we assign one variable to another - copy their pointers)..
         :param node: Name Node.
         """
-        self.abstract_state.set_var_to_var(self.name, node.id)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_List(self, node):
         """
         Handles list node.
         :param node: List Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.elts)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Tuple(self, node):
         """
         Handles tuple node.
         :param node: Tuple Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.elts)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Dict(self, node):
         """
         Handles dictionary node.
         :param node: Dictionary Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Call(self, node):
         if node.func.id not in self.functions:
