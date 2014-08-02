@@ -134,15 +134,15 @@ class ProgramVisitor(ast.NodeVisitor):
         :param node: Current if node.
         """
         if len(node.orelse) == 0:
-            self.asses_list(node.body, self.abstract_state)
+            self.assess_list(node.body, self.abstract_state)
         else:
             orelse_state = self.abstract_state.clone()
-            self.asses_list(node.body, self.abstract_state)
-            self.asses_list(node.orelse, orelse_state)
+            self.assess_list(node.body, self.abstract_state)
+            self.assess_list(node.orelse, orelse_state)
             self.abstract_state.lub(orelse_state)
 
 
-    def asses_list(self, entries, abstract_state):
+    def assess_list(self, entries, abstract_state):
         """
         Generates a ProgramVisitor and runs it through the given set of entries while updating the given AbstractState.
         :param entries: A list of entries to process.
