@@ -38,8 +38,6 @@ def evaluate_function(function, args, keywords, abstract_state):
         if not found:
             default = function.args.defaults[i]
             register_assignment(abstract_state, default, keyword.arg)
-    #TODO: we do not support values that are not consts
-    #abstract_state.set_var_to_const(function.args.args[i].id, getattr(function.args.defaults[default_index], function.args.defaults[i]._fields[0]))
     i = 1
 
 class AssignVisitor(ast.NodeVisitor):
