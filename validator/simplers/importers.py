@@ -10,19 +10,24 @@ def read_module(package_path, module):
 
 
 def get_dependencies_dict(package_path, package_name, main_module):
-    modules = [main_module]
+    modules = set()
+    modules.add(main_module)
     dependency = {}
 
     while modules:
         current = modules.pop()
         dependency[current] = []
-
         code = read_module(package_path, current)
 
         for code_line in code.splitlines():
-            if code_line.startswith('import ' + package_name + '.'):
-                raise Exception('Unsupported operation. Validator supports only "from" syntax')
-            if code_line.startswith('from ' + package_name + '.') or code_line.startswith('from .'):
+            if code_line.startswith('import ' + package_name):
+                import_ = code_line.split('import ')[1]
+                if os.path.isdir(package_path + '\\' + import_.replace('.', '\\')):
+                    code_line = 'from %s import __init__' % import_
+                else:
+                    code_line = 'from %s import *' * import_
+
+            if code_line.startswith('from ' + package_name) or code_line.startswith('from .'):
                 from_, import_ = code_line.split('from ')[1].split(' import ')
                 if code_line.startswith('from .'):
                     tmp = current.split('.')[len(from_.strip('.')) - len(from_) - 1:-1]
@@ -36,7 +41,9 @@ def get_dependencies_dict(package_path, package_name, main_module):
                     depencdencies.append(from_)
 
                 dependency[current].extend(depencdencies)
-                modules.extend(depencdencies)
+                for d in depencdencies:
+                    if d not in dependency:
+                        modules.add(d)
 
     return dependency
 
@@ -78,8 +85,13 @@ def flat(package_path, package_name, import_order):
         code += read_module(package_path, module)
         code += os.linesep
 
-    return '\n'.join(filter(lambda line: not(line.startswith('from .') or line.startswith('from ' + package_name)),
+    code = '\n'.join(filter(lambda line: not(line.startswith('from .') or line.startswith('from ' + package_name)),
                             code.splitlines()))
+    for module in import_order:
+        for m in module.split('.'):
+            code = code.replace('%s.' % m, '')
+
+    return code
 
 
 def flat_module(package_path, main_module):
@@ -89,6 +101,6 @@ def flat_module(package_path, main_module):
 
 
 if __name__ == '__main__':
-    main_module = 'rainbowstream.rainbow'
-    package_path = r'C:\Users\Oded\Desktop\rainbowstream-0.4.10'
+    main_module = 'nilo.webgallery.runscript'
+    package_path = r'C:\Users\Oded\Desktop\nilo.webgallery-0.2.5'
     print flat_module(package_path, main_module)
