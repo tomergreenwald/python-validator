@@ -76,7 +76,6 @@ class AssignVisitor(ast.NodeVisitor):
         self.abstract_state.set_var_to_const(self.name, node)
 
     def visit_Call(self, node):
-        return
         """
         if node.func.id is 'set':
             self.obj.simple = 'set'
@@ -87,6 +86,7 @@ class AssignVisitor(ast.NodeVisitor):
         init_object(self.obj, classes[node.func.id], node.args, node.keywords)
         # node.func.id can be in functions or something like that
         """
+        raise Exception('Call visit is not supported yet')
 
 
 def initialize_abstract_state(abstract_state):
@@ -108,18 +108,18 @@ class ProgramVisitor(ast.NodeVisitor):
     """
 
     def visit_ClassDef(self, node):
-        return
         """
         if len(node.bases) is not 1:
             raise Exception('Multiple inheritance does not supported (%s)' % node.name)
         ClassDefVisitor().visit(node)
         """
+        raise Exception('Call visit is not supported yet')
 
     def visit_FunctionDef(self, node):
-        return
         """
         FunctionDefVisitor().visit(node)
         """
+        raise Exception('Call visit is not supported yet')
 
     def visit_Assign(self, node):
         """
