@@ -1,6 +1,7 @@
 import ast
 
 from validator.state.abs_state import AbstractState
+from validator.representation.MethodRepresentation import MethodRepresentation
 
 
 def get_node_name(node):
@@ -15,16 +16,40 @@ def get_node_name(node):
         return node.attr
     return node.id
 
+def register_assignment(abstract_state, from_var ,to_var_name):
+    if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
+        abstract_state.set_var_to_var(to_var_name, from_var.id)
+    else:
+        abstract_state.set_var_to_const(to_var_name, getattr(from_var, from_var._fields[0]))
+
+def evaluate_function(function, args, keywords, abstract_state):
+    arguments = []
+    for i in xrange(len(args)):
+        arguments.append(i)
+        register_assignment(abstract_state, args[i], function.args.args[i].id)
+    for i in xrange(len(function.args.defaults)):
+        arg_index = i + len(function.args.args) - len(function.args.defaults)
+        arg = function.args.args[arg_index]
+        found = False
+        for keyword in keywords:
+            if arg.id == keyword.arg:
+                found = True
+                register_assignment(abstract_state, keyword.value, keyword.arg)
+        if not found:
+            default = function.args.defaults[i]
+            register_assignment(abstract_state, default, keyword.arg)
+    i = 1
 
 class AssignVisitor(ast.NodeVisitor):
     """
     Handle assign calls. Adds to the object the relavent methods and attributes
     """
 
-    def __init__(self, name, abstract_state):
+    def __init__(self, name, abstract_state, functions):
         super(AssignVisitor, self).__init__()
         self.name = name
         self.abstract_state = abstract_state
+        self.functions = functions
 
     def visit_Attribute(self, node):
         """
@@ -38,55 +63,56 @@ class AssignVisitor(ast.NodeVisitor):
         Handles string node.
         :param node: String Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.s)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Num(self, node):
         """
         Handles number node.
         :param node: Number Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.n)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Name(self, node):
         """
         Handles name node (It means that we assign one variable to another - copy their pointers)..
         :param node: Name Node.
         """
-        self.abstract_state.set_var_to_var(self.name, node.id)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_List(self, node):
         """
         Handles list node.
         :param node: List Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.elts)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Tuple(self, node):
         """
         Handles tuple node.
         :param node: Tuple Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node.elts)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Dict(self, node):
         """
         Handles dictionary node.
         :param node: Dictionary Node.
         """
-        self.abstract_state.set_var_to_const(self.name, node)
+        register_assignment(self.abstract_state, node, self.name)
 
     def visit_Call(self, node):
-        """
-        if node.func.id is 'set':
-            self.obj.simple = 'set'
-
-        #FIXME: we do not support call for regular functions (that are not constructors)
-        if node.func.id not in classes and node.func.id not in functions:
+        if node.func.id not in self.functions:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        init_object(self.obj, classes[node.func.id], node.args, node.keywords)
-        # node.func.id can be in functions or something like that
-        """
-        raise Exception('Call visit is not supported yet')
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.abstract_state)
+
+
+class FunctionDefVisitor(ast.NodeVisitor):
+    def __init__(self, context):
+        self.context = context
+
+
+    def visit_FunctionDef(self, node):
+        self.context[node.name] = node
 
 
 def initialize_abstract_state(abstract_state):
@@ -102,6 +128,7 @@ class ProgramVisitor(ast.NodeVisitor):
             initialize_abstract_state(self.abstract_state)
         else:
             self.abstract_state = abstract_state
+        self.functions = {}
 
     """
     Should visit all the program
@@ -116,17 +143,18 @@ class ProgramVisitor(ast.NodeVisitor):
         raise Exception('Call visit is not supported yet')
 
     def visit_FunctionDef(self, node):
-        """
-        FunctionDefVisitor().visit(node)
-        """
-        raise Exception('Call visit is not supported yet')
+        FunctionDefVisitor(self.functions).visit(node)
+
+    def visit_Expr(self, node):
+        i = 1
+
 
     def visit_Assign(self, node):
         """
         Handles assignment to variable.
         :param node: Current assignment node.
         """
-        handle_assign(node, self.abstract_state)
+        handle_assign(node, self.abstract_state, self.functions)
 
     def visit_If(self, node):
         """
@@ -153,12 +181,12 @@ def assess_list(entries, abstract_state):
         visitor.visit(entry)
 
 
-def handle_assign(node, abstract_state):
+def handle_assign(node, abstract_state, functions):
     """
     Handles assign - creates the relevant object and connects it to the context.
     """
     if len(node.targets) is not 1:
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
-    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state)
+    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state, functions)
     assign_visitor.visit(node.value)
