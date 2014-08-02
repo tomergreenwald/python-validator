@@ -27,6 +27,7 @@ def register_assignment(abstract_state, from_var ,to_var_name):
     else:
         abstract_state.set_var_to_const(to_var_name, getattr(from_var, from_var._fields[0]))
 
+
 def evaluate_function(function, args, keywords, abstract_state):
     arguments = []
     for i in xrange(len(args)):
@@ -44,6 +45,7 @@ def evaluate_function(function, args, keywords, abstract_state):
             default = function.args.defaults[i]
             register_assignment(abstract_state, default, keyword.arg)
     assess_list(function.body, abstract_state)
+
 
 class AssignVisitor(ast.NodeVisitor):
     """
