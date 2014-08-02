@@ -78,8 +78,14 @@ def flat(package_path, package_name, import_order):
         code += read_module(package_path, module)
         code += os.linesep
 
-    return '\n'.join(filter(lambda line: not(line.startswith('from .') or line.startswith('from ' + package_name)),
+    code = '\n'.join(filter(lambda line: not(line.startswith('from .') or line.startswith('from ' + package_name)),
                             code.splitlines()))
+    print import_order
+    for module in import_order:
+        for m in module.split('.'):
+            code = code.replace('%s.' % m, '')
+
+    return code
 
 
 def flat_module(package_path, main_module):
@@ -89,6 +95,6 @@ def flat_module(package_path, main_module):
 
 
 if __name__ == '__main__':
-    main_module = 'rainbowstream.rainbow'
-    package_path = r'C:\Users\Oded\Desktop\rainbowstream-0.4.10'
+    main_module = 'nilo.webgallery.runscript'
+    package_path = r'C:\Users\Oded\Desktop\nilo.webgallery-0.2.5'
     print flat_module(package_path, main_module)
