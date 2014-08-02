@@ -42,24 +42,6 @@ class CallFunction(ast.NodeVisitor):
             pass
 
 
-class FunctionDefVisitor(ast.NodeVisitor):
-    def visit_FunctionDef(self, node):
-        m = MethodRepresentation(node.name, node)
-
-        args = [a.id for a in node.args.args]
-        defaults = node.args.defaults
-        for i in xrange(len(args) - len(defaults)):
-            obj = ObjectRepr(args[i])
-            obj.simple = object
-            m.arguments.append(obj)
-        for i in xrange(len(defaults)):
-            obj = ObjectRepr(args[-len(defaults):][i])
-            AssignVisitor(obj).visit(defaults[i])
-            m.arguments.append(obj)
-
-        functions[node.name] = m
-
-
 class ClassDefVisitor(ast.NodeVisitor):
     """
     Handles class definitions. Creates new class in classes dictionary and set it's name,

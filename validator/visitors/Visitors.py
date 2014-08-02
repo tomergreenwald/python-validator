@@ -1,6 +1,7 @@
 import ast
 
 from validator.state.abs_state import AbstractState
+from validator.representation.MethodRepresentation import MethodRepresentation
 
 
 def get_node_name(node):
@@ -15,16 +16,57 @@ def get_node_name(node):
         return node.attr
     return node.id
 
+def evaluate_function(function, args, keywords, abstract_state):
+    arguments = []
+    for i in xrange(len(args)):
+        arguments.append(i)
+        if type(args[i]) is ast.Name:
+            abstract_state.set_var_to_var(function.args.args[i].id, args[i].id)
+        elif type(args[i]) is ast.Num:
+            abstract_state.set_var_to_const(function.args.args[i].id, args[i].n)
+        elif type(args[i]) is ast.Str:
+            abstract_state.set_var_to_const(function.args.args[i].id, args[i].s)
+        else:
+            raise Exception('Type not yet supported')
+    for i in xrange(len(function.args.defaults)):
+        arg_index = i + len(function.args.args) - len(function.args.defaults)
+        arg = function.args.args[arg_index]
+        found = False
+        for keyword in keywords:
+            if arg.id == keyword.arg:
+                found = True
+                if type(keyword.value) is ast.Name:
+                    abstract_state.set_var_to_var(keyword.arg, keyword.value.id)
+                elif type(keyword.value) is ast.Num:
+                    abstract_state.set_var_to_const(keyword.arg, keyword.value.n)
+                elif type(keyword.value) is ast.Str:
+                    abstract_state.set_var_to_const(keyword.arg, keyword.value.s)
+                else:
+                    raise Exception('Type not yet supported')
+        if not found:
+            default = function.args.defaults[i]
+            if type(default) is ast.Name:
+                abstract_state.set_var_to_var(keyword.arg, default.id)
+            elif type(default) is ast.Num:
+                abstract_state.set_var_to_const(keyword.arg, default.n)
+            elif type(default) is ast.Str:
+                abstract_state.set_var_to_const(keyword.arg, default.s)
+            else:
+                raise Exception('Type not yet supported')
+    #TODO: we do not support values that are not consts
+    #abstract_state.set_var_to_const(function.args.args[i].id, getattr(function.args.defaults[default_index], function.args.defaults[i]._fields[0]))
+    i = 1
 
 class AssignVisitor(ast.NodeVisitor):
     """
     Handle assign calls. Adds to the object the relavent methods and attributes
     """
 
-    def __init__(self, name, abstract_state):
+    def __init__(self, name, abstract_state, functions):
         super(AssignVisitor, self).__init__()
         self.name = name
         self.abstract_state = abstract_state
+        self.functions = functions
 
     def visit_Attribute(self, node):
         """
@@ -76,17 +118,18 @@ class AssignVisitor(ast.NodeVisitor):
         self.abstract_state.set_var_to_const(self.name, node)
 
     def visit_Call(self, node):
-        """
-        if node.func.id is 'set':
-            self.obj.simple = 'set'
-
-        #FIXME: we do not support call for regular functions (that are not constructors)
-        if node.func.id not in classes and node.func.id not in functions:
+        if node.func.id not in self.functions:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        init_object(self.obj, classes[node.func.id], node.args, node.keywords)
-        # node.func.id can be in functions or something like that
-        """
-        raise Exception('Call visit is not supported yet')
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.abstract_state)
+
+
+class FunctionDefVisitor(ast.NodeVisitor):
+    def __init__(self, context):
+        self.context = context
+
+
+    def visit_FunctionDef(self, node):
+        self.context[node.name] = node
 
 
 def initialize_abstract_state(abstract_state):
@@ -102,6 +145,7 @@ class ProgramVisitor(ast.NodeVisitor):
             initialize_abstract_state(self.abstract_state)
         else:
             self.abstract_state = abstract_state
+        self.functions = {}
 
     """
     Should visit all the program
@@ -116,17 +160,18 @@ class ProgramVisitor(ast.NodeVisitor):
         raise Exception('Call visit is not supported yet')
 
     def visit_FunctionDef(self, node):
-        """
-        FunctionDefVisitor().visit(node)
-        """
-        raise Exception('Call visit is not supported yet')
+        FunctionDefVisitor(self.functions).visit(node)
+
+    def visit_Expr(self, node):
+        i = 1
+
 
     def visit_Assign(self, node):
         """
         Handles assignment to variable.
         :param node: Current assignment node.
         """
-        handle_assign(node, self.abstract_state)
+        handle_assign(node, self.abstract_state, self.functions)
 
     def visit_If(self, node):
         """
@@ -153,12 +198,12 @@ def assess_list(entries, abstract_state):
         visitor.visit(entry)
 
 
-def handle_assign(node, abstract_state):
+def handle_assign(node, abstract_state, functions):
     """
     Handles assign - creates the relevant object and connects it to the context.
     """
     if len(node.targets) is not 1:
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
-    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state)
+    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state, functions)
     assign_visitor.visit(node.value)
