@@ -17,14 +17,11 @@ def get_node_name(node):
     return node.id
 
 def register_assignment(abstract_state, from_var ,to_var_name):
-    if type(from_var) is ast.Name:
+    if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         abstract_state.set_var_to_var(to_var_name, from_var.id)
-    elif type(from_var) is ast.Num:
-        abstract_state.set_var_to_const(to_var_name, from_var.n)
-    elif type(from_var) is ast.Str:
-        abstract_state.set_var_to_const(to_var_name, from_var.s)
     else:
-        raise Exception('Type not yet supported')
+        abstract_state.set_var_to_const(to_var_name, getattr(from_var, from_var._fields[0]))
+        
 def evaluate_function(function, args, keywords, abstract_state):
     arguments = []
     for i in xrange(len(args)):
