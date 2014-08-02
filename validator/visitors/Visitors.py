@@ -1,7 +1,6 @@
 import ast
 
 from validator.state.abs_state import AbstractState
-from validator.representation.MethodRepresentation import MethodRepresentation
 
 
 def get_node_name(node):
