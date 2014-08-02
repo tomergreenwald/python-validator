@@ -27,24 +27,52 @@ class AssignVisitor(ast.NodeVisitor):
         self.abstract_state = abstract_state
 
     def visit_Attribute(self, node):
+        """
+        Handles attribute node.
+        :param node: Attribute Node.
+        """
         self.abstract_state.set_var_to_var(self.name, get_node_name(node))
 
     def visit_Str(self, node):
+        """
+        Handles string node.
+        :param node: String Node.
+        """
         self.abstract_state.set_var_to_const(self.name, node.s)
 
     def visit_Num(self, node):
+        """
+        Handles number node.
+        :param node: Number Node.
+        """
         self.abstract_state.set_var_to_const(self.name, node.n)
 
     def visit_Name(self, node):
+        """
+        Handles name node (It means that we assign one variable to another - copy their pointers)..
+        :param node: Name Node.
+        """
         self.abstract_state.set_var_to_var(self.name, node.id)
 
     def visit_List(self, node):
+        """
+        Handles list node.
+        :param node: List Node.
+        """
         self.abstract_state.set_var_to_const(self.name, node.elts)
 
     def visit_Tuple(self, node):
+        """
+        Handles tuple node.
+        :param node: Tuple Node.
+        """
         self.abstract_state.set_var_to_const(self.name, node.elts)
 
     def visit_Dict(self, node):
+        """
+        Handles dictionary node.
+        :param node: Dictionary Node.
+        """
         self.abstract_state.set_var_to_const(self.name, node)
 
     def visit_Call(self, node):
@@ -94,9 +122,17 @@ class ProgramVisitor(ast.NodeVisitor):
         """
 
     def visit_Assign(self, node):
+        """
+        Handles assignment to variable.
+        :param node: Current assignment node.
+        """
         handle_assign(node, self.abstract_state)
 
     def visit_If(self, node):
+        """
+        Handles if/elif/else cases by assessing every option and than calculating the Least Upper Bound for them all.
+        :param node: Current if node.
+        """
         if len(node.orelse) == 0:
             self.asses_list(node.body, self.abstract_state)
         else:
