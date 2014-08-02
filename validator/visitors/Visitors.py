@@ -155,7 +155,7 @@ def assess_list(entries, abstract_state):
 
 def handle_assign(node, abstract_state):
     """
-    Handles assign - creates the relavent object and connects it to the context.
+    Handles assign - creates the relevant object and connects it to the context.
     """
     if len(node.targets) is not 1:
         raise Exception('Multiple targets does not supported (%s)' % node.name)
