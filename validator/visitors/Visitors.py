@@ -16,18 +16,20 @@ def get_node_name(node):
         return node.attr
     return node.id
 
+def register_assignment(abstract_state, from_var ,to_var_name):
+    if type(from_var) is ast.Name:
+        abstract_state.set_var_to_var(to_var_name, from_var.id)
+    elif type(from_var) is ast.Num:
+        abstract_state.set_var_to_const(to_var_name, from_var.n)
+    elif type(from_var) is ast.Str:
+        abstract_state.set_var_to_const(to_var_name, from_var.s)
+    else:
+        raise Exception('Type not yet supported')
 def evaluate_function(function, args, keywords, abstract_state):
     arguments = []
     for i in xrange(len(args)):
         arguments.append(i)
-        if type(args[i]) is ast.Name:
-            abstract_state.set_var_to_var(function.args.args[i].id, args[i].id)
-        elif type(args[i]) is ast.Num:
-            abstract_state.set_var_to_const(function.args.args[i].id, args[i].n)
-        elif type(args[i]) is ast.Str:
-            abstract_state.set_var_to_const(function.args.args[i].id, args[i].s)
-        else:
-            raise Exception('Type not yet supported')
+        register_assignment(abstract_state, args[i], function.args.args[i].id)
     for i in xrange(len(function.args.defaults)):
         arg_index = i + len(function.args.args) - len(function.args.defaults)
         arg = function.args.args[arg_index]
@@ -35,24 +37,10 @@ def evaluate_function(function, args, keywords, abstract_state):
         for keyword in keywords:
             if arg.id == keyword.arg:
                 found = True
-                if type(keyword.value) is ast.Name:
-                    abstract_state.set_var_to_var(keyword.arg, keyword.value.id)
-                elif type(keyword.value) is ast.Num:
-                    abstract_state.set_var_to_const(keyword.arg, keyword.value.n)
-                elif type(keyword.value) is ast.Str:
-                    abstract_state.set_var_to_const(keyword.arg, keyword.value.s)
-                else:
-                    raise Exception('Type not yet supported')
+                register_assignment(abstract_state, keyword.value, keyword.arg)
         if not found:
             default = function.args.defaults[i]
-            if type(default) is ast.Name:
-                abstract_state.set_var_to_var(keyword.arg, default.id)
-            elif type(default) is ast.Num:
-                abstract_state.set_var_to_const(keyword.arg, default.n)
-            elif type(default) is ast.Str:
-                abstract_state.set_var_to_const(keyword.arg, default.s)
-            else:
-                raise Exception('Type not yet supported')
+            register_assignment(abstract_state, default, keyword.arg)
     #TODO: we do not support values that are not consts
     #abstract_state.set_var_to_const(function.args.args[i].id, getattr(function.args.defaults[default_index], function.args.defaults[i]._fields[0]))
     i = 1
