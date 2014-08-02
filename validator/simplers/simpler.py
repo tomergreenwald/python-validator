@@ -169,6 +169,25 @@ class CodeSimpler(ast.NodeTransformer):
             value=ast.BinOp(left=node.target, op=node.op, right=node.value)
         )
 
+class BinOpHelper(ast.NodeVisitor):
+    def visit_Add(self, node):
+        return '__add__'
+
+    def visit_Mult(self, node):
+        return '__mul__'
+
+    def visit_Sub(self, node):
+        return '__sub__'
+
+    def visit_Div(self, node):
+        return '__div__'
+
+
+class BinOpTransformer(ast.NodeTransformer):
+    def visit_BinOp(self, node):
+        return ast.Call(func=Attribute(value=node.left, attr=BinOpHelper().visit(node.op), ctx=Load()),
+                        args=[node.right], keywords=[], starargs=None, kwargs=None)
+
 
 def make_simple(code):
     """
@@ -182,4 +201,7 @@ def make_simple(code):
         should_simple_again = False
         visitor = CodeSimpler()
         visitor.visit(ast_tree)
+
+    visitor = BinOpTransformer()
+    visitor.visit(ast_tree)
     return codegen.to_source(ast_tree)
