@@ -2,6 +2,7 @@ __author__ = 'Oded'
 
 import os
 
+
 def read_module(package_path, module):
     path = package_path + '\\' + module.replace('.', '\\') + '.py'
     with open(path) as f:
