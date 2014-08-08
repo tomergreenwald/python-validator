@@ -2,6 +2,7 @@ __author__ = 'Oded'
 
 import os
 
+
 def read_module(package_path, module):
     path = package_path + '\\' + module.replace('.', '\\') + '.py'
     with open(path) as f:
@@ -26,6 +27,11 @@ def get_dependencies_dict(package_path, package_name, main_module):
                     code_line = 'from %s import __init__' % import_
                 else:
                     code_line = 'from %s import *' * import_
+
+            if code_line.startswith('import '):
+                import_ = code_line.split('import ')[1]
+                if os.path.isfile(package_path + '\\' + current[:current.rfind('.')] + '\\' + import_ + '.py'):
+                    code_line = 'from %s import %s' % (current[:current.rfind('.')], import_)
 
             if code_line.startswith('from ' + package_name) or code_line.startswith('from .'):
                 from_, import_ = code_line.split('from ')[1].split(' import ')
@@ -101,6 +107,6 @@ def flat_module(package_path, main_module):
 
 
 if __name__ == '__main__':
-    main_module = 'nilo.webgallery.runscript'
-    package_path = r'C:\Users\Oded\Desktop\nilo.webgallery-0.2.5'
+    main_module = 'cutplace._cutplace'
+    package_path = r'C:\Users\Oded\Desktop\cutplace-0.7.1'
     print flat_module(package_path, main_module)
