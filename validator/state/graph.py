@@ -1,5 +1,6 @@
 class GraphVertex(object):
-    def __init__(self, ind):
+    def __init__(self, ind, label):
+        self.edge_label = label
         self.ind = ind
         self.parent = -1
         self.constant = -1
@@ -12,19 +13,24 @@ class Graph(object):
         * single parent
         * sons
         * index of a constant it equals to
+        * the label of the edge connecting it to its father
     each vertex can be TOP or non TOP element
+    
+    the following invariant must always hold:
+        self.vertices[i] in self.vertices[self.vertices[i].parent].sons
+        
     """
     def __init__(self):
-        self.size = 0
+        self.next_ind = 0
         self.vertices = dict()
     
-    def create_new_vertex(self):
+    def create_new_vertex(self, label = ''):
         """
         add new vertex to the graph, returns the new vertex index
         """
-        v_ind = self.size
-        self.size += 1
-        new_v = GraphVertex(v_ind)
+        v_ind = self.next_ind
+        self.next_ind += 1
+        new_v = GraphVertex(v_ind, label)
         self.vertices[v_ind] = new_v
         return v_ind
     
@@ -34,6 +40,11 @@ class Graph(object):
         """
         if not vertices.has_key(son) or not vertices.has_key(par):
             raise KeyError()
+            
+        old_parent = self.vertices[son].parent
+        if old_parent >= 0:
+            self.vertices[old_parent].sons.remove(son)
+        
         self.vertices[son].parent = par
         self.vertices[parent].sons.add(son)
     
@@ -72,3 +83,16 @@ class Graph(object):
         set a var to be non TOP
         """
         self.vertices[v].is_top = False
+    
+    def remove_vertex(self, v):
+        """
+        remove a vertex from the graph
+        TODO need to implement some kind of garbage collector
+        """
+        pass
+        """
+        p = self.vertices[v].parent
+        if p >= 0:
+            self.vertices[p].sons.remove(v)
+        self.vertices.pop(v)
+        """
