@@ -1,14 +1,17 @@
+from lattice import LatticeElement as LE
+
 class GraphVertex(object):
     def __init__(self, ind, label):
         self.edge_label = label
         self.ind = ind
         self.parent = -1
         self.constant = -1
-        self.sons = set()
+        self.sons = dict()
         self.is_top = False
+        self.knowledge = LE(LE.L_MUST_HAVE)
     
     def __repr__(self):
-        return 'parent\t%d\tlabel\t%s\nconst\t%d\tTOP\t%s\nsons\t%s' %(self.parent, self.edge_label, self.constant, self.is_top, list(self.sons))
+        return 'parent\t%d\tlabel\t%s\nconst\t%d\tTOP\t%s\nknowledge\t%s\nsons\t%s' %(self.parent, self.edge_label, self.constant, self.is_top, self.knowledge.get_element_name(), self.sons.items())
 
 class Graph(object):
     """
@@ -19,9 +22,9 @@ class Graph(object):
         * the label of the edge connecting it to its father
     each vertex can be TOP or non TOP element
     
-    the following invariant must always hold:
-        self.vertices[i] in self.vertices[self.vertices[i].parent].sons
-        
+    the following invariants must always hold:
+        par = self.vertices[son].parent => self.vertices[par].sons[self.vertices[son].edge_label] = son
+        v in self.vertices.values() => (v.parent >= 0 ^ v.constant >= 0) | v.is_top (this should be maintained by caller)
     """
     def __init__(self):
         self.next_ind = 0
@@ -46,10 +49,10 @@ class Graph(object):
             
         old_parent = self.vertices[son].parent
         if old_parent >= 0:
-            self.vertices[old_parent].sons.remove(son)
+            self.vertices[old_parent].sons.pop(self.vertices[son].edge_label)
         
         self.vertices[son].parent = par
-        self.vertices[par].sons.add(son)
+        self.vertices[par].sons[self.vertices[son].edge_label] = son
     
     def set_constant(self, son, cons):
         """
@@ -93,12 +96,6 @@ class Graph(object):
         TODO need to implement some kind of garbage collector
         """
         pass
-        """
-        p = self.vertices[v].parent
-        if p >= 0:
-            self.vertices[p].sons.remove(v)
-        self.vertices.pop(v)
-        """
     
     def __repr__(self):
         res = ''

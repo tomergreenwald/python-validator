@@ -1,4 +1,4 @@
-from exceptions import VerifierError, VerifierWarning
+from state_exceptions import VerifierError, VerifierWarning
 
 class LatticeElement(object):
     L_BOTOM = -1
