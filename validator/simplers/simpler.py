@@ -5,7 +5,7 @@ import _ast
 from ast import *
 import uuid
 
-import codegen
+import astor
 
 
 should_simple_again = True
@@ -103,8 +103,8 @@ def attr_simpler(node):
 
 
 def arth_simpler(node):
-    new_node_left = None
-    new_node_right = None
+    new_node_left = node.value.left
+    new_node_right = node.value.right
     if not isinstance(node.value.left, type(ast.Name())):
         tmp_var_name = random_tmp_var()
         new_node_left = ast.Assign(
@@ -119,7 +119,6 @@ def arth_simpler(node):
             value=node.value.right
         )
         node.value.right = ast.Name(id=tmp_var_name, ctx=Load())
-
     return new_node_left, new_node_right, node
 
 
@@ -169,6 +168,7 @@ class CodeSimpler(ast.NodeTransformer):
             value=ast.BinOp(left=node.target, op=node.op, right=node.value)
         )
 
+
 class BinOpHelper(ast.NodeVisitor):
     def visit_Add(self, node):
         return '__add__'
@@ -181,7 +181,6 @@ class BinOpHelper(ast.NodeVisitor):
 
     def visit_Div(self, node):
         return '__div__'
-
 
 class BinOpTransformer(ast.NodeTransformer):
     def visit_BinOp(self, node):
@@ -204,4 +203,4 @@ def make_simple(code):
 
     visitor = BinOpTransformer()
     visitor.visit(ast_tree)
-    return codegen.to_source(ast_tree)
+    return astor.codegen.to_source(ast_tree)

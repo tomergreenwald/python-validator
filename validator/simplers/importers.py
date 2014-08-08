@@ -2,6 +2,7 @@ __author__ = 'Oded'
 
 import os
 
+
 def read_module(package_path, module):
     path = package_path + '\\' + module.replace('.', '\\') + '.py'
     with open(path) as f:
@@ -20,30 +21,41 @@ def get_dependencies_dict(package_path, package_name, main_module):
         code = read_module(package_path, current)
 
         for code_line in code.splitlines():
-            if code_line.startswith('import ' + package_name):
+            if code_line.startswith('import'):
                 import_ = code_line.split('import ')[1]
                 if os.path.isdir(package_path + '\\' + import_.replace('.', '\\')):
                     code_line = 'from %s import __init__' % import_
+                elif os.path.isfile(package_path + '\\' + current[:current.rfind('.')] + '\\' + import_ + '.py'):
+                    code_line = 'from %s import %s' % (current[:current.rfind('.')], import_)
                 else:
-                    code_line = 'from %s import *' * import_
+                    code_line = 'from %s import *' % import_
 
-            if code_line.startswith('from ' + package_name) or code_line.startswith('from .'):
+            if code_line.startswith('from'):
                 from_, import_ = code_line.split('from ')[1].split(' import ')
                 if code_line.startswith('from .'):
                     tmp = current.split('.')[len(from_.strip('.')) - len(from_) - 1:-1]
                     tmp.append(from_.strip('.'))
                     from_ = '.'.join(tmp)
-                depencdencies = []
-                if os.path.isdir(package_path + '\\' + from_.replace('.', '\\')):
-                    for m in import_.split(', '):
-                        depencdencies.append(from_ + '.' + m)
-                else:
-                    depencdencies.append(from_)
 
-                dependency[current].extend(depencdencies)
-                for d in depencdencies:
-                    if d not in dependency:
-                        modules.add(d)
+                tmp_path = package_path + '\\' + current[:current.rfind('.')] + '\\' + from_
+                if os.path.isdir(tmp_path) or os.path.isfile(tmp_path + '.py'):
+                    from_ = current[:current.rfind('.')] + '.' + from_
+
+                if from_.startswith(package_name):
+                    depencdencies = []
+                    if os.path.isfile(package_path + '\\' + from_.replace('.', '\\') + '.py'):
+                        depencdencies.append(from_)
+                    elif os.path.isdir(package_path + '\\' + from_.replace('.', '\\')):
+                        for m in import_.split(', '):
+                            if not os.path.exists(package_path + '\\' + from_.replace('.', '\\') + '\\' + import_ + '.py'):
+                                depencdencies.append(from_ + '.__init__')
+                            else:
+                                depencdencies.append(from_ + '.' + m)
+
+                    dependency[current].extend(list(set(depencdencies)))
+                    for d in depencdencies:
+                        if d not in dependency:
+                            modules.add(d)
 
     return dependency
 
@@ -85,8 +97,6 @@ def flat(package_path, package_name, import_order):
         code += read_module(package_path, module)
         code += os.linesep
 
-    code = '\n'.join(filter(lambda line: not(line.startswith('from .') or line.startswith('from ' + package_name)),
-                            code.splitlines()))
     for module in import_order:
         for m in module.split('.'):
             code = code.replace('%s.' % m, '')
@@ -98,9 +108,3 @@ def flat_module(package_path, main_module):
     package_name = main_module.split('.')[0]
     import_order = get_import_order(package_path, package_name, main_module)
     return flat(package_path, package_name, import_order)
-
-
-if __name__ == '__main__':
-    main_module = 'nilo.webgallery.runscript'
-    package_path = r'C:\Users\Oded\Desktop\nilo.webgallery-0.2.5'
-    print flat_module(package_path, main_module)
