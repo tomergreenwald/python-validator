@@ -128,15 +128,16 @@ class Graph(object):
                 try:
                     removed_const = removed_const.__getattribute__(att)
                 except:
-                    logging.debug('[remove_vertex] failed to get attribute %s from type %s' %(att, type(removed_const))
+                    logging.debug('[remove_vertex] failed to get attribute %s \
+                                   from type %s' %(att, type(removed_const)))
                     const_ind = -1
                     break
         
         if const_ind >= 0:
             # by this point, removed_const should refer to the type of the removed node
-            for (lbl, v) in self.vertices[vertex_ind].sons:
+            for (lbl, v) in self.vertices[vertex_ind].sons.items():
                 self.vertices[v].parent = -1
-                self.vertices[v].knowledge.inplace_lub = self.vertices.knowledge
+                self.vertices[v].knowledge.inplace_lub(vertex_knowledge)
                 if self.vertices[v].constant < 0:
                     if const_ind >= 0:
                         try:
@@ -145,7 +146,8 @@ class Graph(object):
                             continue
                         except:
                             logging.debug('[remove_vertex] failed to get \
-                            attribute %s from type %s' %(lbl, type(removed_const))
+                                           attribute %s from type %s' \
+                                           %(lbl, type(removed_const)))
                             
                     # we set to top in any case we were not able
                     # to determine the constant for this vertex

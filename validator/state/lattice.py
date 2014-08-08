@@ -58,15 +58,15 @@ class LatticeElement(object):
         if p0 == p1:
             return LatticeElement(p0.val)
         
-        if p0.val == L_BOTOM:
+        if p0.val == LatticeElement.L_BOTOM:
             return LatticeElement(p1.val)
-        if p1.val == L_BOTOM:
+        if p1.val == LatticeElement.L_BOTOM:
             return LatticeElement(p0.val)
         
-        if p0.val == L_TOP or p1.val == L_TOP:
+        if p0.val == LatticeElement.L_TOP or p1.val == LatticeElement.L_TOP:
             return LatticeElement(LatticeElement.L_TOP)
         
-        if p0.val == L_MAY_HAVE or p1.val == L_MAY_HAVE:
+        if p0.val == LatticeElement.L_MAY_HAVE or p1.val == LatticeElement.L_MAY_HAVE:
             return LatticeElement(LatticeElement.L_MAY_HAVE)
         
         # This is the case for this lattice. if the lattice is changed, this function should be updated more carefully
