@@ -126,32 +126,26 @@ def simple(node):
     global should_simple_again
 
     if should_assign_tuple_simpler(node):
-        print 'b'
         should_simple_again = True
         return assign_tuple_simpler(node)
 
     if should_target_simpler(node):
-        print 'c'
         should_simple_again = True
         return targets_simpler(node)
 
     if should_attr_simpler(node):
-        print 'd'
         should_simple_again = True
         return attr_simpler(node)
 
     if should_call_simpler(node):
-        print 'e'
         should_simple_again = True
         return call_simpler(node)
 
     if should_arth_simpler(node):
-        print 'f'
         should_simple_again = True
         return arth_simpler(node)
 
     if should_call_args_simpler(node):
-        print 'h'
         should_simple_again = True
         return call_args_simpler(node)
 
@@ -160,8 +154,6 @@ def simple(node):
 
 class CodeSimpler(ast.NodeTransformer):
     def visit_Assign(self, node):
-        print 'a'
-        print node
         return simple(node)
 
     def visit_Expr(self, node):
@@ -208,8 +200,7 @@ def make_simple(code):
         should_simple_again = False
         visitor = CodeSimpler()
         visitor.visit(ast_tree)
-        print astor.codegen.to_source(ast_tree)
 
-    #visitor = BinOpTransformer()
-    #visitor.visit(ast_tree)
+    visitor = BinOpTransformer()
+    visitor.visit(ast_tree)
     return astor.codegen.to_source(ast_tree)

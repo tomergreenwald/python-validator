@@ -40,7 +40,7 @@ def get_dependencies_dict(package_path, package_name, main_module):
                 tmp_path = package_path + '\\' + current[:current.rfind('.')] + '\\' + from_
                 if os.path.isdir(tmp_path) or os.path.isfile(tmp_path + '.py'):
                     from_ = current[:current.rfind('.')] + '.' + from_
-                print current, from_, import_
+
                 if from_.startswith(package_name):
                     depencdencies = []
                     if os.path.isfile(package_path + '\\' + from_.replace('.', '\\') + '.py'):
