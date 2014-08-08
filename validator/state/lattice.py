@@ -5,7 +5,8 @@ class LatticeElement(object):
     L_MAY_HAVE = 0
     L_MUST_HAVE = 1
     L_MUST_NOT_HAVE = 2
-    TOTAL_ATTR_TYPES = 3
+    L_TOP = 3
+    TOTAL_ATTR_TYPES = 4
     
     def __init__(self, element):
         self.val = element
@@ -31,6 +32,9 @@ class LatticeElement(object):
         elif self.val == LatticeElement.L_MUST_NOT_HAVE or self.val == LatticeElement.L_BOTOM:
             raise VerifierError("Attribute does not exist")
     
+    def inplace_lub(self, p):
+        self.element = self.lub(self, p)
+    
     @staticmethod
     def lub(p0, p1):
         """
@@ -52,7 +56,18 @@ class LatticeElement(object):
                            Bottom
         """
         if p0 == p1:
-            return p0
+            return LatticeElement(p0.val)
+        
+        if p0.val == L_BOTOM:
+            return LatticeElement(p1.val)
+        if p1.val == L_BOTOM:
+            return LatticeElement(p0.val)
+        
+        if p0.val == L_TOP or p1.val == L_TOP:
+            return LatticeElement(LatticeElement.L_TOP)
+        
+        if p0.val == L_MAY_HAVE or p1.val == L_MAY_HAVE:
+            return LatticeElement(LatticeElement.L_MAY_HAVE)
         
         # This is the case for this lattice. if the lattice is changed, this function should be updated more carefully
         return LatticeElement(LatticeElement.L_MAY_HAVE)
