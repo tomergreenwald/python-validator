@@ -40,16 +40,19 @@ def get_dependencies_dict(package_path, package_name, main_module):
                 tmp_path = package_path + '\\' + current[:current.rfind('.')] + '\\' + from_
                 if os.path.isdir(tmp_path) or os.path.isfile(tmp_path + '.py'):
                     from_ = current[:current.rfind('.')] + '.' + from_
-
+                print current, from_, import_
                 if from_.startswith(package_name):
                     depencdencies = []
                     if os.path.isfile(package_path + '\\' + from_.replace('.', '\\') + '.py'):
                         depencdencies.append(from_)
                     elif os.path.isdir(package_path + '\\' + from_.replace('.', '\\')):
                         for m in import_.split(', '):
-                            depencdencies.append(from_ + '.' + m)
+                            if not os.path.exists(package_path + '\\' + from_.replace('.', '\\') + '\\' + import_ + '.py'):
+                                depencdencies.append(from_ + '.__init__')
+                            else:
+                                depencdencies.append(from_ + '.' + m)
 
-                    dependency[current].extend(depencdencies)
+                    dependency[current].extend(list(set(depencdencies)))
                     for d in depencdencies:
                         if d not in dependency:
                             modules.add(d)
