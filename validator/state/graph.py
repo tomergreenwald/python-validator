@@ -6,6 +6,9 @@ class GraphVertex(object):
         self.constant = -1
         self.sons = set()
         self.is_top = False
+    
+    def __repr__(self):
+        return 'parent\t%d\tlabel\t%s\nconst\t%d\tTOP\t%s\nsons\t%s' %(self.parent, self.edge_label, self.constant, self.is_top, list(self.sons))
 
 class Graph(object):
     """
@@ -38,7 +41,7 @@ class Graph(object):
         """
         connect son and parent by an edge (directed from the son to the parent)
         """
-        if not vertices.has_key(son) or not vertices.has_key(par):
+        if not self.vertices.has_key(son) or not self.vertices.has_key(par):
             raise KeyError()
             
         old_parent = self.vertices[son].parent
@@ -46,7 +49,7 @@ class Graph(object):
             self.vertices[old_parent].sons.remove(son)
         
         self.vertices[son].parent = par
-        self.vertices[parent].sons.add(son)
+        self.vertices[par].sons.add(son)
     
     def set_constant(self, son, cons):
         """
@@ -96,3 +99,13 @@ class Graph(object):
             self.vertices[p].sons.remove(v)
         self.vertices.pop(v)
         """
+    
+    def __repr__(self):
+        res = ''
+        for ind, ver in sorted(self.vertices.items()):
+            title = '%d' %ind
+            sides_len = 40 - len(title) - 2
+            title = '%s %d %s' %('-' * (sides_len / 2), ind, '-' * (sides_len - sides_len / 2))
+            res += '%s\n%s\n' %(title, ver)
+        
+        return res[:-1]
