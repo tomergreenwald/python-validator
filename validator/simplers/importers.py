@@ -105,9 +105,3 @@ def flat_module(package_path, main_module):
     package_name = main_module.split('.')[0]
     import_order = get_import_order(package_path, package_name, main_module)
     return flat(package_path, package_name, import_order)
-
-
-if __name__ == '__main__':
-    main_module = 'throw.main'
-    package_path = r'C:\Users\Oded\Desktop\throw-0.1-28-gd3ab'
-    print flat_module(package_path, main_module)
