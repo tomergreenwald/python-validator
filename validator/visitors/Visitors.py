@@ -205,7 +205,7 @@ def initialize_abstract_state(abstract_state):
 
 class ProgramVisitor(ast.NodeVisitor):
 
-    def __init__(self, stack = [], abstract_state=None, functions = {}):
+    def __init__(self, stack=[], abstract_state=None, functions={}):
         """
         Should visit all the program
         """
