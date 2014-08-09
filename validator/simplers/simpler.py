@@ -197,7 +197,7 @@ def make_simple(code):
     """
     global should_simple_again
     should_simple_again = True
-    
+
     ast_tree = ast.parse(code)
     while should_simple_again:
         should_simple_again = False

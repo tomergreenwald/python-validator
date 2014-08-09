@@ -192,7 +192,8 @@ def handle_assign(node, abstract_state, functions):
     Handles assign - creates the relevant object and connects it to the context.
     """
     if len(node.targets) is not 1:
-        raise Exception('Multiple targets does not supported (%s)' % node.name) # TODO - check if I did it in the simpler
+        # The simpler simples it
+        raise Exception('Multiple targets does not supported (%s)' % node.name)
 
     assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state, functions)
     assign_visitor.visit(node.value)
