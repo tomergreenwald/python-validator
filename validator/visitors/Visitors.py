@@ -67,12 +67,13 @@ def stack_var_name(stack, var):
 
 def register_assignment(stack, abstract_state, from_var ,to_var_name):
     """
-    Registers an assigment from one variable (or const value) to another to a given AbstractState.
+    Registers an assignment from one variable (or const value) to another to a given AbstractState.
     :param abstract_state: AbstractState to register assignment to.
     :param from_var: AST node to extract type and data from.
     :param to_var_name: variable name to assign data to.
     """
     actual_to_name = stack_var_name(stack, to_var_name)
+    # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         actual_from_name = actual_var_name(stack, abstract_state, from_var.id)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
@@ -117,6 +118,7 @@ class AssignVisitor(ast.NodeVisitor):
         Handles attribute node.
         :param node: Attribute Node.
         """
+        # TODO: it may be set_var_to_const
         self.abstract_state.set_var_to_var(self.name, get_node_name(node))
 
     def visit_Str(self, node):
@@ -171,19 +173,23 @@ class FunctionDefVisitor(ast.NodeVisitor):
     def __init__(self, context):
         self.context = context
 
-
     def visit_FunctionDef(self, node):
         self.context[node.name] = node
 
 
-def initialize_abstract_state(abstract_state):
+def initialize_abstract_state(abstract_state): # TODO - it should be in Avial's code
     abstract_state.set_var_to_const('True', True)
     abstract_state.set_var_to_const('False', False)
     abstract_state.set_var_to_const('None', None)
 
 
 class ProgramVisitor(ast.NodeVisitor):
+
     def __init__(self, stack = [], abstract_state=None):
+        """
+        Should visit all the program
+        """
+        super(ProgramVisitor, self).__init__()
         if abstract_state is None:
             self.abstract_state = AbstractState()
             initialize_abstract_state(self.abstract_state)
@@ -191,10 +197,6 @@ class ProgramVisitor(ast.NodeVisitor):
             self.abstract_state = abstract_state
         self.stack = stack
         self.functions = {}
-
-    """
-    Should visit all the program
-    """
 
     def visit_ClassDef(self, node):
         """
@@ -210,7 +212,6 @@ class ProgramVisitor(ast.NodeVisitor):
     def visit_Expr(self, node):
         raise Exception('Expr visit is not supported yet')
 
-
     def visit_Assign(self, node):
         """
         Handles assignment to variable.
@@ -224,12 +225,40 @@ class ProgramVisitor(ast.NodeVisitor):
         :param node: Current if node.
         """
         if len(node.orelse) == 0:
+            before_if_states = self.abstract_state.clone()
             assess_list(node.body, self.stack, self.abstract_state)
+            self.abstract_state.lub(before_if_states)
         else:
             orelse_state = self.abstract_state.clone()
             assess_list(node.body, self.stack, self.abstract_state)
             assess_list(node.orelse, self.stack, orelse_state)
             self.abstract_state.lub(orelse_state)
+
+    def visit_TryFinally(self, node):
+        assess_list(node.body, self.abstract_state)
+        assess_list(node.finalbody, self.abstract_state)
+
+    def visit_TryExcept(self, node):
+        before_block_abstract_states = self.abstract_state.clone()
+
+        # If no exception raises
+        try_block = node.body
+        try_block_abstract_states = before_block_abstract_states.clone()
+        assess_list(try_block, try_block_abstract_states)
+        self.abstract_state.lub(try_block_abstract_states)
+
+        # If exception raises during the execution
+        helper = []
+        for expr in try_block:
+            helper.append(expr)
+            current_abstract_states = before_block_abstract_states.clone()
+            assess_list(helper, current_abstract_states)
+
+            for handler in node.handlers:
+                # TODO should add scope var with the "as e"
+                handler_abstract_states = current_abstract_states.clone()
+                assess_list(handler.body, handler_abstract_states)
+                self.abstract_state.lub(handler_abstract_states)
 
 
 def assess_list(entries, stack, abstract_state):
@@ -248,6 +277,7 @@ def handle_assign(node, stack, abstract_state, functions):
     Handles assign - creates the relevant object and connects it to the context.
     """
     if len(node.targets) is not 1:
+        # The simpler simples it
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
     assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions)
