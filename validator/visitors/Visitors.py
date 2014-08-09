@@ -120,11 +120,11 @@ class CallVisitor(ast.NodeVisitor):
 
 
 class AssignVisitor(CallVisitor):
-    """
-    Handle assign calls. Adds to the object the relavent methods and attributes
-    """
 
     def __init__(self, name, stack, abstract_state, functions):
+        """
+        Handle assign calls. Adds to the object the relavent methods and attributes
+        """
         super(AssignVisitor, self).__init__(stack, abstract_state, functions)
         self.name = name
         self.abstract_state = abstract_state
