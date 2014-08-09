@@ -64,6 +64,7 @@ class AssignVisitor(ast.NodeVisitor):
         Handles attribute node.
         :param node: Attribute Node.
         """
+        # TODO: it may be set_var_to_const
         self.abstract_state.set_var_to_var(self.name, get_node_name(node))
 
     def visit_Str(self, node):
