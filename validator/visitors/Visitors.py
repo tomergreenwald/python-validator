@@ -13,6 +13,7 @@ def get_variable_name(stack, abstract_state, name):
         raise Exception('Name (%s) is not a local or a global variable for the stack - %s' % name, stack)
 
 
+# TODO: shouldn't it use the stack somehow?
 def get_node_name(node):
     """
     Generates the fully qualified name for a given node. If the node contains a 'value' attribute then it is a complex
@@ -34,7 +35,7 @@ def var_name_list(stack, var):
     :return: List of probable names.
     """
     names = []
-    if len(stack) > 0:
+    if stack:
         function_name = "#".join(stack)
         names.append(function_name + "#" + var)
     names.append(var)
@@ -67,7 +68,7 @@ def stack_var_name(stack, var):
     return var_name_list(stack, var)[0]
 
 
-def register_assignment(stack, abstract_state, from_var ,to_var_name, split_stack=False):
+def register_assignment(stack, abstract_state, from_var, to_var_name, split_stack=False):
     """
     Registers an assignment from one variable (or const value) to another to a given AbstractState.
     :param abstract_state: AbstractState to register assignment to.
@@ -76,7 +77,7 @@ def register_assignment(stack, abstract_state, from_var ,to_var_name, split_stac
     """
     actual_to_name = stack_var_name(stack, to_var_name)
     if split_stack:
-        updated_stack = stack[0:-1]
+        updated_stack = stack[:-1]
     else:
         updated_stack = stack
     # TODO the node can be const
@@ -206,13 +207,12 @@ def initialize_abstract_state(abstract_state):
 
 
 class ProgramVisitor(ast.NodeVisitor):
-
     def __init__(self, stack=[], abstract_state=None, functions={}):
         """
         Should visit all the program
         """
         super(ProgramVisitor, self).__init__()
-        if abstract_state is None:
+        if not abstract_state:
             self.abstract_state = AbstractState()
             initialize_abstract_state(self.abstract_state)
         else:
@@ -229,6 +229,7 @@ class ProgramVisitor(ast.NodeVisitor):
         raise Exception('Call visit is not supported yet')
 
     def visit_FunctionDef(self, node):
+        # TODO - should be stack either
         FunctionDefVisitor(self.functions).visit(node)
 
     def visit_Expr(self, node):
