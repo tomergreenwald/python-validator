@@ -105,13 +105,27 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
     stack.pop()
 
 
-class AssignVisitor(ast.NodeVisitor):
+class CallVisitor(ast.NodeVisitor):
+
+    def __init__(self, stack, abstract_state, functions):
+        super(CallVisitor, self).__init__()
+        self.abstract_state = abstract_state
+        self.functions = functions
+        self.stack = stack
+
+    def visit_Call(self, node):
+        if node.func.id not in self.functions:
+            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state, self.functions)
+
+
+class AssignVisitor(CallVisitor):
     """
     Handle assign calls. Adds to the object the relavent methods and attributes
     """
 
     def __init__(self, name, stack, abstract_state, functions):
-        super(AssignVisitor, self).__init__()
+        super(AssignVisitor, self).__init__(stack, abstract_state, functions)
         self.name = name
         self.abstract_state = abstract_state
         self.functions = functions
@@ -167,22 +181,11 @@ class AssignVisitor(ast.NodeVisitor):
         """
         register_assignment(self.stack, self.abstract_state, node, self.name)
 
-    def visit_Call(self, node):
-        if node.func.id not in self.functions:
-            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state, self.functions)
 
-class ExprVisitor(ast.NodeVisitor):
+class ExprVisitor(CallVisitor):
 
     def __init__(self, stack, abstract_state, functions):
-        self.abstract_state = abstract_state
-        self.functions = functions
-        self.stack = stack
-
-    def visit_Call(self, node):
-        if node.func.id not in self.functions:
-            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state, self.functions)
+        super(ExprVisitor, self).__init__(stack, abstract_state, functions)
 
 
 class FunctionDefVisitor(ast.NodeVisitor):
