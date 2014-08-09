@@ -15,13 +15,15 @@ def get_node_name(node):
         return node.attr
     return node.id
 
+
 def register_assignment(abstract_state, from_var ,to_var_name):
     """
-    Registers an assigment from one variable (or const value) to another to a given AbstractState.
+    Registers an assignment from one variable (or const value) to another to a given AbstractState.
     :param abstract_state: AbstractState to register assignment to.
     :param from_var: AST node to extract type and data from.
     :param to_var_name: variable name to assign data to.
     """
+    # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         abstract_state.set_var_to_var(to_var_name, from_var.id)
     else:
@@ -63,6 +65,7 @@ class AssignVisitor(ast.NodeVisitor):
         Handles attribute node.
         :param node: Attribute Node.
         """
+        # TODO: it may be set_var_to_const
         self.abstract_state.set_var_to_var(self.name, get_node_name(node))
 
     def visit_Str(self, node):
@@ -117,7 +120,6 @@ class FunctionDefVisitor(ast.NodeVisitor):
     def __init__(self, context):
         self.context = context
 
-
     def visit_FunctionDef(self, node):
         self.context[node.name] = node
 
@@ -139,7 +141,7 @@ class ProgramVisitor(ast.NodeVisitor):
                 initialize_abstract_state(self.abstract_state)
         else:
             self.abstract_state = abstract_state
-            self.functions = {}
+        self.functions = {}
 
     def visit_ClassDef(self, node):
         """
@@ -192,6 +194,7 @@ def handle_assign(node, abstract_state, functions):
     Handles assign - creates the relevant object and connects it to the context.
     """
     if len(node.targets) is not 1:
+        # The simpler simples it
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
     assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state, functions)

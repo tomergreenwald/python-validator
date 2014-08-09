@@ -7,7 +7,8 @@ import uuid
 
 import astor
 
-should_simple_again = True
+
+should_simple_again = None
 
 
 def random_tmp_var():
@@ -181,7 +182,6 @@ class BinOpHelper(ast.NodeVisitor):
     def visit_Div(self, node):
         return '__div__'
 
-
 class BinOpTransformer(ast.NodeTransformer):
     def visit_BinOp(self, node):
         global should_simple_again
@@ -196,6 +196,7 @@ def make_simple(code):
     Return the code as a string after make it more "simple"
     """
     global should_simple_again
+    should_simple_again = True
 
     ast_tree = ast.parse(code)
     while should_simple_again:
