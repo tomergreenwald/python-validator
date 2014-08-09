@@ -193,7 +193,8 @@ class FunctionDefVisitor(ast.NodeVisitor):
         self.context[node.name] = node
 
 
-def initialize_abstract_state(abstract_state): # TODO - it should be in Avial's code
+def initialize_abstract_state(abstract_state):
+    # TODO - it should be in Avial's code
     abstract_state.set_var_to_const('True', True)
     abstract_state.set_var_to_const('False', False)
     abstract_state.set_var_to_const('None', None)
