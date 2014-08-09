@@ -122,25 +122,24 @@ class FunctionDefVisitor(ast.NodeVisitor):
         self.context[node.name] = node
 
 
-def initialize_abstract_state(abstract_state):
+def initialize_abstract_state(abstract_state): # TODO - it should be in Avial's code
     abstract_state.set_var_to_const('True', True)
     abstract_state.set_var_to_const('False', False)
     abstract_state.set_var_to_const('None', None)
 
 
 class ProgramVisitor(ast.NodeVisitor):
-    def __init__(self, abstract_state=None):
-        super(ProgramVisitor, self).__init__()
-        if abstract_state is None:
-            self.abstract_state = AbstractState()
-            initialize_abstract_state(self.abstract_state)
-        else:
-            self.abstract_state = abstract_state
-        self.functions = {}
-
     """
     Should visit all the program
     """
+    def __init__(self, abstract_state=None):
+        super(ProgramVisitor, self).__init__()
+        if abstract_state is None:
+                self.abstract_state = AbstractState()
+                initialize_abstract_state(self.abstract_state)
+        else:
+            self.abstract_state = abstract_state
+            self.functions = {}
 
     def visit_ClassDef(self, node):
         """
@@ -155,7 +154,6 @@ class ProgramVisitor(ast.NodeVisitor):
 
     def visit_Expr(self, node):
         raise Exception('Expr visit is not supported yet')
-
 
     def visit_Assign(self, node):
         """
