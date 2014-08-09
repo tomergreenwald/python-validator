@@ -7,7 +7,6 @@ import uuid
 
 import astor
 
-
 should_simple_again = True
 
 
@@ -182,8 +181,11 @@ class BinOpHelper(ast.NodeVisitor):
     def visit_Div(self, node):
         return '__div__'
 
+
 class BinOpTransformer(ast.NodeTransformer):
     def visit_BinOp(self, node):
+        global should_simple_again
+        should_simple_again = True
         return ast.Call(func=Attribute(value=node.left, attr=BinOpHelper().visit(node.op), ctx=Load()),
                         args=[node.right], keywords=[], starargs=None, kwargs=None)
 
@@ -201,6 +203,9 @@ def make_simple(code):
         visitor = CodeSimpler()
         visitor.visit(ast_tree)
 
-    visitor = BinOpTransformer()
-    visitor.visit(ast_tree)
+    should_simple_again = True
+    while should_simple_again:
+        should_simple_again = False
+        visitor = BinOpTransformer()
+        visitor.visit(ast_tree)
     return astor.codegen.to_source(ast_tree)
