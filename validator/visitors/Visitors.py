@@ -179,6 +179,32 @@ class ProgramVisitor(ast.NodeVisitor):
             assess_list(node.orelse, orelse_state)
             self.abstract_state.lub(orelse_state)
 
+    def visit_TryFinally(self, node):
+        assess_list(node.body, self.abstract_state)
+        assess_list(node.finalbody, self.abstract_state)
+
+    def visit_TryExcept(self, node):
+        before_block_abstract_states = self.abstract_state.clone()
+
+        # If no exception raises
+        try_block = node.body
+        try_block_abstract_states = before_block_abstract_states.clone()
+        assess_list(try_block, try_block_abstract_states)
+        self.abstract_state.lub(try_block_abstract_states)
+
+        # If exception raises during the execution
+        helper = []
+        for expr in try_block:
+            helper.append(expr)
+            current_abstract_states = before_block_abstract_states.clone()
+            assess_list(helper, current_abstract_states)
+
+            for handler in node.handlers:
+                # TODO should add scope var with the "as e"
+                handler_abstract_states = current_abstract_states.clone()
+                assess_list(handler.body, handler_abstract_states)
+                self.abstract_state.lub(handler_abstract_states)
+
 
 def assess_list(entries, abstract_state):
     """
