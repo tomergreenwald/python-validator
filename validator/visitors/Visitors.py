@@ -65,7 +65,7 @@ def stack_var_name(stack, var):
     return var_name_list(stack, var)[0]
 
 
-def register_assignment(stack, abstract_state, from_var ,to_var_name):
+def register_assignment(stack, abstract_state, from_var ,to_var_name, split_stack=False):
     """
     Registers an assignment from one variable (or const value) to another to a given AbstractState.
     :param abstract_state: AbstractState to register assignment to.
@@ -73,19 +73,23 @@ def register_assignment(stack, abstract_state, from_var ,to_var_name):
     :param to_var_name: variable name to assign data to.
     """
     actual_to_name = stack_var_name(stack, to_var_name)
+    if split_stack:
+        updated_stack = stack[0:-1]
+    else:
+        updated_stack = stack
     # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
-        actual_from_name = actual_var_name(stack, abstract_state, from_var.id)
+        actual_from_name = actual_var_name(updated_stack, abstract_state, from_var.id)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
 
-def evaluate_function(function, args, keywords, stack, abstract_state):
+def evaluate_function(function, args, keywords, stack, abstract_state, functions):
     stack.append(function.name)
     arguments = []
     for i in xrange(len(args)):
         arguments.append(i)
-        register_assignment(stack, abstract_state, args[i], function.args.args[i].id)
+        register_assignment(stack, abstract_state, args[i], function.args.args[i].id, True)
     for i in xrange(len(function.args.defaults)):
         arg_index = i + len(function.args.args) - len(function.args.defaults)
         arg = function.args.args[arg_index]
@@ -93,11 +97,11 @@ def evaluate_function(function, args, keywords, stack, abstract_state):
         for keyword in keywords:
             if arg.id == keyword.arg:
                 found = True
-                register_assignment(stack, abstract_state, keyword.value, keyword.arg)
+                register_assignment(stack, abstract_state, keyword.value, keyword.arg, True)
         if not found:
             default = function.args.defaults[i]
-            register_assignment(stack, abstract_state, default, keyword.arg)
-    assess_list(function.body, stack, abstract_state)
+            register_assignment(stack, abstract_state, default, keyword.arg, True)
+    assess_list(function.body, stack, abstract_state, functions)
     stack.pop()
 
 
@@ -166,7 +170,7 @@ class AssignVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         if node.func.id not in self.functions:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state)
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state, self.functions)
 
 
 class FunctionDefVisitor(ast.NodeVisitor):
@@ -185,7 +189,7 @@ def initialize_abstract_state(abstract_state): # TODO - it should be in Avial's 
 
 class ProgramVisitor(ast.NodeVisitor):
 
-    def __init__(self, stack = [], abstract_state=None):
+    def __init__(self, stack = [], abstract_state=None, functions = {}):
         """
         Should visit all the program
         """
@@ -196,7 +200,7 @@ class ProgramVisitor(ast.NodeVisitor):
         else:
             self.abstract_state = abstract_state
         self.stack = stack
-        self.functions = {}
+        self.functions = functions
 
     def visit_ClassDef(self, node):
         """
@@ -226,17 +230,17 @@ class ProgramVisitor(ast.NodeVisitor):
         """
         if len(node.orelse) == 0:
             before_if_states = self.abstract_state.clone()
-            assess_list(node.body, self.stack, self.abstract_state)
+            assess_list(node.body, self.stack, self.abstract_state, self.functions)
             self.abstract_state.lub(before_if_states)
         else:
             orelse_state = self.abstract_state.clone()
-            assess_list(node.body, self.stack, self.abstract_state)
-            assess_list(node.orelse, self.stack, orelse_state)
+            assess_list(node.body, self.stack, self.abstract_state, self.functions)
+            assess_list(node.orelse, self.stack, orelse_state, self.functions)
             self.abstract_state.lub(orelse_state)
 
     def visit_TryFinally(self, node):
-        assess_list(node.body, self.abstract_state)
-        assess_list(node.finalbody, self.abstract_state)
+        assess_list(node.body, self.abstract_state, self.functions, self.functions)
+        assess_list(node.finalbody, self.abstract_state, self.functions, self.functions)
 
     def visit_TryExcept(self, node):
         before_block_abstract_states = self.abstract_state.clone()
@@ -244,8 +248,8 @@ class ProgramVisitor(ast.NodeVisitor):
         # If no exception raises
         try_block = node.body
         try_block_abstract_states = before_block_abstract_states.clone()
-        assess_list(try_block, try_block_abstract_states)
-        self.abstract_state.lub(try_block_abstract_states)
+        assess_list(try_block, try_block_abstract_states, self.functions)
+        self.abstract_state.lub(try_block_abstract_states, self.functions)
 
         # If exception raises during the execution
         helper = []
@@ -261,13 +265,13 @@ class ProgramVisitor(ast.NodeVisitor):
                 self.abstract_state.lub(handler_abstract_states)
 
 
-def assess_list(entries, stack, abstract_state):
+def assess_list(entries, stack, abstract_state, functions):
     """
     Generates a ProgramVisitor and runs it through the given set of entries while updating the given AbstractState.
     :param entries: A list of entries to process.
     :param abstract_state: AbstractState to initialize the ProgramVisitor with.
     """
-    visitor = ProgramVisitor(stack, abstract_state)
+    visitor = ProgramVisitor(stack, abstract_state, functions)
     for entry in entries:
         visitor.visit(entry)
 

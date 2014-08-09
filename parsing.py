@@ -35,10 +35,14 @@ else:
 if 1==2:
     aa = 1
 
+def func2(arg11):
+    ii = arg11
+
 def func1(arg1, arg2, def1 = 1, def2 = None):
     i = 1
     bfunc = arg1
     local = v3.a
+    z = func2(arg1)
 #1==1
 #func1(a)
 a1 = func1(2, 1, def2 = 'stringy')
