@@ -34,7 +34,7 @@ def var_name_list(stack, var):
     :return: List of probable names.
     """
     names = []
-    if (len(stack) > 0):
+    if len(stack) > 0:
         function_name = "#".join(stack)
         names.append(function_name + "#" + var)
     names.append(var)
@@ -200,7 +200,7 @@ class FunctionDefVisitor(ast.NodeVisitor):
 
 
 def initialize_abstract_state(abstract_state):
-    # TODO - it should be in Avial's code
+    # TODO - it should be in Aviel's code
     abstract_state.set_var_to_const('True', True)
     abstract_state.set_var_to_const('False', False)
     abstract_state.set_var_to_const('None', None)
