@@ -15,6 +15,7 @@ def get_node_name(node):
         return node.attr
     return node.id
 
+
 def register_assignment(abstract_state, from_var ,to_var_name):
     """
     Registers an assigment from one variable (or const value) to another to a given AbstractState.
@@ -116,7 +117,6 @@ class AssignVisitor(ast.NodeVisitor):
 class FunctionDefVisitor(ast.NodeVisitor):
     def __init__(self, context):
         self.context = context
-
 
     def visit_FunctionDef(self, node):
         self.context[node.name] = node
