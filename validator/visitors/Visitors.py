@@ -3,6 +3,15 @@ import ast
 from validator.state.abs_state import AbstractState
 
 
+def get_variable_name(stack, abstract_state, name):
+    fully_qualizfied_name = "#".join(stack).append("_" + name)
+    if abstract_state.has_var(fully_qualizfied_name):
+        return fully_qualizfied_name
+    elif abstract_state.has_var(name):
+        return name
+    else:
+        raise Exception('Name (%s) is not a local or a global variable for the stack - %s' % name, stack)
+
 def get_node_name(node):
     """
     Generates the fully qualified name for a given node. If the node contains a 'value' attribute then it is a complex
@@ -15,24 +24,67 @@ def get_node_name(node):
         return node.attr
     return node.id
 
-def register_assignment(abstract_state, from_var ,to_var_name):
+
+def var_name_list(stack, var):
+    """
+    Generates a list of probable variable names according to the given stack and variable.
+    :param stack: Current stack.
+    :param var: Variable name.
+    :return: List of probable names.
+    """
+    names = []
+    if (len(stack) > 0):
+        function_name = "#".join(stack)
+        names.append(function_name + "#" + var)
+    names.append(var)
+    return names
+
+
+def actual_var_name(stack, abstract_state, var):
+    """
+    Generates a fully qualified name for a local or a global variable.
+    Throws exception if the variable was no previously set to the abstract state.
+    :param stack: Current stack.
+    :param abstract_state: Current AbstractState.
+    :param var: Variable name.
+    :return: Fully qualified variable name.
+    """
+    names = var_name_list(stack, var)
+    for name in names:
+        if abstract_state.has_var(name):
+            return name
+    raise Exception("Refereneced variable was not assigned previuosly - [%s] - %s" %(str(stack), var))
+
+def stack_var_name(stack, var):
+    """
+    Generates a fully qualified name for a variable on the stack.
+    :param stack: Current stack.
+    :param var: Variable name.
+    :return: Fully qualified variable name.
+    """
+    return var_name_list(stack, var)[0]
+
+
+def register_assignment(stack, abstract_state, from_var ,to_var_name):
     """
     Registers an assigment from one variable (or const value) to another to a given AbstractState.
     :param abstract_state: AbstractState to register assignment to.
     :param from_var: AST node to extract type and data from.
     :param to_var_name: variable name to assign data to.
     """
+    actual_to_name = stack_var_name(stack, to_var_name)
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
-        abstract_state.set_var_to_var(to_var_name, from_var.id)
+        actual_from_name = actual_var_name(stack, abstract_state, from_var.id)
+        abstract_state.set_var_to_var(actual_to_name, actual_from_name)
     else:
-        abstract_state.set_var_to_const(to_var_name, getattr(from_var, from_var._fields[0]))
+        abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
 
-
-def evaluate_function(function, args, keywords, abstract_state):
+def evaluate_function(function, args, keywords, stack, abstract_state):
+    stack.append(function.name)
     arguments = []
     for i in xrange(len(args)):
         arguments.append(i)
-        register_assignment(abstract_state, args[i], function.args.args[i].id)
+        register_assignment(stack, abstract_state, args[i], function.args.args[i].id)
     for i in xrange(len(function.args.defaults)):
         arg_index = i + len(function.args.args) - len(function.args.defaults)
         arg = function.args.args[arg_index]
@@ -40,11 +92,12 @@ def evaluate_function(function, args, keywords, abstract_state):
         for keyword in keywords:
             if arg.id == keyword.arg:
                 found = True
-                register_assignment(abstract_state, keyword.value, keyword.arg)
+                register_assignment(stack, abstract_state, keyword.value, keyword.arg)
         if not found:
             default = function.args.defaults[i]
-            register_assignment(abstract_state, default, keyword.arg)
-    assess_list(function.body, abstract_state)
+            register_assignment(stack, abstract_state, default, keyword.arg)
+    assess_list(function.body, stack, abstract_state)
+    stack.pop()
 
 
 class AssignVisitor(ast.NodeVisitor):
@@ -52,11 +105,12 @@ class AssignVisitor(ast.NodeVisitor):
     Handle assign calls. Adds to the object the relavent methods and attributes
     """
 
-    def __init__(self, name, abstract_state, functions):
+    def __init__(self, name, stack, abstract_state, functions):
         super(AssignVisitor, self).__init__()
         self.name = name
         self.abstract_state = abstract_state
         self.functions = functions
+        self.stack = stack
 
     def visit_Attribute(self, node):
         """
@@ -70,47 +124,47 @@ class AssignVisitor(ast.NodeVisitor):
         Handles string node.
         :param node: String Node.
         """
-        register_assignment(self.abstract_state, node, self.name)
+        register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_Num(self, node):
         """
         Handles number node.
         :param node: Number Node.
         """
-        register_assignment(self.abstract_state, node, self.name)
+        register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_Name(self, node):
         """
         Handles name node (It means that we assign one variable to another - copy their pointers)..
         :param node: Name Node.
         """
-        register_assignment(self.abstract_state, node, self.name)
+        register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_List(self, node):
         """
         Handles list node.
         :param node: List Node.
         """
-        register_assignment(self.abstract_state, node, self.name)
+        register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_Tuple(self, node):
         """
         Handles tuple node.
         :param node: Tuple Node.
         """
-        register_assignment(self.abstract_state, node, self.name)
+        register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_Dict(self, node):
         """
         Handles dictionary node.
         :param node: Dictionary Node.
         """
-        register_assignment(self.abstract_state, node, self.name)
+        register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_Call(self, node):
         if node.func.id not in self.functions:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.abstract_state)
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state)
 
 
 class FunctionDefVisitor(ast.NodeVisitor):
@@ -129,12 +183,13 @@ def initialize_abstract_state(abstract_state):
 
 
 class ProgramVisitor(ast.NodeVisitor):
-    def __init__(self, abstract_state=None):
+    def __init__(self, stack = [], abstract_state=None):
         if abstract_state is None:
             self.abstract_state = AbstractState()
             initialize_abstract_state(self.abstract_state)
         else:
             self.abstract_state = abstract_state
+        self.stack = stack
         self.functions = {}
 
     """
@@ -161,7 +216,7 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles assignment to variable.
         :param node: Current assignment node.
         """
-        handle_assign(node, self.abstract_state, self.functions)
+        handle_assign(node, self.stack, self.abstract_state, self.functions)
 
     def visit_If(self, node):
         """
@@ -169,31 +224,31 @@ class ProgramVisitor(ast.NodeVisitor):
         :param node: Current if node.
         """
         if len(node.orelse) == 0:
-            assess_list(node.body, self.abstract_state)
+            assess_list(node.body, self.stack, self.abstract_state)
         else:
             orelse_state = self.abstract_state.clone()
-            assess_list(node.body, self.abstract_state)
-            assess_list(node.orelse, orelse_state)
+            assess_list(node.body, self.stack, self.abstract_state)
+            assess_list(node.orelse, self.stack, orelse_state)
             self.abstract_state.lub(orelse_state)
 
 
-def assess_list(entries, abstract_state):
+def assess_list(entries, stack, abstract_state):
     """
     Generates a ProgramVisitor and runs it through the given set of entries while updating the given AbstractState.
     :param entries: A list of entries to process.
     :param abstract_state: AbstractState to initialize the ProgramVisitor with.
     """
-    visitor = ProgramVisitor(abstract_state)
+    visitor = ProgramVisitor(stack, abstract_state)
     for entry in entries:
         visitor.visit(entry)
 
 
-def handle_assign(node, abstract_state, functions):
+def handle_assign(node, stack, abstract_state, functions):
     """
     Handles assign - creates the relevant object and connects it to the context.
     """
     if len(node.targets) is not 1:
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
-    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), abstract_state, functions)
+    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions)
     assign_visitor.visit(node.value)

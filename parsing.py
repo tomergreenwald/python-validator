@@ -19,7 +19,7 @@ v3 = ''
 v3.a = 5
 v3.b = 'b'
 v3.v = v
-v2 = v3
+v2 = v3.v
 a_list = (a,b,c, 's')
 a_tuple = [a,b,c, 's']
 a_dict = {1:1}
@@ -37,9 +37,12 @@ if 1==2:
 
 def func1(arg1, arg2, def1 = 1, def2 = None):
     i = 1
+    bfunc = arg1
+    local = v3.a
 #1==1
 #func1(a)
 a1 = func1(2, 1, def2 = 'stringy')
+#check = bfunc
 """
 ast_tree = ast.parse(code)
 visitor = ProgramVisitor()
