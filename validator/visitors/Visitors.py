@@ -186,7 +186,6 @@ class AssignVisitor(CallVisitor):
 
 
 class ExprVisitor(CallVisitor):
-
     def __init__(self, stack, abstract_state, functions):
         super(ExprVisitor, self).__init__(stack, abstract_state, functions)
 
