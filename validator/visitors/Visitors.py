@@ -18,11 +18,12 @@ def get_node_name(node):
 
 def register_assignment(abstract_state, from_var ,to_var_name):
     """
-    Registers an assigment from one variable (or const value) to another to a given AbstractState.
+    Registers an assignment from one variable (or const value) to another to a given AbstractState.
     :param abstract_state: AbstractState to register assignment to.
     :param from_var: AST node to extract type and data from.
     :param to_var_name: variable name to assign data to.
     """
+    # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         abstract_state.set_var_to_var(to_var_name, from_var.id)
     else:
@@ -140,7 +141,7 @@ class ProgramVisitor(ast.NodeVisitor):
                 initialize_abstract_state(self.abstract_state)
         else:
             self.abstract_state = abstract_state
-            self.functions = {}
+        self.functions = {}
 
     def visit_ClassDef(self, node):
         """
