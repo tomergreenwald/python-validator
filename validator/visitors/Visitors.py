@@ -12,6 +12,7 @@ def get_variable_name(stack, abstract_state, name):
     else:
         raise Exception('Name (%s) is not a local or a global variable for the stack - %s' % name, stack)
 
+
 def get_node_name(node):
     """
     Generates the fully qualified name for a given node. If the node contains a 'value' attribute then it is a complex
@@ -55,6 +56,7 @@ def actual_var_name(stack, abstract_state, var):
             return name
     raise Exception("Refereneced variable was not assigned previuosly - [%s] - %s" %(str(stack), var))
 
+
 def stack_var_name(stack, var):
     """
     Generates a fully qualified name for a variable on the stack.
@@ -83,6 +85,7 @@ def register_assignment(stack, abstract_state, from_var ,to_var_name, split_stac
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
+
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
     stack.append(function.name)
