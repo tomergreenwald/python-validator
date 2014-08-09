@@ -172,6 +172,18 @@ class AssignVisitor(ast.NodeVisitor):
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
         evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state, self.functions)
 
+class ExprVisitor(ast.NodeVisitor):
+
+    def __init__(self, stack, abstract_state, functions):
+        self.abstract_state = abstract_state
+        self.functions = functions
+        self.stack = stack
+
+    def visit_Call(self, node):
+        if node.func.id not in self.functions:
+            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state, self.functions)
+
 
 class FunctionDefVisitor(ast.NodeVisitor):
     def __init__(self, context):
@@ -214,7 +226,7 @@ class ProgramVisitor(ast.NodeVisitor):
         FunctionDefVisitor(self.functions).visit(node)
 
     def visit_Expr(self, node):
-        raise Exception('Expr visit is not supported yet')
+        ExprVisitor(self.stack, self.abstract_state, self.functions).visit(node)
 
     def visit_Assign(self, node):
         """

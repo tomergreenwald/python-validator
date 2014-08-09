@@ -43,6 +43,7 @@ def func1(arg1, arg2, def1 = 1, def2 = None):
     bfunc = arg1
     local = v3.a
     z = func2(arg1)
+    func2(arg2)
 #1==1
 #func1(a)
 a1 = func1(2, 1, def2 = 'stringy')
