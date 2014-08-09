@@ -170,6 +170,7 @@ class ProgramVisitor(ast.NodeVisitor):
         :param node: Current if node.
         """
         if len(node.orelse) == 0:
+            # TODO should do lub before and after
             assess_list(node.body, self.abstract_state)
         else:
             orelse_state = self.abstract_state.clone()
