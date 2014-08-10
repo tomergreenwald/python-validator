@@ -81,7 +81,10 @@ class AbstractState(object):
         var_ind = self.var_to_vertex.pop(var)
         self.graph.remove_vertex(var_ind)
         """
-        pass
+        if var not in self.vars_set:
+            return
+        var_ind = self.var_to_vertex(var)
+        self.graph.unlink_vertex(var_ind)
         
     def _check_attr(self, vertex, attr):
         """

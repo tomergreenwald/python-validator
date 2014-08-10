@@ -155,7 +155,7 @@ class Graph(object):
     
     def unlink_vertex(self, vertex_ind):
         """
-        remove a vertex from the graph.
+        unlink a vertex from all its sons, making it free
         make all its sons parent to be -1
         we don't remove sons from graph, because maybe someone points to them
         need to implement some kind of garbage collector to remove sons too
@@ -186,6 +186,18 @@ class Graph(object):
         # by this point, parent of all sons is -1, and every son is TOP or
         # has a non negative constant index
         self.vertices[vertex_ind].sons.clear()
+    
+    def remove_vertex(self, vertex_ind):
+        """
+        remove a vertex from the graph. first by unlinking it from its sons, 
+        then from its parent (if any)
+        """
+        self.unlink_vertex(vertex_ind)
+        
+        par = self.vertices[vertex_ind].parent
+        if par >= 0:
+            self.vertices[par].sons.pop(self.vertices[vertex_ind].label)
+        self.vertices.pop(vertex_ind)
     
     def __repr__(self):
         res = ''
