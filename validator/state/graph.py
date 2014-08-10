@@ -1,5 +1,6 @@
-from collections import deque
+import logging
 from lattice import LatticeElement as LE
+logging.basicConfig(level = logging.DEBUG)
 
 class GraphVertex(object):
     def __init__(self, ind, label):
@@ -37,6 +38,10 @@ class Graph(object):
         self.all_cons = dict()
     
     def set_vertex_to_const(self, vertex_ind, const):
+        """
+        set a vertex to be a constant
+        add the constant to the constants pull if necessary (a constant of a new type)
+        """
         t = type(const)
         cons_ind = self.types_dict.get(t, -1)
         if cons_ind < 0:
@@ -50,6 +55,7 @@ class Graph(object):
     def create_new_vertex(self, label = ''):
         """
         add new vertex to the graph, returns the new vertex index
+        initialize the vertex with a label. no father, no constant, not TOP
         """
         v_ind = self.next_ind
         self.next_ind += 1
@@ -60,6 +66,7 @@ class Graph(object):
     def make_parent(self, son, par):
         """
         connect son and parent by an edge (directed from the son to the parent)
+        disconnect son from parent if needed (TODO think if we are doing it right or if it is necessary at all)
         """
         if not self.vertices.has_key(son) or not self.vertices.has_key(par):
             raise KeyError()
@@ -71,23 +78,11 @@ class Graph(object):
         self.vertices[son].parent = par
         self.vertices[par].sons[self.vertices[son].edge_label] = son
     
-    def set_constant(self, son, cons):
-        """
-        set constant index for vertex
-        """
-        self.vertices[son].constant = cons
-    
     def get_parent(self, v):
         """
         get parent index for vertex
         """
         return self.vertices[v].parent
-    
-    def get_constant(self, v):
-        """
-        get constant index for vertex
-        """
-        return self.vertices[v].constant
     
     def is_top(self, v):
         """
@@ -101,58 +96,82 @@ class Graph(object):
         """
         self.vertices[v].knowledge.val = LE.L_TOP
     
-    
-    def remove_vertex(self, vertex_ind):
+    def get_knowledge(self, v):
         """
-        remove a vertex from the graph.
-        make all its sons parent to be -1
-        we dont remove sons from graph, because maybe someone points to them
-        need to implement some kind of garbage collector
+        returns the LUB of all the knowledges on the path from v to its higher parent
+        TODO reconsider the correctness of this logic...
         """
-        cur_v = vertex_ind
         vertex_knowledge = LE(LE.L_BOTOM)
+        while v != -1:
+            vertex_knowledge.inplace_lub(self.vertices[v].knowledge)
+            v = self.vertices[v].parent
+        
+        return vertex_knowledge
+    
+    def get_rooted_const(self, vertex_ind):
+        """
+        received a vertex index
+        return the constant which this vertex correspond to, or None if there
+        is no such constant
+        """
         const_ind = -1
+        cur_v = vertex_ind
         path_to_const = []
 
         while cur_v != -1:
             if const_ind < 0 and self.vertices[cur_v].constant >= 0:
                 const_ind = self.vertices[cur_v].constant
-            vertex_knowledge.inplace_lub(self.vertices[cur_v].knowledge)
-            if const_ind < 0:
-                path_to_const.append(self.vertices[cur_v].edge_label)
+                break
+            path_to_const.append(self.vertices[cur_v].edge_label)
             cur_v = self.vertices[cur_v].parent
         
-        if const_ind >= 0:
-            removed_const = self.all_cons[const_ind]
-            for att in path_to_const[::-1]:
-                try:
-                    removed_const = removed_const.__getattribute__(att)
-                except:
-                    logging.debug('[remove_vertex] failed to get attribute %s \
-                                   from type %s' %(att, type(removed_const)))
-                    const_ind = -1
-                    break
+        if const_ind < 0:
+            return None
         
-        if const_ind >= 0:
-            # by this point, removed_const should refer to the type of the removed node
-            for (lbl, v) in self.vertices[vertex_ind].sons.items():
-                self.vertices[v].parent = -1
-                self.vertices[v].knowledge.inplace_lub(vertex_knowledge)
-                if self.vertices[v].constant < 0:
-                    if const_ind >= 0:
-                        try:
-                            new_const = removed_const.__getattribute__(lbl)
-                            self.set_vertex_to_const(v, new_const)
-                            continue
-                        except:
-                            logging.debug('[remove_vertex] failed to get \
-                                           attribute %s from type %s' \
-                                           %(lbl, type(removed_const)))
-                            
-                    # we set to top in any case we were not able
-                    # to determine the constant for this vertex
-                    self.set_top(v)
-                    
+        root_const = self.all_cons[const_ind]
+        for att in path_to_const[::-1]:
+            try:
+                root_const = root_const.__getattribute__(att)
+            except:
+                logging.debug('[get_rooted_const] failed to get attribute %s \
+                                   from type %s' %(att, type(root_const)))
+                return None
+        
+        return root_const
+    
+    def unlink_vertex(self, vertex_ind):
+        """
+        remove a vertex from the graph.
+        make all its sons parent to be -1
+        we don't remove sons from graph, because maybe someone points to them
+        need to implement some kind of garbage collector to remove sons too
+        this suppose to happen when this vertex is overwritten
+        """
+        vertex_const = self.get_rooted_const(vertex_ind)
+        
+        for (lbl, v) in self.vertices[vertex_ind].sons.items():
+            self.vertices[v].parent = -1
+            
+            if self.vertices[v].constant < 0:
+                if vertex_const is not None:
+                    try:
+                        new_const = vertex_const.__getattribute__(lbl)
+                        self.set_vertex_to_const(v, new_const)
+                        continue
+                    except:
+                        logging.debug('[remove_vertex] failed to get \
+                                       attribute %s from type %s' \
+                                       %(lbl, type(new_const)))
+                        
+                # we set to top in any case we were not able
+                # to determine the constant for this vertex
+                # this is because we can know nothing about the sons of this
+                # vertex, except if they are already exists
+                self.set_top(v)
+        
+        # by this point, parent of all sons is -1, and every son is TOP or
+        # has a non negative constant index
+        self.vertices[vertex_ind].sons.clear()
     
     def __repr__(self):
         res = ''
