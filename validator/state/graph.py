@@ -95,18 +95,13 @@ class Graph(object):
         set a var to be TOP
         """
         self.vertices[v].knowledge.val = LE.L_TOP
+        # TODO do we want to set constant to -1 and move its value to sons?
     
     def get_knowledge(self, v):
         """
-        returns the LUB of all the knowledges on the path from v to its higher parent
-        TODO reconsider the correctness of this logic...
+        returns knowledge of vertex
         """
-        vertex_knowledge = LE(LE.L_BOTOM)
-        while v != -1:
-            vertex_knowledge.inplace_lub(self.vertices[v].knowledge)
-            v = self.vertices[v].parent
-        
-        return vertex_knowledge
+        return self.vertices[v].knowledge
     
     def get_rooted_const(self, vertex_ind):
         """
@@ -138,6 +133,25 @@ class Graph(object):
                 return None
         
         return root_const
+    
+    def can_have_son(self, vertex_ind, son_label):
+        """
+        returns True if the son can be legally added to a vertex
+        """
+        if self.is_top(vertex_ind):
+            return True
+            
+        vertex_const = self.get_rooted_const(vertex_ind)
+        if vertex_const is None
+            return False
+        
+        try:
+            son_const = vertex_const.__getattribute__(son_label)
+            return True
+        except:
+            logging.debug('[can_have_son] failed to get attribute %s \
+                                   from type %s' %(son_label, type(vertex_const)))
+            return False
     
     def unlink_vertex(self, vertex_ind):
         """
