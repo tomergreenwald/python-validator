@@ -92,7 +92,7 @@ class AbstractState(object):
         checks if this attribute belongs to the vertex
         """
     
-    def expression_to_vertex_index(self, var):
+    def _expression_to_vertex_index(self, var):
         """
         receive an expression like f!g!x.a.b.c.a.b.c.a.b.c
         returns the index of the vertex corresponding to it
@@ -104,7 +104,7 @@ class AbstractState(object):
             if the father exists (recursively) and is TOP, create new vertex for son
             if the father exists and is not TOP, add the vertex (it must be constant-legal)
         """
-        logging.debug('[expression_to_vertex_index] var %s' %var)
+        logging.debug('[_expression_to_vertex_index] var %s' %var)
         if var in self.vars_set:
             return self.var_to_vertex[var]
             
@@ -118,7 +118,7 @@ class AbstractState(object):
             # there is a father
             # we want to make sure that a vertex for the father exists (and 
             # create one if necessary)
-            father_ind = self.expression_to_vertex_index(father)
+            father_ind = self._expression_to_vertex_index(father)
             print 'created father %s with index %d' %(father, father_ind)
             if father_ind >= 0:
                 if self.graph.can_have_son(father_ind, basename):
@@ -144,7 +144,7 @@ class AbstractState(object):
         returns vertex index if we can
         may raise an exception
         """
-        var_ind = self.expression_to_vertex_index(var_name)
+        var_ind = self._expression_to_vertex_index(var_name)
         if var_ind < 0:
             raise VerifierError("variable %s not in state" %var_name)
         
@@ -161,7 +161,7 @@ class AbstractState(object):
         and that doesn't have any sons. may raise an exception
         this creates a new vertex with L_MUST_HAVE knowledge (if needed)
         """
-        var_ind = self.expression_to_vertex_index(var_name)
+        var_ind = self._expression_to_vertex_index(var_name)
         if var_ind >= 0:
             # var has a representation in the graph
             # unlink it from its sons, because it may be changed very soon
@@ -207,7 +207,7 @@ class AbstractState(object):
         var1_ind = self._get_var_index(var1)
         
         """
-        var0_ind = self.expression_to_vertex_index(var0)
+        var0_ind = self._expression_to_vertex_index(var0)
         if var0_ind >= 0:
             # var has a representation in the graph
             # unlink it from its sons, because it may be changed very soon
