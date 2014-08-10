@@ -142,7 +142,7 @@ class Graph(object):
             return True
             
         vertex_const = self.get_rooted_const(vertex_ind)
-        if vertex_const is None
+        if vertex_const is None:
             return False
         
         try:
