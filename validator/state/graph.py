@@ -6,13 +6,15 @@ class GraphVertex(object):
     def __init__(self, ind, label):
         self.edge_label = label
         self.ind = ind
-        self.parent = -1
+        self.bio_parent = -1
+        self.step_parents = dict()
         self.constant = -1
         self.sons = dict()
         self.knowledge = LE(LE.L_MUST_HAVE)
     
     def __repr__(self):
-        return 'parent\t%d\tlabel\t%s\tconst\t%d\nknowledge\t%s\nsons\t%s' %(self.parent, self.edge_label, self.constant, self.knowledge.get_element_name(), self.sons.items())
+        return 'bparent\t%d\tlabel\t%s\tconst\t%d\nknowledge\t%s\nsons\t%s\nsparents\t%s' \
+               %(self.bio_parent, self.edge_label, self.constant, self.knowledge.get_element_name(), self.sons.items(), self.step_parents.items())
 
 class Graph(object):
     """
@@ -71,18 +73,18 @@ class Graph(object):
         if not self.vertices.has_key(son) or not self.vertices.has_key(par):
             raise KeyError()
             
-        old_parent = self.vertices[son].parent
+        old_parent = self.vertices[son].bio_parent
         if old_parent >= 0:
             self.vertices[old_parent].sons.pop(self.vertices[son].edge_label)
         
-        self.vertices[son].parent = par
+        self.vertices[son].bio_parent = par
         self.vertices[par].sons[self.vertices[son].edge_label] = son
     
     def get_parent(self, v):
         """
-        get parent index for vertex
+        get biological parent index for vertex
         """
-        return self.vertices[v].parent
+        return self.vertices[v].bio_parent
     
     def is_top(self, v):
         """
@@ -118,7 +120,7 @@ class Graph(object):
                 const_ind = self.vertices[cur_v].constant
                 break
             path_to_const.append(self.vertices[cur_v].edge_label)
-            cur_v = self.vertices[cur_v].parent
+            cur_v = self.vertices[cur_v].bio_parent
         
         if const_ind < 0:
             return None
@@ -156,7 +158,7 @@ class Graph(object):
     def unlink_vertex(self, vertex_ind):
         """
         unlink a vertex from all its sons, making it free
-        make all its sons parent to be -1
+        make all its sons biological parent to be -1
         we don't remove sons from graph, because maybe someone points to them
         need to implement some kind of garbage collector to remove sons too
         this suppose to happen when this vertex is overwritten
@@ -164,6 +166,10 @@ class Graph(object):
         vertex_const = self.get_rooted_const(vertex_ind)
         
         for (lbl, v) in self.vertices[vertex_ind].sons.items():
+            if self.vertices[v].bio_parent != vertex_ind:
+                # vertex belongs to another parent
+                # TODO remove from step_fathers
+                continue
             self.vertices[v].parent = -1
             
             if self.vertices[v].constant < 0:
@@ -194,7 +200,8 @@ class Graph(object):
         """
         self.unlink_vertex(vertex_ind)
         
-        par = self.vertices[vertex_ind].parent
+        par = self.vertices[vertex_ind].bio_parent
+        # TODO remove from step_parents also
         if par >= 0:
             self.vertices[par].sons.pop(self.vertices[vertex_ind].label)
         self.vertices.pop(vertex_ind)
