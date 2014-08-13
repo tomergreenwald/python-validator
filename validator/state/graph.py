@@ -10,7 +10,7 @@ class GraphEdge(object):
         self.knowledge = know if know is not None else LE(LE.L_MUST_HAVE)
     
     def __repr__(self):
-        return '%03d - > %03d\tlabel\t%s\tknowledge\t%s' \
+        return '(%d)->(%d)\tlabel\t%s\tknowledge\t%s' \
                %(self.son, self.parent, self.label, self.knowledge)
 
 class GraphVertex(object):
@@ -23,9 +23,9 @@ class GraphVertex(object):
         self.knowledge = LE(LE.L_MUST_HAVE)
     
     def __repr__(self):
-        return 'const\t%d\tbio edge\t%s\tknowledge\t%s\n' %(self.constant, self.bio_edge, self.knowledge) + \
+        return 'const\t%d\tknowledge\t%s\nbedge\t%s\n' %(self.constant, self.knowledge, self.bio_edge) + \
                'sons:\n%s\n' %('\n'.join(['\t%s' %x for x in self.sons.values()])) + \
-               'parents:\n%s' %('\n'.join(['\t%s' %x for x in self.all_parents.values()])) + \
+               'parents:\n%s' %('\n'.join(['\t%s' %x for x in self.all_parents.values()]))
 
 class Graph(object):
     """
@@ -87,7 +87,7 @@ class Graph(object):
         if not self.vertices.has_key(son) or not self.vertices.has_key(par):
             raise KeyError()
             
-        if self.vertices.all_parents:
+        if self.vertices[son].all_parents:
             raise Exception("[make_parent] making parent of son who already has parents...")
         """
         old_parent = self.vertices[son].bio_parent
@@ -109,14 +109,12 @@ class Graph(object):
     
     def is_top(self, v):
         """
-        TODO rewrite this function
         returns true if a var is TOP
         """
         return self.vertices[v].knowledge.val == LE.L_TOP
     
     def set_top(self, v):
         """
-        TODO rewrite this function
         set a var to be TOP
         """
         self.vertices[v].knowledge.val = LE.L_TOP
@@ -189,7 +187,8 @@ class Graph(object):
         """
         vertex_const = self.get_rooted_const(vertex_ind)
         
-        for (lbl, v) in self.vertices[vertex_ind].sons.items():
+        for (lbl, e) in self.vertices[vertex_ind].sons.items():
+            v = e.son
             # remove from all_parents
             self.vertices[v].all_parents.pop(lbl)
             
@@ -242,3 +241,18 @@ class Graph(object):
             res += '%s\n%s\n' %(title, ver)
         
         return res[:-1]
+
+        
+        
+"""
+import sys
+sys.path.append(r'D:\school\verify\project2\python-validator\validator\state')
+execfile(r'D:\school\verify\project2\python-validator\validator\state\graph.py')
+
+class T(object):
+    def __init__(self):
+        self.b = 5
+        self.a = self
+
+g = Graph(); g.create_new_vertex(); g.create_new_vertex('a'); g.make_parent(1, 0); g.create_new_vertex('a'); g.make_parent(2, 1); g.create_new_vertex('b'); g.make_parent(3, 0); g.create_new_vertex('');  g.create_new_vertex('b'); g.make_parent(5, 4); g.set_vertex_to_const(0, T())
+"""
