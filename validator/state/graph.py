@@ -4,31 +4,35 @@ logging.basicConfig(level = logging.DEBUG)
 
 class GraphVertex(object):
     def __init__(self, ind, label):
-        self.edge_label = label
+        self.bio_label = label
         self.ind = ind
         self.bio_parent = -1
-        self.step_parents = dict()
+        self.step_parents = set()
         self.constant = -1
         self.sons = dict()
         self.knowledge = LE(LE.L_MUST_HAVE)
     
     def __repr__(self):
-        return 'bparent\t%d\tlabel\t%s\tconst\t%d\nknowledge\t%s\nsons\t%s\nsparents\t%s' \
-               %(self.bio_parent, self.edge_label, self.constant, self.knowledge.get_element_name(), self.sons.items(), self.step_parents.items())
+        return 'bparent\t%d\tlabel\t%s\tconst\t%d\n' %(self.bio_parent, self.bio_label, self.constant) + \
+               'knowledge\t%s\n' %(self.knowledge.get_element_name()) + \
+               'sons\t%s\n' %(self.sons.items()) + \
+               'sparents\t%s' %(self.step_parents.items())
 
 class Graph(object):
     """
-    Graph class. each vertex is labled by a non negative integer, and has:
-        * single parent
-        * sons
+    Graph class. each vertex is labelled by a non negative integer, and has:
+        * single biological parent
+        * possibly many step fathers
+        * sons (inverse of step_parents)
         * index of a constant it equals to
         * the label of the edge connecting it to its father
         * each vertex has an element from the lattice
     There are constants, but we save only one instance for each type
     
     the following invariants must always hold:
-        par = self.vertices[son].parent => self.vertices[par].sons[self.vertices[son].edge_label] = son
-        v in self.vertices.values() => v.parent >= 0 | v.constant >= 0 | v.is_top (this should be maintained by caller)
+        par = self.vertices[son].bio_parent => par in self.vertices[son].step_parents
+        par in self.vertices[son].step_parents => self.vertices[par].sons[self.vertices[son].bio_label] = son
+        v in self.vertices.values() => v.bio_parent >= 0 | v.constant >= 0 | v.is_top (this should be maintained by caller)
         the graph is a DAG
     """
     def __init__(self):
@@ -67,18 +71,24 @@ class Graph(object):
     
     def make_parent(self, son, par):
         """
+        this function refers to biological parent
         connect son and parent by an edge (directed from the son to the parent)
         disconnect son from parent if needed (TODO think if we are doing it right or if it is necessary at all)
         """
         if not self.vertices.has_key(son) or not self.vertices.has_key(par):
             raise KeyError()
             
+        if self.vertices.step_parents:
+            raise Exception("[make_parent] making parent of son who already has parents...")
+        """
         old_parent = self.vertices[son].bio_parent
         if old_parent >= 0:
-            self.vertices[old_parent].sons.pop(self.vertices[son].edge_label)
+            self.vertices[old_parent].sons.pop(self.vertices[son].bio_label)
+        """
         
         self.vertices[son].bio_parent = par
-        self.vertices[par].sons[self.vertices[son].edge_label] = son
+        self.vertices[son].step_parents.add(par)
+        self.vertices[par].sons[self.vertices[son].bio_label] = son
     
     def get_parent(self, v):
         """
@@ -119,7 +129,7 @@ class Graph(object):
             if const_ind < 0 and self.vertices[cur_v].constant >= 0:
                 const_ind = self.vertices[cur_v].constant
                 break
-            path_to_const.append(self.vertices[cur_v].edge_label)
+            path_to_const.append(self.vertices[cur_v].bio_label)
             cur_v = self.vertices[cur_v].bio_parent
         
         if const_ind < 0:
@@ -168,7 +178,7 @@ class Graph(object):
         for (lbl, v) in self.vertices[vertex_ind].sons.items():
             if self.vertices[v].bio_parent != vertex_ind:
                 # vertex belongs to another parent
-                # TODO remove from step_fathers
+                # TODO remove from step_parents
                 continue
             self.vertices[v].parent = -1
             
