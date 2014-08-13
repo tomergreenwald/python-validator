@@ -127,7 +127,7 @@ class Graph(object):
         """
         return self.vertices[v].knowledge
     
-    def get_rooted_const(self, vertex_ind):
+    def _get_rooted_const(self, vertex_ind):
         """
         received a vertex index
         return the constant which this vertex correspond to, or None if there
@@ -152,7 +152,7 @@ class Graph(object):
             try:
                 root_const = root_const.__getattribute__(att)
             except:
-                logging.debug('[get_rooted_const] failed to get attribute %s \
+                logging.debug('[_get_rooted_const] failed to get attribute %s \
                                    from type %s' %(att, type(root_const)))
                 return None
         
@@ -165,7 +165,7 @@ class Graph(object):
         if self.is_top(vertex_ind):
             return True
             
-        vertex_const = self.get_rooted_const(vertex_ind)
+        vertex_const = self._get_rooted_const(vertex_ind)
         if vertex_const is None:
             return False
         
@@ -185,7 +185,7 @@ class Graph(object):
         need to implement some kind of garbage collector to remove sons too
         this suppose to happen when this vertex is overwritten
         """
-        vertex_const = self.get_rooted_const(vertex_ind)
+        vertex_const = self._get_rooted_const(vertex_ind)
         
         for (lbl, e) in self.vertices[vertex_ind].sons.items():
             v = e.son
