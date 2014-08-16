@@ -35,13 +35,13 @@ class GraphVertex(object):
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
     
-    def remove_parent(self, lbl, par):
-        self.all_parents[lbl].remove(par)
+    def remove_parent(self, lbl, edge):
+        self.all_parents[lbl].remove(edge)
         if not self.all_parents[lbl]:
             self.all_parents.pop(lbl)
     
-    def remove_son(self, lbl, son):
-        self.sons[lbl].remove(son)
+    def remove_son(self, lbl, edge):
+        self.sons[lbl].remove(edge)
         if not self.sons[lbl]:
             self.sons.pop(lbl)
     
@@ -227,7 +227,7 @@ class Graph(object):
             for e in ee:
                 v = e.son
                 # remove from all_parents
-                self.vertices[v].remove_parent(lbl, vertex_ind)
+                self.vertices[v].remove_parent(lbl, e)
                 
                 if self.vertices[v].bio_edge.parent != vertex_ind:
                     # vertex belongs to another parent
@@ -266,7 +266,7 @@ class Graph(object):
         
         for (lbl, ee) in self.vertices[vertex_ind].all_parents.items():
             for e in ee:
-                self.vertices[e.parent].remove_son(lbl, vertex_ind)
+                self.vertices[e.parent].remove_son(lbl, e)
         
         self.vertices.pop(vertex_ind)
     
