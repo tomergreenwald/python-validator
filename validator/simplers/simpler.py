@@ -112,7 +112,7 @@ def arth_simpler(node):
             value=node.value.left
         )
         node.value.left = ast.Name(id=tmp_var_name, ctx=Load())
-    elif not isinstance(node.value.right, type(ast.Name())):
+    if not isinstance(node.value.right, type(ast.Name())):
         tmp_var_name = random_tmp_var()
         new_node_right = ast.Assign(
             targets=[ast.Name(id=tmp_var_name, ctx=Store())],
@@ -181,6 +181,7 @@ class BinOpHelper(ast.NodeVisitor):
 
     def visit_Div(self, node):
         return '__div__'
+
 
 class BinOpTransformer(ast.NodeTransformer):
     def visit_BinOp(self, node):
