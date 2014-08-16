@@ -55,7 +55,7 @@ def actual_var_name(stack, abstract_state, var):
     for name in names:
         if abstract_state.has_var(name):
             return name
-    raise Exception("Refereneced variable was not assigned previuosly - [%s] - %s" %(str(stack), var))
+    raise Exception("Refereneced variable was not assigned previuosly - [%s] - %s" % (str(stack), var))
 
 
 def stack_var_name(stack, var):
@@ -110,7 +110,6 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
 
 
 class CallVisitor(ast.NodeVisitor):
-
     def __init__(self, stack, abstract_state, functions):
         super(CallVisitor, self).__init__()
         self.abstract_state = abstract_state
@@ -120,11 +119,11 @@ class CallVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         if node.func.id not in self.functions:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state, self.functions)
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
+                          self.functions)
 
 
 class AssignVisitor(CallVisitor):
-
     def __init__(self, name, stack, abstract_state, functions):
         """
         Handle assign calls. Adds to the object the relavent methods and attributes
@@ -169,10 +168,21 @@ class AssignVisitor(CallVisitor):
         Handles list node.
         :param node: List Node.
         """
-        # TODO create var represents list functions and the lub of the items
-        # TODO handle + and append should change the lub
-        # TODO handle Subscript (actually - ignore it and make the operations on the LUB object) it should be in visit_Target or something like that
+        # TODO handle + and 'append' - should change the lub
+        # TODO handle Subscript should do the logic on 'var_that_represents_the_list_items'
         register_assignment(self.stack, self.abstract_state, node, self.name)   # Register the name as list
+
+        var_name_that_represents_the_list_items = self.name + '_vars_lub'
+        if node.elts:
+            register_assignment(self.stack, self.abstract_state, ast.Assign(
+                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=Store())],
+                value=node.elts[0]), var_name_that_represents_the_list_items)
+        for item in node.elts[1:]:
+            clone = self.abstract_state.clone()
+            register_assignment(self.stack, clone, ast.Assign(
+                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=Store())],
+                value=item), var_name_that_represents_the_list_items)
+            self.abstract_state.lub(clone)
 
     def visit_Tuple(self, node):
         """
