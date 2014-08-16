@@ -1,4 +1,5 @@
 from copy import deepcopy
+import logging
 from graph import Graph
 from utils import *
 from state_exceptions import *
@@ -111,18 +112,24 @@ class AbstractState(object):
             # we want to make sure that a vertex for the father exists (and 
             # create one if necessary)
             father_ind = self._expression_to_vertex_index(father)
-            print 'created father %s with index %d' %(father, father_ind)
             if father_ind >= 0:
-                if self.graph.can_have_son(father_ind, basename):
-                    if self.graph.is_top(father_ind):
+                have_son = self.graph.can_have_son(father_ind, basename)
+                if have_son:
+                    if have_son == 'top':
                         # father is TOP, so will be its son
                         return self.add_var_and_set_to_top(var) 
-                    else:
+                    elif have_son == 'const':
                         # this must be the case that the son is legal due to constant
                         son_ind = self.graph.create_new_vertex(basename)
                         self.vars_set.add(var)
                         self.var_to_vertex[var] = son_ind
                         self.graph.make_parent(son_ind, father_ind)
+                        return son_ind
+                    elif have_son == 'edge':
+                        # this must be the case that the son already exists in the graph
+                        son_ind = self.graph.get_son_index(father_ind, basename)
+                        self.vars_set.add(var)
+                        self.var_to_vertex[var] = son_ind
                         return son_ind
                 else:
                     # var cannot be son of its father
@@ -217,18 +224,18 @@ class AbstractState(object):
         if var0_ind < 0:
             # set var0 to point to var1 vertex
             # create new step father if needed
-            basename = var_to_basename(var)
+            basename = var_to_basename(var0)
             self.vars_set.add(var0)
             self.var_to_vertex[var0] = var1_ind
             if father0_ind >= 0:
                 self.graph.make_step_parent(var1_ind, father0_ind, basename)
         else:
-            old_vertex = self.var_to_vertex[var]
+            old_vertex = self.var_to_vertex[var0]
             # make the children of the vertex independent of him
             self.graph.unlink_vertex(old_vertex)
             
             if father0_ind >= 0:
-                basename = var_to_basename(var)
+                basename = var_to_basename(var0)
                 self.var_to_vertex[var0] = var1_ind
                 if father0_ind >= 0:
                     self.graph.make_step_parent(var1_ind, father0_ind, basename)
@@ -238,82 +245,18 @@ class AbstractState(object):
             
         
         
-        if father_var0 is None:
-            # TODO ***** HERE *****
-            self.vars_set.add
-                
-            basename = var_to_basename(var)
-            var_ind = self.graph.create_new_vertex(basename)
-            self.vars_set.add(var)
-            self.var_to_vertex[var] = var_ind
-            
-            father = var_to_father(var)
-            if father is not None:
-                if father not in self.vars_set:
-                    father_ind = self.add_var_and_set_to_top(father)
-                else:
-                    father_ind = self.var_to_vertex[father]
-                    
-                self.graph.make_parent(var_ind, father_ind)
         
-            return var_ind
-        
-        # following line may create new vertex
-        var0_ind = self._cleanup_var_vertex(var0)
-        
-        self.graph.make_step_parent(
-        
-        """
-        var0_ind = self._expression_to_vertex_index(var0)
-        if var0_ind >= 0:
-            # var has a representation in the graph
-            # unlink it from its sons, because it may be changed very soon
-            self.graph.unlink_vertex(var0_ind)
-        
-        father0 = var_to_father(var0)
-        if father0 is None:
-            # there is no father. var is without attributes
-            pass
-        else:
-            father0_ind = self._get_var_index(father0)
-            if var0_ind < 0:
-                var0_ind = this.graph.create_new_vertex(basename)
-            self.make_parent(
-        
-        
-        
-        
-        if var0 not in self.vars_set:
-            # new variable will be created
-            
-            father0 = var_to_father(var0)
-            if father0 is not None:
-                if father0 in self.vars_set:
-                    father0_ind = self.var_to_vertex[father0]
-                else:
-                    # TODO think what we need to do here: create new father or
-                    # report an alert? in the first case, we may use add_var instead
-                    father0_ind = self.add_var_and_set_to_top(father0)
-                    
-                self.graph.make_parent(var0_ind, father0_ind)
-            else:        
-                var0_ind = self.add_var(var0)
-        else:
-            
-            
-            self.vars_set.add(var0)
-            self.seeds[var0] = set()
-            self.seeded_by[var0] = set()
-        
-            
-        self._clear_seeds(var0) # this also calls _flush_all_seeds
-        
-        self._add_dependency(var0, var1)
-        self._add_dependency(var1, var0)
-        
-        self.need_to_update.add(var1)
-        self.need_to_update.add(var0)
-        
-        self.vars_info[var0] = VariableInfo()
-    """
     
+"""
+import sys; sys.path.append(r'D:\school\verify\project2\python-validator\validator\state'); execfile(r'D:\school\verify\project2\python-validator\validator\state\abstract.py')
+
+class T(object):
+    def __init__(self):
+        self.b = 5
+        self.a = self
+
+a = AbstractState(); a.set_var_to_const('x', T()); a.set_var_to_var('z', 'x.a.a.a.b.real.real'); a.set_var_to_const('y', Exception()); a.set_var_to_var('x.a.a.a.b', 'y.message'); 
+
+a._get_var_index('x.a.a.a.b.real')
+
+"""
