@@ -175,12 +175,12 @@ class AssignVisitor(CallVisitor):
         var_name_that_represents_the_list_items = self.name + '_vars_lub'
         if node.elts:
             register_assignment(self.stack, self.abstract_state, ast.Assign(
-                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=Store())],
+                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=ast.Store())],
                 value=node.elts[0]), var_name_that_represents_the_list_items)
         for item in node.elts[1:]:
             clone = self.abstract_state.clone()
             register_assignment(self.stack, clone, ast.Assign(
-                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=Store())],
+                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=ast.Store())],
                 value=item), var_name_that_represents_the_list_items)
             self.abstract_state.lub(clone)
 
