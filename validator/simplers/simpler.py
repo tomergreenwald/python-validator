@@ -148,6 +148,18 @@ def simple(node):
     if should_call_args_simpler(node):
         should_simple_again = True
         return call_args_simpler(node)
+    
+    if isinstance(node.value, ast.List):
+        list_extractor = []
+        should_return=False
+        for v in node.value.elts:
+            if not isinstance(v, ast.Name):
+                should_return = True
+                tmp_var_name = random_tmp_var()
+                list_extractor.append(ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=v))
+                node.value.elts[node.value.elts.index(v)] = ast.Name(id=tmp_var_name, ctx=Load())
+        if should_return:
+            return list_extractor + [node]
 
     return node
 
@@ -196,6 +208,7 @@ class BinOpHelper(ast.NodeVisitor):
     def visit_Div(self, node):
         return '__div__'
 
+
 class BinOpTransformer(ast.NodeTransformer):
     def visit_BinOp(self, node):
         global should_simple_again
@@ -223,4 +236,5 @@ def make_simple(code):
         should_simple_again = False
         visitor = BinOpTransformer()
         visitor.visit(ast_tree)
+    
     return astor.codegen.to_source(ast_tree)
