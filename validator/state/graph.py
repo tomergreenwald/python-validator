@@ -2,6 +2,15 @@ import logging
 from lattice import LatticeElement as LE
 logging.basicConfig(level = logging.DEBUG)
 
+class SetDict(dict):
+    def __init__(self):
+        print '5'
+    def add_element(self, k, v):
+        if self.has_key[k]:
+            self[k].add(v)
+        else:
+            self[k] = set([v])
+
 class GraphEdge(object):
     def __init__(self, label = None, son = None, par = -1, know = None):
         self.label = label
@@ -18,9 +27,19 @@ class GraphVertex(object):
         self.ind = ind
         self.constant = -1
         self.bio_edge = GraphEdge(label, son = ind, par = -1)
-        self.sons = dict()
-        self.all_parents = dict()
+        self.sons = SetDict()
+        self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
+    
+    def remove_parent(self, lbl, par):
+        self.all_parents[lbl].remove(par)
+        if not self.all_parents[lbl]:
+            self.all_parents.pop(lbl)
+    
+    def remove_son(self, lbl, son):
+        self.sons[lbl].remove(son)
+        if not self.sons[lbl]:
+            self.sons.pop(lbl)
     
     def __repr__(self):
         return 'const\t%d\tknowledge\t%s\nbedge\t%s\n' %(self.constant, self.knowledge, self.bio_edge) + \
@@ -98,8 +117,22 @@ class Graph(object):
         bedge = self.vertices[son].bio_edge
         bedge.parent = par
         # now biological edge contains all the information
-        self.vertices[son].all_parents[bedge.label] = bedge
-        self.vertices[par].sons[bedge.label] = bedge
+        self.vertices[son].all_parents.add_element(bedge.label, bedge)
+        self.vertices[par].sons.add_element(bedge.label, bedge)
+    
+    def make_step_parent(self, son, par, label):
+        """
+        this function refers to step parent (not biological)
+        connect son and parent by an edge (directed from the son to the parent)
+        """
+        if not self.vertices.has_key(son) or not self.vertices.has_key(par):
+            raise KeyError()
+        
+        new_edge = GraphEdge(label, son, par)
+        # TODO what if label already exists
+        self.vertices[son].all_parents.add_element(label, new_edge)
+        self.vertices[par].sons.add_element(label, new_edge)
+        
     
     def get_parent(self, v):
         """
@@ -187,34 +220,35 @@ class Graph(object):
         """
         vertex_const = self._get_rooted_const(vertex_ind)
         
-        for (lbl, e) in self.vertices[vertex_ind].sons.items():
-            v = e.son
-            # remove from all_parents
-            self.vertices[v].all_parents.pop(lbl)
-            
-            if self.vertices[v].bio_edge.parent != vertex_ind:
-                # vertex belongs to another parent
-                continue
+        for (lbl, ee) in self.vertices[vertex_ind].sons.items():
+            for e in ee:
+                v = e.son
+                # remove from all_parents
+                self.vertices[v].remove_parent(lbl, vertex_ind)
                 
-            self.vertices[v].bio_edge.parent = -1
-            self.vertices[v].bio_edge.label = None # just to be sure, doesnt really matter
-            
-            if self.vertices[v].constant < 0:
-                if vertex_const is not None:
-                    try:
-                        new_const = vertex_const.__getattribute__(lbl)
-                        self.set_vertex_to_const(v, new_const)
-                        continue
-                    except:
-                        logging.debug('[remove_vertex] failed to get \
-                                       attribute %s from type %s' \
-                                       %(lbl, type(new_const)))
-                        
-                # we set to top in any case we were not able
-                # to determine the constant for this vertex
-                # this is because we can know nothing about the sons of this
-                # vertex, except if they are already exists
-                self.set_top(v)
+                if self.vertices[v].bio_edge.parent != vertex_ind:
+                    # vertex belongs to another parent
+                    continue
+                    
+                self.vertices[v].bio_edge.parent = -1
+                self.vertices[v].bio_edge.label = None # just to be sure, doesn't really matter
+                
+                if self.vertices[v].constant < 0:
+                    if vertex_const is not None:
+                        try:
+                            new_const = vertex_const.__getattribute__(lbl)
+                            self.set_vertex_to_const(v, new_const)
+                            continue
+                        except:
+                            logging.debug('[remove_vertex] failed to get \
+                                           attribute %s from type %s' \
+                                           %(lbl, type(new_const)))
+                            
+                    # we set to top in any case we were not able
+                    # to determine the constant for this vertex
+                    # this is because we can know nothing about the sons of this
+                    # vertex, except if they are already exists
+                    self.set_top(v)
         
         # by this point, parent of all sons is -1, and every son is TOP or
         # has a non negative constant index
@@ -227,8 +261,9 @@ class Graph(object):
         """
         self.unlink_vertex(vertex_ind)
         
-        for (lbl, e) in self.vertices[vertex_ind].all_parents.items():
-            self.vertices[e.parent].sons.pop(lbl)
+        for (lbl, ee) in self.vertices[vertex_ind].all_parents.items():
+            for e in ee:
+                self.vertices[e.parent].remove_son(lbl, vertex_ind)
         
         self.vertices.pop(vertex_ind)
     
