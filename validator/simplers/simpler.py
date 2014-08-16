@@ -103,8 +103,8 @@ def attr_simpler(node):
 
 
 def arth_simpler(node):
-    new_node_left = node.value.left
-    new_node_right = node.value.right
+    returned_body = []
+
     if not isinstance(node.value.left, type(ast.Name())):
         tmp_var_name = random_tmp_var()
         new_node_left = ast.Assign(
@@ -112,6 +112,7 @@ def arth_simpler(node):
             value=node.value.left
         )
         node.value.left = ast.Name(id=tmp_var_name, ctx=Load())
+        returned_body.append(new_node_left)
     if not isinstance(node.value.right, type(ast.Name())):
         tmp_var_name = random_tmp_var()
         new_node_right = ast.Assign(
@@ -119,7 +120,10 @@ def arth_simpler(node):
             value=node.value.right
         )
         node.value.right = ast.Name(id=tmp_var_name, ctx=Load())
-    return new_node_left, new_node_right, node
+        returned_body.append(new_node_right)
+    returned_body.append(node)
+
+    return returned_body
 
 
 def simple(node):
