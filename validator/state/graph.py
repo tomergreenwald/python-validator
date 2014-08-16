@@ -3,8 +3,12 @@ from lattice import LatticeElement as LE
 logging.basicConfig(level = logging.DEBUG)
 
 class SetDict(dict):
+    """
+    implements a dictionary that maps keys to sets
+    """
     def __init__(self):
-        print '5'
+        pass
+        
     def add_element(self, k, v):
         if self.has_key[k]:
             self[k].add(v)
