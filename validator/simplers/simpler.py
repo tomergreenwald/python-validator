@@ -149,7 +149,7 @@ def simple(node):
         should_simple_again = True
         return call_args_simpler(node)
     
-    if isinstance(node.value, ast.List):
+    if isinstance(node.value, ast.List) or isinstance(node.value, ast.Tuple):
         list_extractor = []
         should_return=False
         for v in node.value.elts:
