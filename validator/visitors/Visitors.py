@@ -141,6 +141,7 @@ class AssignVisitor(CallVisitor):
         :param node: Attribute Node.
         """
         # TODO: it may be set_var_to_const
+        #TODO: Should do something with the stack?
         self.abstract_state.set_var_to_var(self.name, get_node_name(node))
 
     def visit_Str(self, node):
@@ -169,6 +170,7 @@ class AssignVisitor(CallVisitor):
         Handles list node.
         :param node: List Node.
         """
+
         register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_Tuple(self, node):
