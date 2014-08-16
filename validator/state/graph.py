@@ -197,9 +197,14 @@ class Graph(object):
     def can_have_son(self, vertex_ind, son_label):
         """
         returns True if the son can be legally added to a vertex
+        the returned value can be 'edge', 'top' or 'const', depending on
+        the way we know the son can exists
         """
+        if self.vertices[vertex_ind].sons.has_key(son_label):
+            return 'edge')
+        
         if self.is_top(vertex_ind):
-            return True
+            return 'top'
             
         vertex_const = self._get_rooted_const(vertex_ind)
         if vertex_const is None:
@@ -207,7 +212,7 @@ class Graph(object):
         
         try:
             son_const = vertex_const.__getattribute__(son_label)
-            return True
+            return 'const'
         except:
             logging.debug('[can_have_son] failed to get attribute %s \
                                    from type %s' %(son_label, type(vertex_const)))
