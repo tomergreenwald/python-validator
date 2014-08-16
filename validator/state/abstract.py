@@ -9,6 +9,7 @@ class AbstractState(object):
         """
         """
         self.vars_set = set()
+        # TODO think if var_to_vertex should contain only main var names
         self.var_to_vertex = dict()
         self.consts = dict()
         self.graph = Graph()
@@ -29,7 +30,7 @@ class AbstractState(object):
             # think what should we do here... do we want to set the var to top? probably not, but remember it...
             return self.var_to_vertex[var]
         
-        basename = var_to_basename[var]
+        basename = var_to_basename(var)
         var_ind = self.graph.create_new_vertex(basename)
         self.vars_set.add(var)
         self.var_to_vertex[var] = var_ind
@@ -54,7 +55,7 @@ class AbstractState(object):
         if var in vars_set:
             return self.var_to_vertex[var]
             
-        basename = var_to_basename[var]
+        basename = var_to_basename(var)
         var_ind = self.graph.create_new_vertex(basename)
         self.vars_set.add(var)
         self.var_to_vertex[var] = var_ind
@@ -75,16 +76,7 @@ class AbstractState(object):
         call this when a variable is not relevant anymore
         TODO implement some kind of garbage collector to release saved constants
         """
-        """
-        sons = 
-        self.vars_set.remove(var)
-        var_ind = self.var_to_vertex.pop(var)
-        self.graph.remove_vertex(var_ind)
-        """
-        if var not in self.vars_set:
-            return
-        var_ind = self.var_to_vertex(var)
-        self.graph.unlink_vertex(var_ind)
+        pass
         
     def _check_attr(self, vertex, attr):
         """
@@ -204,7 +196,72 @@ class AbstractState(object):
         """
         logging.debug('set var %s to %s' %(var0, var1))
         
+        # following line may raise an exception
         var1_ind = self._get_var_index(var1)
+        
+        father_var0 = var_to_father(var0)
+        
+        try:
+            var0_ind = self._get_var_index(var0)
+        except VerifierError:
+            var0_ind = -1
+        
+        
+        father0_ind = -1
+        if father_var0 is not None:
+            try:
+                father0_ind = self._get_var_index(father_var0)
+            except VerifierError:
+                raise VerifierError("Cannot set var %s because %s doesn't exist" %(var0, father_var0))
+        
+        if var0_ind < 0:
+            # set var0 to point to var1 vertex
+            # create new step father if needed
+            basename = var_to_basename(var)
+            self.vars_set.add(var0)
+            self.var_to_vertex[var0] = var1_ind
+            if father0_ind >= 0:
+                self.graph.make_step_parent(var1_ind, father0_ind, basename)
+        else:
+            old_vertex = self.var_to_vertex[var]
+            # make the children of the vertex independent of him
+            self.graph.unlink_vertex(old_vertex)
+            
+            if father0_ind >= 0:
+                basename = var_to_basename(var)
+                self.var_to_vertex[var0] = var1_ind
+                if father0_ind >= 0:
+                    self.graph.make_step_parent(var1_ind, father0_ind, basename)
+            else:
+                # simply change the vertex for this var
+                self.var_to_vertex[var0] = var1_ind
+            
+        
+        
+        if father_var0 is None:
+            # TODO ***** HERE *****
+            self.vars_set.add
+                
+            basename = var_to_basename(var)
+            var_ind = self.graph.create_new_vertex(basename)
+            self.vars_set.add(var)
+            self.var_to_vertex[var] = var_ind
+            
+            father = var_to_father(var)
+            if father is not None:
+                if father not in self.vars_set:
+                    father_ind = self.add_var_and_set_to_top(father)
+                else:
+                    father_ind = self.var_to_vertex[father]
+                    
+                self.graph.make_parent(var_ind, father_ind)
+        
+            return var_ind
+        
+        # following line may create new vertex
+        var0_ind = self._cleanup_var_vertex(var0)
+        
+        self.graph.make_step_parent(
         
         """
         var0_ind = self._expression_to_vertex_index(var0)
