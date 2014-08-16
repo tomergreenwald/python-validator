@@ -169,6 +169,10 @@ class AssignVisitor(CallVisitor):
         Handles list node.
         :param node: List Node.
         """
+        # TODO create var represents list functions and the lub of the items
+        # TODO + should change the lub
+        # TODO append should change the lub
+        # TODO handle Subscript (actually - ignore it and make the operations on the LUB object) it should be in visit_Target or something like that
         register_assignment(self.stack, self.abstract_state, node, self.name)
 
     def visit_Tuple(self, node):
