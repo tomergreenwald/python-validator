@@ -246,6 +246,13 @@ class ProgramVisitor(ast.NodeVisitor):
         """
         handle_assign(node, self.stack, self.abstract_state, self.functions)
 
+    def visit_For(self, node):
+        """
+        Handles for loop.
+        The iterate var is already should be in LUB form. We just need to assess the body of the loop.
+        """
+        assess_list(node.body, self.stack, self.abstract_state, self.functions)
+
     def visit_If(self, node):
         """
         Handles if/elif/else cases by assessing every option and than calculating the Least Upper Bound for them all.
