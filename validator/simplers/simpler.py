@@ -30,9 +30,7 @@ def should_attr_simpler(node):
 
 
 def should_call_simpler(node):
-    return (isinstance(node.value, _ast.Call) and isinstance(node.value.func, _ast.Attribute)
-            and (isinstance(node.value.func.value, _ast.Attribute) or isinstance(node.value.func.value, _ast.Call)))
-
+    return isinstance(node.value, _ast.Call) and not isinstance(node.value.func, _ast.Name)
 
 def should_call_args_simpler(node):
     if not isinstance(node.value, _ast.Call):
@@ -76,9 +74,9 @@ def call_simpler(node):
     tmp_var_name = random_tmp_var()
     new_node = ast.Assign(
         targets=[ast.Name(id=tmp_var_name, ctx=Store())],
-        value=node.value.func.value
+        value=node.value.func
     )
-    node.value.func.value = ast.Name(id=tmp_var_name, ctx=Load())
+    node.value.func = ast.Name(id=tmp_var_name, ctx=Load())
     return new_node, node
 
 
@@ -214,4 +212,5 @@ def make_simple(code):
         should_simple_again = False
         visitor = BinOpTransformer()
         visitor.visit(ast_tree)
+    
     return astor.codegen.to_source(ast_tree)
