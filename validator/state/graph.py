@@ -2,6 +2,14 @@ import logging
 from lattice import LatticeElement as LE
 logging.basicConfig(level = logging.DEBUG)
 
+"""
+TODO
+we want the sons to be simple dictionary, not SetDict
+need to update the expected invariants
+(maybe) need to solve the problem where a constant refers to itself
+need to understand what the knowledge field actually means
+"""
+
 class SetDict(dict):
     """
     implements a dictionary that maps keys to sets

@@ -5,6 +5,10 @@ from utils import *
 from state_exceptions import *
 from lattice import LatticeElement as LE
 
+"""
+TODO we dont really want to save all the vars in var_to_vertex, unless they are main vars (no attributes)
+"""
+
 class AbstractState(object):
     def __init__(self):
         """
