@@ -129,7 +129,6 @@ class Graph(object):
             raise KeyError()
         
         new_edge = GraphEdge(label, son, par)
-        # TODO what if label already exists
         self.vertices[son].all_parents.add_element(label, new_edge)
         self.vertices[par].sons.add_element(label, new_edge)
         
