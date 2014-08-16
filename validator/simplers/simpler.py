@@ -168,6 +168,20 @@ class CodeSimpler(ast.NodeTransformer):
             value=ast.BinOp(left=node.target, op=node.op, right=node.value)
         )
 
+    def visit_For(self, node):
+        if not isinstance(node.iter, ast.Name):
+            global should_simple_again
+            should_simple_again = True
+
+            tmp_var_name = random_tmp_var()
+            list_assign_node = ast.Assign(
+                                          targets=[ast.Name(id=tmp_var_name, ctx=Store())],
+                                          value=node.iter
+                                          )
+            node.iter = ast.Name(id=tmp_var_name, ctx=Load())
+            return list_assign_node, node
+        return self.generic_visit(node)
+
 
 class BinOpHelper(ast.NodeVisitor):
     def visit_Add(self, node):
