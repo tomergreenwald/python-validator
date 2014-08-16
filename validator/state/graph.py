@@ -210,7 +210,7 @@ class Graph(object):
         the way we know the son can exists
         """
         if self.vertices[vertex_ind].sons.has_key(son_label):
-            return 'edge')
+            return 'edge'
         
         if self.is_top(vertex_ind):
             return 'top'
