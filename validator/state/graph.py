@@ -194,6 +194,15 @@ class Graph(object):
         
         return root_const
     
+    def get_son_index(self, par, lbl):
+        """
+        return vertex index of son of par which has label lbl
+        """
+        if self.vertices[par].sons.has_key(lbl):
+            for e in self.vertices[par].sons[lbl]:
+                return e.son
+        return -1
+    
     def can_have_son(self, vertex_ind, son_label):
         """
         returns True if the son can be legally added to a vertex
