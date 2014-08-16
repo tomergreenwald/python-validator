@@ -10,7 +10,7 @@ class SetDict(dict):
         pass
         
     def add_element(self, k, v):
-        if self.has_key[k]:
+        if self.has_key(k):
             self[k].add(v)
         else:
             self[k] = set([v])
