@@ -70,9 +70,10 @@ class Graph(object):
     There are constants, but we save only one instance for each type
     
     the following invariants must always hold:
-        par = self.vertices[son].bio_parent => par in self.vertices[son].all_parents
-        par in self.vertices[son].all_parents => self.vertices[par].sons[self.vertices[son].bio_label] = son
-        v in self.vertices.values() => v.bio_parent >= 0 | v.constant >= 0 | v.is_top (this should be maintained by caller)
+        edge in self.vertices[son].all_parents => edge.son = son, edge in self.vertices[edge.par].sons[edge.label]
+        edge in self.vertices[par].sons => edge.par = par, edge in self.vertices[edge.son].all_parents[edge.label]
+        edge = self.vertices[son].bio_edge => edge in self.vertices[son].all_parents
+        v in self.vertices.values() => v.bio_edge.par >= 0 | v.constant >= 0 | v.is_top (this should be maintained by caller)
         the graph is a DAG
     """
     def __init__(self):
