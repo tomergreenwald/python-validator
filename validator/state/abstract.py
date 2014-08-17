@@ -52,35 +52,6 @@ class AbstractState(object):
             self.var_to_vertex[var] = var_ind
         
         return var_ind
-        
-    """
-    def add_var(self, var):
-        "" "
-        if var already exists- do nothing
-        if father of var doesnt exist as a var- make it TOP
-        otherwise- this is straight forward
-        
-        return the vertex index of var
-        "" "
-        if var in vars_set:
-            return self.var_to_vertex[var]
-            
-        basename = var_to_basename(var)
-        var_ind = self.graph.create_new_vertex(basename)
-        self.vars_set.add(var)
-        self.var_to_vertex[var] = var_ind
-        
-        father = var_to_father(var)
-        if father is not None:
-            if father not in self.vars_set:
-                father_ind = self.add_var_and_set_to_top(father)
-            else:
-                father_ind = self.var_to_vertex[father]
-                
-            self.graph.make_bio_parent(var_ind, father_ind)
-    
-        return var_ind
-    """
     
     def remove_var(self, var):
         """
