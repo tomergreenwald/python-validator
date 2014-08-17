@@ -41,26 +41,27 @@ class AbstractState(object):
         
         basename = var_to_basename(var)
         var_ind = self.graph.create_new_vertex(basename)
-        self.vars_set.add(var)
-        self.var_to_vertex[var] = var_ind
         self.graph.set_top(var_ind)
         
         father = var_to_father(var)
         if father:
             father_ind = self.add_var_and_set_to_top(father)
             self.graph.make_bio_parent(var_ind, father_ind)
+        else:
+            self.vars_set.add(var)
+            self.var_to_vertex[var] = var_ind
         
         return var_ind
         
-    
+    """
     def add_var(self, var):
-        """
+        "" "
         if var already exists- do nothing
         if father of var doesnt exist as a var- make it TOP
         otherwise- this is straight forward
         
         return the vertex index of var
-        """
+        "" "
         if var in vars_set:
             return self.var_to_vertex[var]
             
@@ -79,7 +80,8 @@ class AbstractState(object):
             self.graph.make_bio_parent(var_ind, father_ind)
     
         return var_ind
-        
+    """
+    
     def remove_var(self, var):
         """
         call this when a variable is not relevant anymore
@@ -130,15 +132,11 @@ class AbstractState(object):
                     elif have_son == 'const':
                         # this must be the case that the son is legal due to constant
                         son_ind = self.graph.create_new_vertex(basename)
-                        self.vars_set.add(var)
-                        self.var_to_vertex[var] = son_ind
                         self.graph.make_bio_parent(son_ind, father_ind)
                         return son_ind
                     elif have_son == 'edge':
                         # this must be the case that the son already exists in the graph
                         son_ind = self.graph.get_son_index(father_ind, basename)
-                        self.vars_set.add(var)
-                        self.var_to_vertex[var] = son_ind
                         return son_ind
                 else:
                     # var cannot be son of its father
@@ -191,8 +189,6 @@ class AbstractState(object):
             father_ind = self._get_var_index(father)
             # this is the case when we create new attribute
             var_ind = self.graph.create_new_vertex(basename)
-            self.vars_set.add(var_name)
-            self.var_to_vertex[var_name] = var_ind
             self.graph.make_bio_parent(var_ind, father_ind)
             return var_ind
             
@@ -235,10 +231,11 @@ class AbstractState(object):
             # set var0 to point to var1 vertex
             # create new step father if needed
             basename = var_to_basename(var0)
-            self.vars_set.add(var0)
-            self.var_to_vertex[var0] = var1_ind
             if father0_ind >= 0:
                 self.graph.make_step_parent(var1_ind, father0_ind, basename)
+            else:
+                self.vars_set.add(var0)
+                self.var_to_vertex[var0] = var1_ind
         else:
             # make the children of the vertex independent of him
             self.graph.unlink_vertex(var0_ind)
