@@ -7,6 +7,7 @@ from lattice import LatticeElement as LE
 
 """
 TODO we dont really want to save all the vars in var_to_vertex, unless they are main vars (no attributes)
+TODO when querying for some var and the result is not L_MUST_HAVE, consider changing the full path to L_MUST_HAVE
 """
 
 class AbstractState(object):
@@ -31,9 +32,12 @@ class AbstractState(object):
         adding a variable to the state, and mark it as top
         return the vertex index of var
         """
-        if var in vars_set:
+        var_ind = self._expression_to_vertex_index(var)
+        if var_ind >= 0:
             # think what should we do here... do we want to set the var to top? probably not, but remember it...
-            return self.var_to_vertex[var]
+            # self.graph.set_top(var_ind)
+            return var_ind
+        
         
         basename = var_to_basename(var)
         var_ind = self.graph.create_new_vertex(basename)
@@ -155,6 +159,7 @@ class AbstractState(object):
         var_knowledge = self.graph.get_knowledge(var_ind)
         if var_knowledge.val == LE.L_MAY_HAVE:
             # TODO report this warning in another way
+            # TODO consider the edges that leads to the vertex
             logging.debug('warning var %s may not be defined' %var_name)
         
         return var_ind
@@ -163,7 +168,8 @@ class AbstractState(object):
         """
         receives a var name. returns an index of a vertex representing this var
         and that doesn't have any sons. may raise an exception
-        this creates a new vertex with L_MUST_HAVE knowledge (if needed)
+        this can create a new vertex with L_MUST_HAVE knowledge if the var
+        doesn't exist
         """
         var_ind = self._expression_to_vertex_index(var_name)
         if var_ind >= 0:
@@ -196,7 +202,7 @@ class AbstractState(object):
         call this function when a by-value assignment is done, such as x = 5
         we expect val0 to consist of a known type during analysis time
         """
-        logging.debug('set var %s to const' %var_name)
+        logging.debug('[set_var_to_const] set var %s to const' %var_name)
         
         var_ind = self._cleanup_var_vertex(var_name)
         self.graph.set_vertex_to_const(var_ind, val)
@@ -206,21 +212,20 @@ class AbstractState(object):
         call this when there is a statement var0 = var1, and var1 is a pointer (not 
         a simple type such as integer)
         """
-        logging.debug('set var %s to %s' %(var0, var1))
+        logging.debug('[set_var_to_var] set var %s to %s' %(var0, var1))
         
         # following line may raise an exception
         var1_ind = self._get_var_index(var1)
-        
-        father_var0 = var_to_father(var0)
         
         try:
             var0_ind = self._get_var_index(var0)
         except VerifierError:
             var0_ind = -1
         
-        
         father0_ind = -1
+        father_var0 = var_to_father(var0)
         if father_var0 is not None:
+            # semantic father exists
             try:
                 father0_ind = self._get_var_index(father_var0)
             except VerifierError:
@@ -235,9 +240,8 @@ class AbstractState(object):
             if father0_ind >= 0:
                 self.graph.make_step_parent(var1_ind, father0_ind, basename)
         else:
-            old_vertex = self.var_to_vertex[var0]
             # make the children of the vertex independent of him
-            self.graph.unlink_vertex(old_vertex)
+            self.graph.unlink_vertex(var0_ind)
             
             if father0_ind >= 0:
                 basename = var_to_basename(var0)
