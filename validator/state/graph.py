@@ -88,6 +88,7 @@ class Graph(object):
         """
         set a vertex to be a constant
         add the constant to the constants pull if necessary (a constant of a new type)
+        mark this vertex as non top
         """
         t = type(const)
         cons_ind = self.types_dict.get(t, -1)
@@ -98,6 +99,7 @@ class Graph(object):
             self.all_cons[cons_ind] = const
         
         self.vertices[vertex_ind].constant = cons_ind
+        self.vertices[vertex_ind].knowledge = LE(LE.L_MUST_HAVE)
     
     def create_new_vertex(self, label = ''):
         """
