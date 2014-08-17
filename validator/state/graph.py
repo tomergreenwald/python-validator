@@ -110,7 +110,7 @@ class Graph(object):
         self.vertices[v_ind] = new_v
         return v_ind
     
-    def make_parent(self, son, par):
+    def make_bio_parent(self, son, par):
         """
         this function refers to biological parent
         connect son and parent by an edge (directed from the son to the parent)
@@ -120,7 +120,7 @@ class Graph(object):
             raise KeyError()
             
         if self.vertices[son].all_parents:
-            raise Exception("[make_parent] making parent of son who already has parents...")
+            raise Exception("[make_bio_parent] making parent of son who already has parents...")
         """
         old_parent = self.vertices[son].bio_parent
         if old_parent >= 0:
@@ -315,5 +315,5 @@ class T(object):
         self.b = 5
         self.a = self
 
-g = Graph(); g.create_new_vertex(); g.create_new_vertex('a'); g.make_parent(1, 0); g.create_new_vertex('a'); g.make_parent(2, 1); g.create_new_vertex('b'); g.make_parent(3, 0); g.create_new_vertex('');  g.create_new_vertex('b'); g.make_parent(5, 4); g.set_vertex_to_const(0, T())
+g = Graph(); g.create_new_vertex(); g.create_new_vertex('a'); g.make_bio_parent(1, 0); g.create_new_vertex('a'); g.make_bio_parent(2, 1); g.create_new_vertex('b'); g.make_bio_parent(3, 0); g.create_new_vertex('');  g.create_new_vertex('b'); g.make_bio_parent(5, 4); g.set_vertex_to_const(0, T())
 """

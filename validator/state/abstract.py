@@ -44,7 +44,7 @@ class AbstractState(object):
         father = var_to_father(var)
         if father:
             father_ind = self.add_var_and_set_to_top(father)
-            self.graph.make_parent(var_ind, father_ind)
+            self.graph.make_bio_parent(var_ind, father_ind)
         
         return var_ind
         
@@ -72,7 +72,7 @@ class AbstractState(object):
             else:
                 father_ind = self.var_to_vertex[father]
                 
-            self.graph.make_parent(var_ind, father_ind)
+            self.graph.make_bio_parent(var_ind, father_ind)
     
         return var_ind
         
@@ -127,7 +127,7 @@ class AbstractState(object):
                         son_ind = self.graph.create_new_vertex(basename)
                         self.vars_set.add(var)
                         self.var_to_vertex[var] = son_ind
-                        self.graph.make_parent(son_ind, father_ind)
+                        self.graph.make_bio_parent(son_ind, father_ind)
                         return son_ind
                     elif have_son == 'edge':
                         # this must be the case that the son already exists in the graph
@@ -186,7 +186,7 @@ class AbstractState(object):
             var_ind = self.graph.create_new_vertex(basename)
             self.vars_set.add(var_name)
             self.var_to_vertex[var_name] = var_ind
-            self.graph.make_parent(var_ind, father_ind)
+            self.graph.make_bio_parent(var_ind, father_ind)
             return var_ind
             
     
