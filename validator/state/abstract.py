@@ -94,12 +94,13 @@ class AbstractState(object):
         receive an expression like f!g!x.a.b.c.a.b.c.a.b.c
         returns the index of the vertex corresponding to it
         logic:
-            if the variable exists, returns its index
-            otherwise, if there is no father, return -1
-            if the father doesn't exists (recursively), return -1
-            if the var cannot be a son of its father (based on TOP and constant), return -1
-            if the father exists (recursively) and is TOP, create new vertex for son
-            if the father exists and is not TOP, add the vertex (it must be constant-legal)
+            if the variable exists in vars_set, returns its index
+            otherwise, if there is no semantic father, return -1
+            if the father doesn't exists in the graph (recursively), return -1
+            if the var cannot be a son of its father (based on TOP, constant and edge), return -1
+            if the var is already son in the graph, returns its vertex index
+            if the father is TOP, create new vertex for son
+            if the father is not TOP, add the vertex (it must be constant-legal)
         """
         logging.debug('[_expression_to_vertex_index] var %s' %var)
         if var in self.vars_set:
