@@ -282,6 +282,52 @@ class Graph(object):
         # has a non negative constant index
         self.vertices[vertex_ind].sons.clear()
     
+    def unlink_single_son(self, vertex_ind, son_label):
+        """
+        propagate constant from father to single son
+        """
+        if not self.vertices[vertex_ind].sons.has_key(son_label):
+            return
+        
+        vertex_const = self._get_rooted_const(vertex_ind)
+        
+        edge = self.vertices[vertex_ind].sons[son_label]:
+        v = edge.son
+        lbl = son_label
+        # remove from all_parents
+        self.vertices[v].remove_parent(lbl, edge)
+        
+        if self.vertices[v].bio_edge.parent != vertex_ind:
+            # vertex belongs to another parent
+            pass
+        else:            
+            self.vertices[v].bio_edge.parent = -1
+            self.vertices[v].bio_edge.label = None # just to be sure, doesn't really matter
+            
+            if self.vertices[v].constant < 0:
+                need_to_set_top = True
+                if vertex_const is not None:
+                    try:
+                        new_const = vertex_const.__getattribute__(lbl)
+                        self.set_vertex_to_const(v, new_const)
+                        need_to_set_top = False
+                    except:
+                        logging.debug('[unlink_single_son] failed to get \
+                                       attribute %s from type %s' \
+                                       %(lbl, type(new_const)))
+                        
+                if need_to_set_top:
+                    # we set to top in any case we were not able
+                    # to determine the constant for this vertex
+                    # this is because we can know nothing about the sons of this
+                    # vertex, except if they are already exists
+                    self.set_top(v)
+        
+        # by this point, parent of son is -1, and is TOP or
+        # has a non negative constant index
+        del self.vertices[vertex_ind].sons[son_label]
+        
+    
     def remove_vertex(self, vertex_ind):
         """
         remove a vertex from the graph. first by unlinking it from its sons, 
