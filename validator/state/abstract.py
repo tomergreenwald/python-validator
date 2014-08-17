@@ -14,7 +14,6 @@ class AbstractState(object):
         """
         """
         self.vars_set = set()
-        # TODO think if var_to_vertex should contain only main var names
         self.var_to_vertex = dict()
         self.consts = dict()
         self.graph = Graph()

@@ -5,7 +5,6 @@ logging.basicConfig(level = logging.DEBUG)
 """
 TODO
 we want the sons to be simple dictionary, not SetDict
-need to update the expected invariants
 (maybe) need to solve the problem where a constant refers to itself
 need to understand what the knowledge field actually means
 """
@@ -166,6 +165,7 @@ class Graph(object):
         """
         self.vertices[v].knowledge.val = LE.L_TOP
         # TODO do we want to set constant to -1 and move its value to sons?
+        # TODO do we want to mark all its sons edges to TOP?
     
     def get_knowledge(self, v):
         """
