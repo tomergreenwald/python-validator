@@ -6,7 +6,6 @@ from state_exceptions import *
 from lattice import LatticeElement as LE
 
 """
-TODO we dont really want to save all the vars in var_to_vertex, unless they are main vars (no attributes)
 TODO when querying for some var and the result is not L_MUST_HAVE, consider changing the full path to L_MUST_HAVE
 """
 
