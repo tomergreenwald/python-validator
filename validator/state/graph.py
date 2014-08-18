@@ -38,7 +38,7 @@ class GraphVertex(object):
         self.ind = ind
         self.constant = -1
         self.bio_edge = GraphEdge(label, son = ind, par = -1)
-        self.sons = SetDict()
+        self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
     
@@ -132,7 +132,11 @@ class Graph(object):
         bedge.parent = par
         # now biological edge contains all the information
         self.vertices[son].all_parents.add_element(bedge.label, bedge)
-        self.vertices[par].sons.add_element(bedge.label, bedge)
+        # self.vertices[par].sons.add_element(bedge.label, bedge)
+        if self.vertices[par].sons.has_key(bedge.label):
+            # TODO
+            pass
+        self.vertices[par].sons[bedge.label] = bedge
     
     def make_step_parent(self, son, par, label):
         """
@@ -144,8 +148,11 @@ class Graph(object):
         
         new_edge = GraphEdge(label, son, par)
         self.vertices[son].all_parents.add_element(label, new_edge)
-        self.vertices[par].sons.add_element(label, new_edge)
-        
+        # self.vertices[par].sons.add_element(label, new_edge)
+        if self.vertices[par].sons.has_key(label):
+            # TODO
+            pass
+        self.vertices[par].sons[label] = new_edge
     
     def get_parent(self, v):
         """
@@ -210,8 +217,7 @@ class Graph(object):
         return vertex index of son of par which has label lbl
         """
         if self.vertices[par].sons.has_key(lbl):
-            for e in self.vertices[par].sons[lbl]:
-                return e.son
+            return self.vertices[par].sons[lbl].son
         return -1
     
     def can_have_son(self, vertex_ind, son_label):
@@ -247,6 +253,11 @@ class Graph(object):
         this suppose to happen when this vertex is overwritten
         """
         vertex_const = self._get_rooted_const(vertex_ind)
+        
+        for lbl in self.vertices[vertex_ind].sons.keys():
+            self.unlink_single_son(vertex_ind, lbl)
+        
+        return # TODO test this function
         
         for (lbl, ee) in self.vertices[vertex_ind].sons.items():
             for e in ee:
@@ -291,7 +302,7 @@ class Graph(object):
         
         vertex_const = self._get_rooted_const(vertex_ind)
         
-        edge = self.vertices[vertex_ind].sons[son_label]:
+        edge = self.vertices[vertex_ind].sons[son_label]
         v = edge.son
         lbl = son_label
         # remove from all_parents
