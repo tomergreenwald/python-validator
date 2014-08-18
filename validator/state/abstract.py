@@ -7,6 +7,8 @@ from lattice import LatticeElement as LE
 
 """
 TODO when querying for some var and the result is not L_MUST_HAVE, consider changing the full path to L_MUST_HAVE
+the logic should be: query the var from highest parent. any time an exception is raised, report it, and set this var 
+to L_MUST_HAVE or TOP
 """
 
 class AbstractState(object):
