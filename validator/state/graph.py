@@ -115,7 +115,7 @@ class Graph(object):
         """
         this function refers to biological parent
         connect son and parent by an edge (directed from the son to the parent)
-        disconnect son from parent if needed (TODO think if we are doing it right or if it is necessary at all)
+        disconnect son from parent if needed (TODO: think if we are doing it right or if it is necessary at all. update: current 3 calls to this function are called with new vertex)
         """
         if not self.vertices.has_key(son) or not self.vertices.has_key(par):
             raise KeyError()
