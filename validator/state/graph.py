@@ -4,7 +4,6 @@ logging.basicConfig(level = logging.DEBUG)
 
 """
 TODO
-we want the sons to be simple dictionary, not SetDict
 (maybe) need to solve the problem where a constant refers to itself
 need to understand what the knowledge field actually means
 """
@@ -122,11 +121,6 @@ class Graph(object):
             
         if self.vertices[son].all_parents:
             raise Exception("[make_bio_parent] making parent of son who already has parents...")
-        """
-        old_parent = self.vertices[son].bio_parent
-        if old_parent >= 0:
-            self.vertices[old_parent].sons.pop(self.vertices[son].bio_label)
-        """
         
         bedge = self.vertices[son].bio_edge
         bedge.parent = par
@@ -255,41 +249,7 @@ class Graph(object):
         for lbl in self.vertices[vertex_ind].sons.keys():
             self.unlink_single_son(vertex_ind, lbl)
         
-        return # TODO test this function
-        
-        for (lbl, ee) in self.vertices[vertex_ind].sons.items():
-            for e in ee:
-                v = e.son
-                # remove from all_parents
-                self.vertices[v].remove_parent(lbl, e)
-                
-                if self.vertices[v].bio_edge.parent != vertex_ind:
-                    # vertex belongs to another parent
-                    continue
-                    
-                self.vertices[v].bio_edge.parent = -1
-                self.vertices[v].bio_edge.label = None # just to be sure, doesn't really matter
-                
-                if self.vertices[v].constant < 0:
-                    if vertex_const is not None:
-                        try:
-                            new_const = vertex_const.__getattribute__(lbl)
-                            self.set_vertex_to_const(v, new_const)
-                            continue
-                        except:
-                            logging.debug('[remove_vertex] failed to get \
-                                           attribute %s from type %s' \
-                                           %(lbl, type(new_const)))
-                            
-                    # we set to top in any case we were not able
-                    # to determine the constant for this vertex
-                    # this is because we can know nothing about the sons of this
-                    # vertex, except if they are already exists
-                    self.set_top(v)
-        
-        # by this point, parent of all sons is -1, and every son is TOP or
-        # has a non negative constant index
-        self.vertices[vertex_ind].sons.clear()
+        return
     
     def unlink_single_son(self, vertex_ind, son_label):
         """
