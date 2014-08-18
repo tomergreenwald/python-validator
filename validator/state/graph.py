@@ -1,4 +1,5 @@
 import logging
+from collections import deque
 from lattice import LatticeElement as LE
 logging.basicConfig(level = logging.DEBUG)
 
@@ -320,8 +321,34 @@ class Graph(object):
         
         return res[:-1]
 
+    def collect_garbage(self, pointed_vertices):
+        """
+        remove unused vertices from the graph
+        a vertex in use is any vertex that has come connection (by son/parent)
+        to vertices in pointed_vertices
+        TODO: extend this to delete constant too
+        """
+        used_vertices = set()
+        q = deque()
         
+        for v in pointed_vertices:
+            if v not in used_vertices:
+                q.append(v)
+                used_vertices.add(v)
         
+        while len(q):
+            v = q.popleft()
+            neis = [edge.son for edge in self.vertices[v].sons.values()]
+            for ee in self.vertices[v].all_parents.values():
+                neis.extend([edge.parent for edge in ee])
+            for u in neis:
+                if u not in used_vertices:
+                    used_vertices.add(u)
+                    q.append(u)
+        
+        for v in self.vertices.keys():
+            if v not in used_vertices:
+                self.vertices.pop(v)
 """
 import sys
 sys.path.append(r'D:\school\verify\project2\python-validator\validator\state')
