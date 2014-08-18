@@ -132,10 +132,9 @@ class Graph(object):
         bedge.parent = par
         # now biological edge contains all the information
         self.vertices[son].all_parents.add_element(bedge.label, bedge)
-        # self.vertices[par].sons.add_element(bedge.label, bedge)
+
         if self.vertices[par].sons.has_key(bedge.label):
-            # TODO
-            pass
+            self.unlink_single_son(par, bedge.label)
         self.vertices[par].sons[bedge.label] = bedge
     
     def make_step_parent(self, son, par, label):
@@ -148,10 +147,9 @@ class Graph(object):
         
         new_edge = GraphEdge(label, son, par)
         self.vertices[son].all_parents.add_element(label, new_edge)
-        # self.vertices[par].sons.add_element(label, new_edge)
+        
         if self.vertices[par].sons.has_key(label):
-            # TODO
-            pass
+            self.unlink_single_son(par, label)
         self.vertices[par].sons[label] = new_edge
     
     def get_parent(self, v):
