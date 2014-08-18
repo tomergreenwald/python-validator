@@ -213,6 +213,8 @@ class AbstractState(object):
                 basename = var_to_basename(var0)
                 self.var_to_vertex[var0] = var1_ind
                 if father0_ind >= 0:
+                    print 'unlink label %s from father %d' %(basename, father0_ind)
+                    self.graph.unlink_single_son(father0_ind, basename)
                     self.graph.make_step_parent(var1_ind, father0_ind, basename)
             else:
                 # simply change the vertex for this var
