@@ -226,7 +226,21 @@ class AbstractState(object):
         """
         self.graph.collect_garbage(self.var_to_vertex.values())
         
+    def lub(self, other):
+        """
+        perform inplace lub (self = lub(self, other))
+        """
+        # this is a good point to get rid of unused vertices
+        self.collect_garbage()
+        other.collect_garbage()
         
+        new_vars = other.vars_set.difference(self.vars_set)
+        
+        # **************************** #
+        # TODO                         #
+        # **************************** #
+        # CONTINUE TO WORK FROM HERE   #
+        # **************************** #
     
 """
 import sys; sys.path.append(r'D:\school\verify\project2\python-validator\validator\state'); execfile(r'D:\school\verify\project2\python-validator\validator\state\abstract.py')
