@@ -232,7 +232,21 @@ class AbstractState(object):
         self.collect_garbage()
         other.collect_garbage()
         
+        if self.graph.next_ind >= other.graph.next_ind:
+            other.graph.rename_vertices_indices(self.graph.next_ind + 1)
+        else:
+            self.graph.rename_vertices_indices(other.graph.next_ind + 1)
+        
+        if self.graph.next_cons >= other.graph.next_cons:
+            other.graph.rename_constants_indices(self.graph.next_cons + 1)
+        else:
+            self.graph.rename_constants_indices(other.graph.next_cons + 1)
+        
         new_vars = other.vars_set.difference(self.vars_set)
+        common_vars = self.var_set.intersection(other.vars_set)
+        only_self_vars = self.vars_set.difference(other.vars_set)
+        
+        
         
         # **************************** #
         # TODO                         #
