@@ -6,16 +6,20 @@ class Frame(object):
     def __init__(self, frame_name):
         self.frame_name = frame_name
         self.variables = []
+    def register(self, variable):
+        self.variables.append(variable)
+    def clear(self, abstract_state):
+        for variable in self.variables:
+            abstract_state.forget_var(variable)
 
 class Stack(object):
     def __init__(self):
-        self.frames = []
+        self.frames = [Frame("root")]
     def insert(self, frame):
         self.frames.append(frame)
-    def pop(self):
-        for variable in self.frames[-1].variables:
-            remove_variable(variable)
-        self.frames.pop()
+    def pop(self, abstract_state):
+        frame = self.frames.pop()
+        frame.clear(abstract_state)
     def frame_names(self, level=0):
         names = []
         for frame in self.frames:
@@ -24,6 +28,8 @@ class Stack(object):
             return names
         else:
             return names[:-level]
+    def current_frame(self):
+        return self.frames[-1]
     def __len__(self):
         return len(self.frames)
 
@@ -59,10 +65,10 @@ def var_name_list(stack, var, level=0):
     :return: List of probable names.
     """
     names = []
-    if len(stack) > 0:
+    if len(stack) > 1:
         function_name = "#".join(stack.frame_names(level))
         names.append(function_name + "#" + var)
-    names.append(var)
+    names.append("root#" + var)
     return names
 
 
@@ -110,6 +116,7 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
+    stack.current_frame().register(actual_to_name)
 
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
@@ -128,9 +135,9 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
                 register_assignment(stack, abstract_state, keyword.value, keyword.arg, True)
         if not found:
             default = function.args.defaults[i]
-            register_assignment(stack, abstract_state, default, keyword.arg, True)
+            register_assignment(stack, abstract_state, default, function.args.args[arg_index].id, True)
     assess_list(function.body, stack, abstract_state, functions)
-    stack.pop()
+    stack.pop(abstract_state)
 
 
 class CallVisitor(ast.NodeVisitor):
@@ -164,7 +171,7 @@ class AssignVisitor(CallVisitor):
         :param node: Attribute Node.
         """
         # TODO: it may be set_var_to_const
-        self.abstract_state.set_var_to_var(self.name, get_node_name(node))
+        self.abstract_state.set_var_to_var(self.name, actual_var_name(self.stack, self.abstract_state, get_node_name(node)))
 
     def visit_Str(self, node):
         """
@@ -238,9 +245,9 @@ class FunctionDefVisitor(ast.NodeVisitor):
 
 def initialize_abstract_state(abstract_state):
     # TODO - it should be in Aviel's code
-    abstract_state.set_var_to_const('True', True)
-    abstract_state.set_var_to_const('False', False)
-    abstract_state.set_var_to_const('None', None)
+    abstract_state.set_var_to_const('root#True', True)
+    abstract_state.set_var_to_const('root#False', False)
+    abstract_state.set_var_to_const('root#None', None)
 
 
 class ProgramVisitor(ast.NodeVisitor):
