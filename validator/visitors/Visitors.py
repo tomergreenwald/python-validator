@@ -44,7 +44,7 @@ class Stack(object):
 
 
 def get_variable_name(stack, abstract_state, name):
-    fully_qualizfied_name = "#".join(stack).append("_" + name)
+    fully_qualizfied_name = "#".join(stack) + "_" + name
     if abstract_state.has_var(fully_qualizfied_name):
         return fully_qualizfied_name
     elif abstract_state.has_var(name):
