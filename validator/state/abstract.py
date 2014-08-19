@@ -17,9 +17,7 @@ class AbstractState(object):
         """
         self.vars_set = set()
         self.var_to_vertex = dict()
-        self.consts = dict()
         self.graph = Graph()
-        self.const_count = 0
     
     def clone(self):
         """
