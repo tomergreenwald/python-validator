@@ -122,7 +122,7 @@ class AbstractState(object):
         """
         logging.debug('set var %s to %s' %(var0, var1))
         if var1 not in self.vars_set:
-            raise VarNotInState('Setting a variable to a variable not in the state')
+            raise VarNotInState('Assignment not allowed (%s = %s) since %s is not set' % (var0, var1, var1))
             
         if var0 not in self.vars_set:
             self.vars_set.add(var0)

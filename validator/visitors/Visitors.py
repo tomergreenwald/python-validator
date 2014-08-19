@@ -2,6 +2,30 @@ import ast
 
 from validator.state.abs_state import AbstractState
 
+class Frame(object):
+    def __init__(self, frame_name):
+        self.frame_name = frame_name
+        self.variables = []
+
+class Stack(object):
+    def __init__(self):
+        self.frames = []
+    def insert(self, frame):
+        self.frames.append(frame)
+    def pop(self):
+        for variable in self.frames[-1].variables:
+            remove_variable(variable)
+        self.frames.pop()
+    def frame_names(self, level=0):
+        names = []
+        for frame in self.frames:
+            names.append(frame.frame_name)
+        if level == 0:
+            return names
+        else:
+            return names[:-level]
+    def __len__(self):
+        return len(self.frames)
 
 def get_variable_name(stack, abstract_state, name):
     fully_qualizfied_name = "#".join(stack).append("_" + name)
@@ -27,7 +51,7 @@ def get_node_name(node):
     return node.id
 
 
-def var_name_list(stack, var):
+def var_name_list(stack, var, level=0):
     """
     Generates a list of probable variable names according to the given stack and variable.
     :param stack: Current stack.
@@ -35,14 +59,14 @@ def var_name_list(stack, var):
     :return: List of probable names.
     """
     names = []
-    if stack:
-        function_name = "#".join(stack)
+    if len(stack) > 0:
+        function_name = "#".join(stack.frame_names(level))
         names.append(function_name + "#" + var)
     names.append(var)
     return names
 
 
-def actual_var_name(stack, abstract_state, var):
+def actual_var_name(stack, abstract_state, var, level=0):
     """
     Generates a fully qualified name for a local or a global variable.
     Throws exception if the variable was no previously set to the abstract state.
@@ -51,21 +75,21 @@ def actual_var_name(stack, abstract_state, var):
     :param var: Variable name.
     :return: Fully qualified variable name.
     """
-    names = var_name_list(stack, var)
+    names = var_name_list(stack, var, level)
     for name in names:
         if abstract_state.has_var(name):
             return name
-    raise Exception("Refereneced variable was not assigned previuosly - [%s] - %s" % (str(stack), var))
+    raise Exception("Referenced variable was not assigned previuosly - [%s] - %s" % (str(stack.frame_names()), var))
 
 
-def stack_var_name(stack, var):
+def stack_var_name(stack, var, level=0):
     """
     Generates a fully qualified name for a variable on the stack.
     :param stack: Current stack.
     :param var: Variable name.
     :return: Fully qualified variable name.
     """
-    return var_name_list(stack, var)[0]
+    return var_name_list(stack, var, level)[0]
 
 
 def register_assignment(stack, abstract_state, from_var, to_var_name, split_stack=False):
@@ -77,19 +101,19 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     """
     actual_to_name = stack_var_name(stack, to_var_name)
     if split_stack:
-        updated_stack = stack[:-1]
+        level = 1
     else:
-        updated_stack = stack
+        level = 0
     # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
-        actual_from_name = actual_var_name(updated_stack, abstract_state, from_var.id)
+        actual_from_name = actual_var_name(stack, abstract_state, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
 
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
-    stack.append(function.name)
+    stack.insert(Frame(function.name))
     arguments = []
     for i in xrange(len(args)):
         arguments.append(i)
@@ -220,7 +244,7 @@ def initialize_abstract_state(abstract_state):
 
 
 class ProgramVisitor(ast.NodeVisitor):
-    def __init__(self, stack=[], abstract_state=None, functions={}):
+    def __init__(self, stack=Stack(), abstract_state=None, functions={}):
         """
         Should visit all the program
         """
