@@ -327,6 +327,7 @@ class Graph(object):
         a vertex in use is any vertex that has come connection (by son/parent)
         to vertices in pointed_vertices
         TODO: extend this to delete constant too
+        TODO: decrease vertices indices as can
         """
         used_vertices = set()
         q = deque()
