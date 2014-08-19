@@ -170,7 +170,7 @@ class AssignVisitor(CallVisitor):
         """
         # TODO handle + and 'append' - should change the lub
         # TODO handle Subscript should do the logic on 'var_that_represents_the_list_items'
-        register_assignment(self.stack, self.abstract_state, node, self.name)   # Register the name as list
+        register_assignment(self.stack, self.abstract_state, node, self.name)  # Register the name as list
 
         var_name_that_represents_the_list_items = self.name + '_vars_lub'
         if node.elts:
