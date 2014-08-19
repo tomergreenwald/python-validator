@@ -41,6 +41,7 @@ class GraphVertex(object):
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
+        # self.vertices[son].all_parents.add_element(bedge.label, bedge)
     
     def remove_parent(self, lbl, edge):
         self.all_parents[lbl].remove(edge)
@@ -350,6 +351,48 @@ class Graph(object):
         for v in self.vertices.keys():
             if v not in used_vertices:
                 self.vertices.pop(v)
+    
+    def rename_vertices_indices(self, offset):
+        """
+        rename each vertex index:
+            x <- x + offset
+        """
+        for v in self.vertices.keys():
+            for ee in self.vertices[v].all_parents.values():
+                for e in ee:
+                    if e.parent >= 0:
+                        e.parent += offset
+                    if e.son >= 0:
+                        e.son += offset
+            
+            if self.vertices[v].bio_edge.parent < 0:
+                self.vertices[v].bio_edge.son += offset
+        
+        for v in self.vertices.keys():
+            gv = self.vertices[v]
+            self.vertices[v + offset] = gv
+            self.vertices.pop(v)
+        
+        self.next_ind += offset
+    
+    def rename_constants_indices(self, offset):
+        """
+        rename each constant index:
+            x <- x + offset
+        """
+        for v in self.vertices.keys():
+            if self.vertices[v].constant >= 0:
+                self.vertices[v].constant += offset
+        
+        for c in self.all_cons.keys():
+            cv = self.all_cons[c]
+            self.all_cons[c + offset] = cv
+            self.all_cons.pop(c)
+        
+        for t in self.types_dict.keys():
+            self.types_dict[t] += offset
+        
+        self.next_cons += offset
 """
 import sys
 sys.path.append(r'D:\school\verify\project2\python-validator\validator\state')
