@@ -2,24 +2,31 @@ import ast
 
 from validator.state.abs_state import AbstractState
 
+
 class Frame(object):
     def __init__(self, frame_name):
         self.frame_name = frame_name
         self.variables = []
+
     def register(self, variable):
         self.variables.append(variable)
+
     def clear(self, abstract_state):
         for variable in self.variables:
             abstract_state.forget_var(variable)
 
+
 class Stack(object):
     def __init__(self):
         self.frames = [Frame("root")]
+
     def insert(self, frame):
         self.frames.append(frame)
+
     def pop(self, abstract_state):
         frame = self.frames.pop()
         frame.clear(abstract_state)
+
     def frame_names(self, level=0):
         names = []
         for frame in self.frames:
@@ -28,10 +35,13 @@ class Stack(object):
             return names
         else:
             return names[:-level]
+
     def current_frame(self):
         return self.frames[-1]
+
     def __len__(self):
         return len(self.frames)
+
 
 def get_variable_name(stack, abstract_state, name):
     fully_qualizfied_name = "#".join(stack).append("_" + name)
@@ -171,7 +181,8 @@ class AssignVisitor(CallVisitor):
         :param node: Attribute Node.
         """
         # TODO: it may be set_var_to_const
-        self.abstract_state.set_var_to_var(self.name, actual_var_name(self.stack, self.abstract_state, get_node_name(node)))
+        self.abstract_state.set_var_to_var(self.name,
+                                           actual_var_name(self.stack, self.abstract_state, get_node_name(node)))
 
     def visit_Str(self, node):
         """
@@ -292,7 +303,7 @@ class ProgramVisitor(ast.NodeVisitor):
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
         register_assignment(self.stack, self.abstract_state, node.iter.elts[0], node.target.id)
-        #FIXME: I selectede the first element in the list but we need to LUB all of it and then use this value
+        # FIXME: I selectede the first element in the list but we need to LUB all of it and then use this value
         """register_assignment(self.stack, self.abstract_state, ast.Assign(
             targets=[ast.Name(id=node.target, ctx=ast.Store())],
             value=node.iter), node.target.id)"""
