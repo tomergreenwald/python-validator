@@ -393,6 +393,38 @@ class Graph(object):
             self.types_dict[t] += offset
         
         self.next_cons += offset
+    
+    def vertex_lub(x, other, y):
+        """
+        lub between self.vertices[x] and other.vertices[y]
+        """
+        v0 = self.vertices[x]
+        v1 = other.vertices[y]
+        # TODO continue to write this function
+        
+    
+    def lub(self, other, pairs, self_inds, other_inds):
+        """
+        performs lub between self and other
+        pairs are pairs of vertices that should be equal
+        self_inds are vertices that exists only in self
+        other_inds are vertices that exists only in other
+        """
+        vertices_pairs = set()
+        edges_pairs = set()
+        
+        q = deque(pairs)
+        while len(q):
+            (x,y) = q.popleft()
+            vertices_pairs.add((x, y))
+            common = set(self.vertices[x].sons.keys()).intersection(other.vertices[y].sons.keys())
+            for c in common:
+                e0 = self.vertices[x].sons[c]
+                e1 = other.vertices[y].sons[c]
+                edge_pairs.add((e0, e1))
+                q.append((e0.son, e1.son))
+        
+        
 """
 import sys
 sys.path.append(r'D:\school\verify\project2\python-validator\validator\state')

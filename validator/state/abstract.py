@@ -246,6 +246,11 @@ class AbstractState(object):
         common_vars = self.var_set.intersection(other.vars_set)
         only_self_vars = self.vars_set.difference(other.vars_set)
         
+        pairs = [(self.vertices[x], self.vertices[y]) for v in common_vars]
+        self_inds = [self.vertices[x] for v in only_self_vars]
+        other_inds = [self.vertices[x] for v in new_vars]
+        
+        self.graph.lub(self.other.graph, pairs, self_inds, other_inds)
         
         
         # **************************** #
