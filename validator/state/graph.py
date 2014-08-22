@@ -41,12 +41,6 @@ class GraphVertex(object):
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
-        
-        self.vertices[son].all_parents.add_element(label, bedge)
-        if self.vertices[bio_parent].sons.has_key(label):
-            self.unlink_single_son(bio_parent, label)
-        self.vertices[bio_parent].sons[label] = bedge
-        
     
     def remove_parent(self, lbl, edge):
         self.all_parents[lbl].remove(edge)
@@ -117,6 +111,13 @@ class Graph(object):
         self.next_ind += 1
         new_v = GraphVertex(v_ind, label, bio_parent)
         self.vertices[v_ind] = new_v
+        
+        bedge = new_v.bio_edge
+        self.vertices[v_ind].all_parents.add_element(label, bedge)
+        if self.vertices[bio_parent].sons.has_key(label):
+            self.unlink_single_son(bio_parent, label)
+        self.vertices[bio_parent].sons[label] = bedge
+        
         return v_ind
     
     def make_bio_parent(self, son, par):
@@ -227,7 +228,7 @@ class Graph(object):
         """
         if self.vertices[par].sons.has_key(lbl):
             return self.vertices[par].sons[lbl].knowledge
-        except Exception("called get_son_knowledge for nonexistent son. parent %d label %s" %(par, lbl))
+        raise Exception("called get_son_knowledge for nonexistent son. parent %d label %s" %(par, lbl))
     
     def can_have_son(self, vertex_ind, son_label):
         """
