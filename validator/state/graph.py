@@ -221,6 +221,14 @@ class Graph(object):
             return self.vertices[par].sons[lbl].son
         return -1
     
+    def get_son_knowledge(self, par, lbl):
+        """
+        like get_son_index, but instead of returning the son index, returns the knowledge of that edge
+        """
+        if self.vertices[par].sons.has_key(lbl):
+            return self.vertices[par].sons[lbl].knowledge
+        except Exception("called get_son_knowledge for nonexistent son. parent %d label %s" %(par, lbl))
+    
     def can_have_son(self, vertex_ind, son_label):
         """
         returns True if the son can be legally added to a vertex

@@ -74,8 +74,6 @@ class AbstractState(object):
         logging.debug('[_expression_to_vertex_index] var %s' %var)
         if var == '':
             return -1
-        if var in self.vars_set:
-            return self.var_to_vertex[var]
             
         father = var_to_father(var)
         basename = var_to_basename(var)
@@ -84,10 +82,10 @@ class AbstractState(object):
             # if no father exists, father is the root of the graph
             father_ind = ROOT_VERTEX
         else:
+            # we want to make sure that a vertex for the father exists (and 
+            # create one if necessary)
             father_ind = self._expression_to_vertex_index(father)
             
-        # we want to make sure that a vertex for the father exists (and 
-        # create one if necessary)
         if father_ind >= 0:
             have_son = self.graph.can_have_son(father_ind, basename)
             if have_son:
@@ -109,23 +107,43 @@ class AbstractState(object):
             # father is not part of the graph
             return -1
     
-    def _get_var_index(self, var_name):
+    def _get_var_index(self, var_name, add_tops = True):
         """
         returns vertex index if we can
-        may raise an exception
-        # TODO rewrite this function so it will report error and alerts recursively
+        returns list of possible errors and alerts
+        if add_tops is True, add unknown variables as TOPs
         """
-        var_ind = self._expression_to_vertex_index(var_name)
-        if var_ind < 0:
-            raise VerifierError("variable %s not in state" %var_name)
+        res = []
         
-        var_knowledge = self.graph.get_knowledge(var_ind)
-        if var_knowledge.val == LE.L_MAY_HAVE:
-            # TODO report this warning in another way
-            # TODO consider the edges that leads to the vertex
-            logging.debug('warning var %s may not be defined' %var_name)
+        fathers = []
+        f = var_name
+        while f != '':
+            fathers.append(f)
+            f = var_to_father(f)
         
-        return var_ind
+        fathers = fathers[::-1]
+        
+        # now fathers contains the full chain to var_name
+        for f in fathers:
+            ind = _expression_to_vertex_index(f)
+            if ind < 0:
+                res.append(("Error", "var %s attribute %s" %(var_to_father(f), var_to_basename(f))))
+                if add_tops:
+                    self.add_var_and_set_to_top(f)
+                else:
+                    return (-1, res)
+            else:
+                old_f = var_to_father(f)
+                basename = var_to_basename(f)
+                old_f_ind = _expression_to_vertex_index(old_f)
+                
+                son_knowledge = self.graph.get_son_knowledge(old_f_ind, basename)
+                
+                if son_knowledge != LE.L_MUST_HAVE:
+                    res.append(("Alert", "var %s attribute %s" %(var_to_father(f), var_to_basename(f))))
+                    
+        
+        return (self._expression_to_vertex_index(var_name), res)
     
     def _cleanup_var_vertex(self, var_name):
         """
@@ -133,38 +151,43 @@ class AbstractState(object):
         and that doesn't have any sons. may raise an exception
         this can create a new vertex with L_MUST_HAVE knowledge if the var
         doesn't exist
+        returns (var_ind, errors) where errors is a list of possible errors and alerts
         """
         var_ind = self._expression_to_vertex_index(var_name)
         if var_ind >= 0:
             # var has a representation in the graph
             # unlink it from its sons, because it may be changed very soon
             self.graph.unlink_vertex(var_ind)
-            return var_ind
+            return var_ind, []
         
+        # we need to create a new vertex
         basename = var_to_basename(var_name)
         father = var_to_father(var_name)
         
         if father == '':
-            # there is no father. var is without attributes
+            # there is no father. var is main variable
             father_ind = ROOT_VERTEX
+            errors = []
         else:
-            # the following line may raise an Exception
-            father_ind = self._get_var_index(father)
             # this is the case when we create new attribute
+            father_ind, errors = self._get_var_index(father)
         
         var_ind = self.graph.create_new_vertex(basename, father_ind)
-        return var_ind
+        return var_ind, errors
             
     
     def set_var_to_const(self, var_name, val):
         """
         call this function when a by-value assignment is done, such as x = 5
         we expect val0 to consist of a known type during analysis time
+        returns list of errors and alerts
         """
         logging.debug('[set_var_to_const] set var %s to const' %var_name)
         
-        var_ind = self._cleanup_var_vertex(var_name)
+        var_ind, errors = self._cleanup_var_vertex(var_name)
         self.graph.set_vertex_to_const(var_ind, val)
+        
+        return errors
     
     def set_var_to_var(self, var0, var1):
         """
@@ -173,44 +196,28 @@ class AbstractState(object):
         """
         logging.debug('[set_var_to_var] set var %s to %s' %(var0, var1))
         
-        # following line may raise an exception
-        var1_ind = self._get_var_index(var1)
+        errors = []
         
-        try:
-            var0_ind = self._get_var_index(var0)
-        except VerifierError:
-            var0_ind = -1
+        var1_ind, errors1 = self._get_var_index(var1)
+        errors.extend(errors1)
         
-        father0_ind = -1
         father_var0 = var_to_father(var0)
-        if father_var0 != '':
-            # semantic father exists
-            try:
-                father0_ind = self._get_var_index(father_var0)
-            except VerifierError:
-                raise VerifierError("Cannot set var %s because %s doesn't exist" %(var0, father_var0))
+        father0_ind, errors0 = self._get_var_index(father_var0)
+        errors.extend(errors0)
         
-        if var0_ind < 0:
-            # set var0 to point to var1 vertex
-            # create new step father if needed
-            basename = var_to_basename(var0)
-            if father0_ind >= 0:
-                self.graph.make_step_parent(var1_ind, father0_ind, basename)
-            else:
-                self.vars_set.add(var0)
-                self.var_to_vertex[var0] = var1_ind
-        else:
-            # make the children of the vertex independent of him
-            self.graph.unlink_vertex(var0_ind)
-            
-            if father0_ind >= 0:
-                basename = var_to_basename(var0)
-                if father0_ind >= 0:
-                    self.graph.unlink_single_son(father0_ind, basename)
-                    self.graph.make_step_parent(var1_ind, father0_ind, basename)
-            else:
-                # simply change the vertex for this var
-                self.var_to_vertex[var0] = var1_ind
+        basename = var_to_basename(var0)
+        
+        var0_ind = self._expression_to_vertex_index(var0)
+        
+        if var0_ind >= 0:
+            # vertex already exists
+            self.graph.unlink_single_son(father0_ind, basename)
+        
+        # set var0 to point to var1 vertex
+        # create new step father
+        self.graph.make_step_parent(var1_ind, father0_ind, basename)
+        
+        return errors
             
     def collect_garbage(self):
         """
