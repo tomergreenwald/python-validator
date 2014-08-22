@@ -23,7 +23,7 @@ class SetDict(dict):
             self[k] = set([v])
 
 class GraphEdge(object):
-    def __init__(self, label = None, son = None, par = -1, know = None):
+    def __init__(self, label = None, son = None, par = 0, know = None):
         self.label = label
         self.son = son
         self.parent = par
@@ -34,14 +34,19 @@ class GraphEdge(object):
                %(self.son, self.parent, self.label, self.knowledge)
 
 class GraphVertex(object):
-    def __init__(self, ind, label):
+    def __init__(self, ind, label, bio_parent):
         self.ind = ind
         self.constant = -1
-        self.bio_edge = GraphEdge(label, son = ind, par = -1)
+        self.bio_edge = GraphEdge(label, son = ind, par = bio_parent)
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
-        # self.vertices[son].all_parents.add_element(bedge.label, bedge)
+        
+        self.vertices[son].all_parents.add_element(label, bedge)
+        if self.vertices[bio_parent].sons.has_key(label):
+            self.unlink_single_son(bio_parent, label)
+        self.vertices[bio_parent].sons[label] = bedge
+        
     
     def remove_parent(self, lbl, edge):
         self.all_parents[lbl].remove(edge)
@@ -83,6 +88,8 @@ class Graph(object):
         self.next_cons = 0
         self.types_dict = dict()
         self.all_cons = dict()
+        
+        self.create_new_vertex('')
     
     def set_vertex_to_const(self, vertex_ind, const):
         """
@@ -101,14 +108,14 @@ class Graph(object):
         self.vertices[vertex_ind].constant = cons_ind
         self.vertices[vertex_ind].knowledge = LE(LE.L_MUST_HAVE)
     
-    def create_new_vertex(self, label = ''):
+    def create_new_vertex(self, label = '', bio_parent = 0):
         """
         add new vertex to the graph, returns the new vertex index
         initialize the vertex with a label. no father, no constant, not TOP
         """
         v_ind = self.next_ind
         self.next_ind += 1
-        new_v = GraphVertex(v_ind, label)
+        new_v = GraphVertex(v_ind, label, bio_parent)
         self.vertices[v_ind] = new_v
         return v_ind
     
@@ -403,6 +410,14 @@ class Graph(object):
         # TODO continue to write this function
         
     
+    def handle_common_edges(self, edge_pairs):
+        """
+        lub between any two edges
+        first element is edge of self, second element is edge of other
+        """
+        for (e0, e1) in edge_pairs:
+            e0.knowledge.inplace_lub(e1.knowledge)
+    
     def lub(self, other, pairs, self_inds, other_inds):
         """
         performs lub between self and other
@@ -423,6 +438,8 @@ class Graph(object):
                 e1 = other.vertices[y].sons[c]
                 edge_pairs.add((e0, e1))
                 q.append((e0.son, e1.son))
+        
+        self.handle_common_edges(edge_pairs)
         
         
 """

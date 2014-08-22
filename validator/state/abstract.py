@@ -11,6 +11,8 @@ the logic should be: query the var from highest parent. any time an exception is
 to L_MUST_HAVE or TOP
 """
 
+ROOT_VERTEX = 0
+
 class AbstractState(object):
     def __init__(self):
         """
@@ -36,18 +38,17 @@ class AbstractState(object):
             # self.graph.set_top(var_ind)
             return var_ind
         
-        
         basename = var_to_basename(var)
-        var_ind = self.graph.create_new_vertex(basename)
-        self.graph.set_top(var_ind)
+        
         
         father = var_to_father(var)
         if father:
             father_ind = self.add_var_and_set_to_top(father)
-            self.graph.make_bio_parent(var_ind, father_ind)
         else:
-            self.vars_set.add(var)
-            self.var_to_vertex[var] = var_ind
+            father_ind = ROOT_VERTEX
+        
+        var_ind = self.graph.create_new_vertex(basename, father_ind)
+        self.graph.set_top(var_ind)
         
         return var_ind
     
@@ -78,46 +79,48 @@ class AbstractState(object):
             if the father is not TOP, add the vertex (it must be constant-legal)
         """
         logging.debug('[_expression_to_vertex_index] var %s' %var)
+        if var == '':
+            return -1
         if var in self.vars_set:
             return self.var_to_vertex[var]
             
         father = var_to_father(var)
         basename = var_to_basename(var)
         
-        if father is None:
-            # there is no father
-            return -1
+        if father == '':
+            # if no father exists, father is the root of the graph
+            father_ind = ROOT_VERTEX
         else:
-            # there is a father
-            # we want to make sure that a vertex for the father exists (and 
-            # create one if necessary)
             father_ind = self._expression_to_vertex_index(father)
-            if father_ind >= 0:
-                have_son = self.graph.can_have_son(father_ind, basename)
-                if have_son:
-                    if have_son == 'top':
-                        # father is TOP, so will be its son
-                        return self.add_var_and_set_to_top(var) 
-                    elif have_son == 'const':
-                        # this must be the case that the son is legal due to constant
-                        son_ind = self.graph.create_new_vertex(basename)
-                        self.graph.make_bio_parent(son_ind, father_ind)
-                        return son_ind
-                    elif have_son == 'edge':
-                        # this must be the case that the son already exists in the graph
-                        son_ind = self.graph.get_son_index(father_ind, basename)
-                        return son_ind
-                else:
-                    # var cannot be son of its father
-                    return -1
+            
+        # we want to make sure that a vertex for the father exists (and 
+        # create one if necessary)
+        if father_ind >= 0:
+            have_son = self.graph.can_have_son(father_ind, basename)
+            if have_son:
+                if have_son == 'top':
+                    # father is TOP, so will be its son
+                    return self.add_var_and_set_to_top(var) 
+                elif have_son == 'const':
+                    # this must be the case that the son is legal due to constant
+                    son_ind = self.graph.create_new_vertex(basename, father_ind)
+                    return son_ind
+                elif have_son == 'edge':
+                    # this must be the case that the son already exists in the graph
+                    son_ind = self.graph.get_son_index(father_ind, basename)
+                    return son_ind
             else:
-                # father is not part of the graph
+                # var cannot be son of its father
                 return -1
+        else:
+            # father is not part of the graph
+            return -1
     
     def _get_var_index(self, var_name):
         """
         returns vertex index if we can
         may raise an exception
+        # TODO rewrite this function so it will report error and alerts recursively
         """
         var_ind = self._expression_to_vertex_index(var_name)
         if var_ind < 0:
@@ -147,19 +150,17 @@ class AbstractState(object):
         
         basename = var_to_basename(var_name)
         father = var_to_father(var_name)
-        if father is None:
+        
+        if father == '':
             # there is no father. var is without attributes
-            var_ind = self.graph.create_new_vertex(var_name)
-            self.vars_set.add(var_name)
-            self.var_to_vertex[var_name] = var_ind
-            return var_ind
+            father_ind = ROOT_VERTEX
         else:
             # the following line may raise an Exception
             father_ind = self._get_var_index(father)
             # this is the case when we create new attribute
-            var_ind = self.graph.create_new_vertex(basename)
-            self.graph.make_bio_parent(var_ind, father_ind)
-            return var_ind
+        
+        var_ind = self.graph.create_new_vertex(basename, father_ind)
+        return var_ind
             
     
     def set_var_to_const(self, var_name, val):
@@ -189,7 +190,7 @@ class AbstractState(object):
         
         father0_ind = -1
         father_var0 = var_to_father(var0)
-        if father_var0 is not None:
+        if father_var0 != '':
             # semantic father exists
             try:
                 father0_ind = self._get_var_index(father_var0)
