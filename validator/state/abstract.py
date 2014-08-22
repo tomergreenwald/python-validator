@@ -40,7 +40,6 @@ class AbstractState(object):
         
         basename = var_to_basename(var)
         
-        
         father = var_to_father(var)
         if father:
             father_ind = self.add_var_and_set_to_top(father)
@@ -58,12 +57,6 @@ class AbstractState(object):
         TODO implement some kind of garbage collector to release saved constants
         """
         pass
-        
-    def _check_attr(self, vertex, attr):
-        """
-        received an index to vertex, and an attribute
-        checks if this attribute belongs to the vertex
-        """
     
     def _expression_to_vertex_index(self, var):
         """
