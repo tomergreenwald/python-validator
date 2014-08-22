@@ -71,9 +71,9 @@ class AbstractState(object):
             if the father is TOP, create new vertex for son
             if the father is not TOP, add the vertex (it must be constant-legal)
         """
-        logging.debug('[_expression_to_vertex_index] var %s' %var)
+        # logging.debug('[_expression_to_vertex_index] var %s' %var)
         if var == '':
-            return -1
+            return ROOT_VERTEX
             
         father = var_to_father(var)
         basename = var_to_basename(var)
@@ -125,7 +125,7 @@ class AbstractState(object):
         
         # now fathers contains the full chain to var_name
         for f in fathers:
-            ind = _expression_to_vertex_index(f)
+            ind = self._expression_to_vertex_index(f)
             if ind < 0:
                 res.append(("Error", "var %s attribute %s" %(var_to_father(f), var_to_basename(f))))
                 if add_tops:
@@ -135,11 +135,11 @@ class AbstractState(object):
             else:
                 old_f = var_to_father(f)
                 basename = var_to_basename(f)
-                old_f_ind = _expression_to_vertex_index(old_f)
+                old_f_ind = self._expression_to_vertex_index(old_f)
                 
                 son_knowledge = self.graph.get_son_knowledge(old_f_ind, basename)
                 
-                if son_knowledge != LE.L_MUST_HAVE:
+                if son_knowledge.val != LE.L_MUST_HAVE:
                     res.append(("Alert", "var %s attribute %s" %(var_to_father(f), var_to_basename(f))))
                     
         

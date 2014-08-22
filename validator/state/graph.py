@@ -193,7 +193,7 @@ class Graph(object):
         cur_v = vertex_ind
         path_to_const = []
 
-        while cur_v != -1:
+        while cur_v != 0:
             if const_ind < 0 and self.vertices[cur_v].constant >= 0:
                 const_ind = self.vertices[cur_v].constant
                 break
@@ -287,7 +287,8 @@ class Graph(object):
         if self.vertices[v].bio_edge.parent != vertex_ind:
             # vertex belongs to another parent
             pass
-        else:            
+        else:
+            # TODO what is the meaning of this -1? 
             self.vertices[v].bio_edge.parent = -1
             self.vertices[v].bio_edge.label = None # just to be sure, doesn't really matter
             
