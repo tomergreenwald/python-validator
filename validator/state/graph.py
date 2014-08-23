@@ -439,38 +439,47 @@ class Graph(object):
             for ee in self.vertices[v].all_parents.values():
                 for e in ee:
                     if e.parent > 0:
-                        e.parent = mapping[e.parent]
+                        e.parent = mapping.get(e.parent, e.parent)
                     if e.son > 0:
-                        e.son = mapping[e.son]
+                        e.son = mapping.get(e.son, e.son)
             
         new_vertices = dict()
         for v in self.vertices.keys():
             if v == 0:
                 continue
             gv = self.vertices.pop(v)
-            new_vertices[mapping[v]] = gv
+            new_vertices[mapping.get(v, v)] = gv
         
         self.vertices = new_vertices
         self.next_ind = max(self.vertices.keys()) + 1
     
-    def rename_constants_indices(self, offset):
+    def rename_constants_indices(self, mapping):
+        """
+        rename each constant index:
+            x <- mapping[x]
+        """
+        for v in self.vertices.keys():
+            if self.vertices[v].constant >= 0:
+                self.vertices[v].constant = mapping.get(self.vertices[v].constant, self.vertices[v].constant)
+        
+        new_all_cons = dict()
+        for c in self.all_cons.keys():
+            cv = self.all_cons.pop(c)
+            new_all_cons[mapping.get(c, c)] = cv
+        self.all_cons = new_all_cons
+        
+        for t in self.types_dict.keys():
+            self.types_dict[t] = mapping.get(self.types_dict[t], self.types_dict[t])
+        
+        self.next_cons = max(self.all_cons.keys()) + 1
+    
+    def rename_constants_offset(self, offset):
         """
         rename each constant index:
             x <- x + offset
         """
-        for v in self.vertices.keys():
-            if self.vertices[v].constant >= 0:
-                self.vertices[v].constant += offset
-        
-        for c in self.all_cons.keys():
-            cv = self.all_cons[c]
-            self.all_cons[c + offset] = cv
-            self.all_cons.pop(c)
-        
-        for t in self.types_dict.keys():
-            self.types_dict[t] += offset
-        
-        self.next_cons += offset
+        mapping = dict([(x, x + offset) for x in self.all_cons.values()])
+        self.rename_constants_indices(mapping)
     
     def vertex_lub(x, other, y):
         """
@@ -500,26 +509,55 @@ class Graph(object):
         edges_pairs = set()
         vertex_type = dict()
         
-        vertex_type[0] = 'common'
+        common_vertices = set()
+        
+        common_vertices.add(0)
+        
         q = deque([(0, 0)])
+        # go over the whole graph to find common vertices and edges
         while len(q):
-            (x,y) = q.popleft()
+            (x, y) = q.popleft()
             vertices_pairs.add((x, y))
-            common = set(self.vertices[x].sons.keys()).intersection(other.vertices[y].sons.keys())
+            common = set(self.vertices[y].sons.keys()).intersection(other.vertices[x].sons.keys())
             for c in common:
-                e0 = self.vertices[x].sons[c]
-                e1 = other.vertices[y].sons[c]
+                e0 = self.vertices[y].sons[c]
+                e1 = other.vertices[x].sons[c]
                 edge_pairs.add((e0, e1))
                 s0 = e0.son
                 s1 = e1.son
                 q.append((s0, s1))
-                vertex_type[s0] = 'common'
-                vertex_type[s1] = 'common'
+                common_vertices.add(s0)
+                common_vertices.add(s1)
         
-        
-        
+        # perform lub between the common edges
         self.handle_common_edges(edge_pairs)
         
+        # rename equal vertices of other graph
+        other.rename_vertices_indices(dict(vertices_pairs))
+        
+        # add other graph vertices and edges to self graph
+        for v in other.vertices.keys():
+            if v not in common_vertices:
+                # create new vertex from others
+                self.vertices[v] = other.vertices[v]
+                
+            # go over all edges of other graph, and if they are not common, lub their knowledge with L_MAY_HAVE
+            for ee in other.vertices[v].all_parents.values():
+                for e in ee:
+                    if e.son in common_vertices and e.parent in common_vertices:
+                        pass
+                    else:
+                        e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
+        
+        # modify self graph
+        for v in self.vertices.keys():
+            # go over all edges of self graph, and if they are not common, lub their knowledge with L_MAY_HAVE
+            for ee in self.vertices[v].all_parents.values():
+                for e in ee:
+                    if e.son in common_vertices and e.parent in common_vertices:
+                        pass
+                    else:
+                        e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
         
 """
 import sys
