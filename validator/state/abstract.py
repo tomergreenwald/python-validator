@@ -223,7 +223,7 @@ class AbstractState(object):
         """
         remove unused vertices from the graph
         """
-        self.graph.collect_garbage(self.var_to_vertex.values())
+        self.graph.collect_garbage()
         
     def lub(self, other):
         """
