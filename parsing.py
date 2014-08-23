@@ -35,6 +35,13 @@ else:
 if 1==2:
     aa = 1
 
+try:
+    aaaa = 1
+except:
+    aaa = 2
+#This should raise a warning after aviel finishes his part
+b = aaaa
+
 def func2(arg11):
     ii = arg11
 
