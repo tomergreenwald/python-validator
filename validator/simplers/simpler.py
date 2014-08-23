@@ -39,6 +39,9 @@ def should_call_args_simpler(node):
     for a in node.value.args:
         if not isinstance(a, _ast.Name):
             return True
+    for k in node.value.keywords:
+        if not isinstance(k.value, _ast.Name):
+            return True
     return False
 
 
@@ -58,6 +61,15 @@ def call_args_simpler(node):
                                         value=a
                                         ))
             node.value.args[index] = ast.Name(id=tmp_var_name, ctx=Load())
+    for k in node.value.keywords:
+        if not isinstance(k.value, _ast.Name):
+            tmp_var_name = random_tmp_var()
+            new_nodes.append(ast.Assign(
+                                        targets=[ast.Name(id=tmp_var_name, ctx=Store())],
+                                        value = k.value
+                                        )
+                             )
+            k.value = ast.Name(id=tmp_var_name, ctx=Load())
     return new_nodes + [node]
 
 
