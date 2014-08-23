@@ -541,6 +541,19 @@ class Graph(object):
                 common_vertices.add(s0)
                 common_vertices.add(s1)
     
+    def merge_cons(self, other):
+        """
+        merge constant indices between self and other, if the constant are of the same type
+        modifies other's constants
+        """
+        cons_pairs = []
+        for t,i in self.types_dict:
+            other_ind = other.types_dict.get(t, -1)
+            if other_ind >= 0:
+                cons_pairs.append((other_ind, i))
+        
+        other.rename_constants_indices(dict(cons_pairs))
+    
     def lub(self, other):
         """
         performs lub between self and other
@@ -552,13 +565,16 @@ class Graph(object):
         common_edges = set()
         common_vertices = set()
         
-        self.find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs
+        self.find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs)
         
         # perform lub between the common edges
-        self.handle_common_edges(edge_pairs)
+        self.handle_common_edges(common_edges)
         
         # rename equal vertices of other graph
         other.rename_vertices_indices(dict(vertices_pairs))
+        
+        # rename constants of other
+        self.merge_cons(other)
         
         # add other graph vertices and edges to self graph
         for v in other.vertices.keys():
