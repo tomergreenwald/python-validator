@@ -507,7 +507,7 @@ class Graph(object):
         # TODO continue to write this function
         
     
-    def handle_common_edges(self, edge_pairs):
+    def _handle_common_edges(self, edge_pairs):
         """
         lub between any two edges
         first element is edge of self, second element is edge of other
@@ -515,7 +515,7 @@ class Graph(object):
         for (e0, e1) in edge_pairs:
             e0.knowledge.inplace_lub(e1.knowledge)
     
-    def find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs):
+    def _find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs):
         """
         result:
             common_vertices: common vertices between self graph and other graph
@@ -541,7 +541,7 @@ class Graph(object):
                 common_vertices.add(s0)
                 common_vertices.add(s1)
     
-    def merge_cons(self, other):
+    def _merge_cons(self, other):
         """
         merge constant indices between self and other, if the constant are of the same type
         modifies other's constants
@@ -554,29 +554,10 @@ class Graph(object):
         
         other.rename_constants_indices(dict(cons_pairs))
     
-    def lub(self, other):
+    def _add_other_graph(self, other, common_vertices):
         """
-        performs lub between self and other
-        pairs are pairs of vertices that should be equal
-        self_inds are vertices that exists only in self
-        other_inds are vertices that exists only in other
+        add to self graph vertices and edges that are in other graph
         """
-        vertices_pairs = set()
-        common_edges = set()
-        common_vertices = set()
-        
-        self.find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs)
-        
-        # perform lub between the common edges
-        self.handle_common_edges(common_edges)
-        
-        # rename equal vertices of other graph
-        other.rename_vertices_indices(dict(vertices_pairs))
-        
-        # rename constants of other
-        self.merge_cons(other)
-        
-        # add other graph vertices and edges to self graph
         for v in other.vertices.keys():
             if v not in common_vertices:
                 # create new vertex from others
@@ -589,8 +570,11 @@ class Graph(object):
                         pass
                     else:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
-        
-        # modify self graph
+    
+    def _modify_existent_vertices(self, common_vertices):
+        """
+        vertices and edges that are in self graph and not in other's, should be modified
+        """
         for v in self.vertices.keys():
             # go over all edges of self graph, and if they are not common, lub their knowledge with L_MAY_HAVE
             for ee in self.vertices[v].all_parents.values():
@@ -599,6 +583,35 @@ class Graph(object):
                         pass
                     else:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
+    
+    def lub(self, other):
+        """
+        performs lub between self and other
+        pairs are pairs of vertices that should be equal
+        self_inds are vertices that exists only in self
+        other_inds are vertices that exists only in other
+        """
+        vertices_pairs = set()
+        common_edges = set()
+        common_vertices = set()
+        
+        self._find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs)
+        
+        # perform lub between the common edges
+        self._handle_common_edges(common_edges)
+        
+        # rename equal vertices of other graph
+        other.rename_vertices_indices(dict(vertices_pairs))
+        
+        # rename constants of other
+        self._merge_cons(other)
+        
+        # add other graph vertices and edges to self graph
+        self._add_other_graph(other, common_vertices)
+        
+        # modify self graph
+        self._modify_existent_vertices(common_vertices)
+        
         
 """
 import sys
