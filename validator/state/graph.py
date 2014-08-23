@@ -100,6 +100,7 @@ class Graph(object):
             self.all_cons[cons_ind] = const
         
         self.vertices[vertex_ind].constant = cons_ind
+        # new var won't be top
         self.vertices[vertex_ind].knowledge = LE(LE.L_MUST_HAVE)
     
     def create_new_vertex(self, label = '', bio_parent = 0):
@@ -354,14 +355,38 @@ class Graph(object):
         while len(q):
             v = q.popleft()
             neis = [edge.son for edge in self.vertices[v].sons.values()]
-            bio_parent = self.vertices[v].bio_edge.parent
-            if bio_parent >= 0:
-                neis.append(bio_parent)
+            # bio_parent = self.vertices[v].bio_edge.parent
+            # if bio_parent >= 0:
+            #     neis.append(bio_parent)
                 
             for u in neis:
                 if u not in used_vertices:
                     used_vertices.add(u)
                     q.append(u)
+        
+        for v in self.vertices.keys():
+            if self.vertices[v].constant >= 0:
+                continue
+        
+            # we need to check if we need to propagate constant from unused vertices to used vertices
+            unused_chain = []
+            
+            u = v
+            bedge = self.vertices[u].bio_edge
+
+            if bedge.parent in used_vertices:
+                # biological father should exist even after garbage will be collected
+                continue
+            
+            while bedge.parent >= 0 and self.vertices[u].constant < 0:
+                unused_chain.append((bedge.parent, bedge.label))
+                u = bedge.parent
+                bedge = self.vertices[u].bio_edge
+                
+            if self.vertices[u].constant >= 0:
+                # u != v
+                for (vertex, lbl) in unused_chain[::-1]:
+                    self.unlink_single_son(vertex, lbl)
         
         for v in self.vertices.keys():
             for l, ee in self.vertices[v].all_parents.items():
@@ -434,7 +459,7 @@ class Graph(object):
         for (e0, e1) in edge_pairs:
             e0.knowledge.inplace_lub(e1.knowledge)
     
-    def lub(self, other, pairs, self_inds, other_inds):
+    def lub(self):
         """
         performs lub between self and other
         pairs are pairs of vertices that should be equal
@@ -444,7 +469,7 @@ class Graph(object):
         vertices_pairs = set()
         edges_pairs = set()
         
-        q = deque(pairs)
+        q = deque([(0, 0)])
         while len(q):
             (x,y) = q.popleft()
             vertices_pairs.add((x, y))
