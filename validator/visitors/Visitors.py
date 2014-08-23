@@ -302,11 +302,9 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles for loop.
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
-        register_assignment(self.stack, self.abstract_state, node.iter.elts[0], node.target.id)
-        # FIXME: I selectede the first element in the list but we need to LUB all of it and then use this value
-        """register_assignment(self.stack, self.abstract_state, ast.Assign(
+        register_assignment(self.stack, self.abstract_state, ast.Assign(
             targets=[ast.Name(id=node.target, ctx=ast.Store())],
-            value=node.iter), node.target.id)"""
+            value=node.iter.id + '_vars_lub'), node.target.id)
         assess_list(node.body, self.stack, self.abstract_state, self.functions)
 
     def visit_If(self, node):
