@@ -244,13 +244,6 @@ class AbstractState(object):
             self.graph.rename_constants_offset(other.graph.next_cons + 1)
         
         self.graph.lub(self.other.graph)
-        
-        
-        # **************************** #
-        # TODO                         #
-        # **************************** #
-        # CONTINUE TO WORK FROM HERE   #
-        # **************************** #
     
 """
 import sys; sys.path.append(r'D:\school\verify\project2\python-validator\validator\state'); execfile(r'D:\school\verify\project2\python-validator\validator\state\abstract.py')
