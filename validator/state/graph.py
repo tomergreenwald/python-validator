@@ -288,7 +288,7 @@ class Graph(object):
             # vertex belongs to another parent
             pass
         else:
-            # TODO what is the meaning of this -1? 
+            # bio parent is -1 means that there is no bio parent
             self.vertices[v].bio_edge.parent = -1
             self.vertices[v].bio_edge.label = None # just to be sure, doesn't really matter
             
@@ -313,7 +313,7 @@ class Graph(object):
         
         # by this point, parent of son is -1, and is TOP or
         # has a non negative constant index
-        del self.vertices[vertex_ind].sons[son_label]
+        self.vertices[vertex_ind].sons.pop(son_label)
         
     
     def remove_vertex(self, vertex_ind):
