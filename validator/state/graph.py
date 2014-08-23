@@ -364,6 +364,13 @@ class Graph(object):
                     q.append(u)
         
         for v in self.vertices.keys():
+            for l, ee in self.vertices[v].all_parents.items():
+                new_ee = set()
+                for e in ee:
+                    if e.parent < 0 or e.parent in used_vertices:
+                        new_ee.add(e)
+                self.vertices[v].all_parents[l] = new_ee
+                        
             if v not in used_vertices:
                 self.vertices.pop(v)
     
