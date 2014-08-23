@@ -1,6 +1,7 @@
 import ast
 
 from validator.visitors.Visitors import ProgramVisitor
+from validator.simplers import  simpler
 
 classes = {}
 functions = {}
@@ -35,6 +36,13 @@ else:
 if 1==2:
     aa = 1
 
+try:
+    aaaa = 1
+except:
+    aaa = 2
+#This should raise a warning after aviel finishes his part
+b = aaaa
+
 def func2(arg11):
     ii = arg11
 
@@ -53,6 +61,8 @@ for i in [1,2,3]:
 a1 = func1(2, 1, def2 = 'stringy')
 #check = bfunc
 """
-ast_tree = ast.parse(code)
+simple = simpler.make_simple(code)
+print simple
+ast_tree = ast.parse(simple)
 visitor = ProgramVisitor()
 visitor.visit(ast_tree)

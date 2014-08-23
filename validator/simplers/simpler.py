@@ -25,12 +25,13 @@ def should_arth_simpler(node):
 
 
 def should_attr_simpler(node):
-    return isinstance(node.value, _ast.Attribute) and (
-    isinstance(node.value.value, _ast.Attribute) or isinstance(node.value.value, _ast.Call))
+    return isinstance(node.value, _ast.Attribute) and not isinstance(node.value.value, _ast.Name)
 
 
 def should_call_simpler(node):
-    return isinstance(node.value, _ast.Call) and not isinstance(node.value.func, _ast.Name)
+    return isinstance(node.value, _ast.Call) and isinstance(node.value.func, _ast.Attribute) \
+        and (isinstance(node.value.func.value, _ast.Attribute) or isinstance(node.value.func.value, _ast.Call))
+
 
 def should_call_args_simpler(node):
     if not isinstance(node.value, _ast.Call):
@@ -42,7 +43,9 @@ def should_call_args_simpler(node):
 
 
 def should_target_simpler(node):
-    return isinstance(node, _ast.Assign) and not isinstance(node.targets[0], _ast.Name)
+    return isinstance(node, _ast.Assign) and not (isinstance(node.targets[0], _ast.Name) 
+                                                  or (isinstance(node.targets[0], _ast.Attribute) 
+                                                  and isinstance(node.targets[0].value, _ast.Name)))
 
 
 def call_args_simpler(node):
@@ -74,9 +77,9 @@ def call_simpler(node):
     tmp_var_name = random_tmp_var()
     new_node = ast.Assign(
         targets=[ast.Name(id=tmp_var_name, ctx=Store())],
-        value=node.value.func
+        value=node.value.func.value
     )
-    node.value.func = ast.Name(id=tmp_var_name, ctx=Load())
+    node.value.func.value = ast.Name(id=tmp_var_name, ctx=Load())
     return new_node, node
 
 
@@ -84,9 +87,9 @@ def targets_simpler(node):
     tmp_var_name = random_tmp_var()
     new_node = ast.Assign(
         targets=[ast.Name(id=tmp_var_name, ctx=Store())],
-        value=node.targets[0]
+        value=node.targets[0].value
     )
-    node.targets[0] = ast.Name(id=tmp_var_name, ctx=Store())
+    node.targets[0].value = ast.Name(id=tmp_var_name, ctx=Load())
     return new_node, node
 
 

@@ -302,11 +302,9 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles for loop.
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
-        register_assignment(self.stack, self.abstract_state, node.iter.elts[0], node.target.id)
-        # FIXME: I selectede the first element in the list but we need to LUB all of it and then use this value
-        """register_assignment(self.stack, self.abstract_state, ast.Assign(
+        register_assignment(self.stack, self.abstract_state, ast.Assign(
             targets=[ast.Name(id=node.target, ctx=ast.Store())],
-            value=node.iter), node.target.id)"""
+            value=node.iter.id + '_vars_lub'), node.target.id)
         assess_list(node.body, self.stack, self.abstract_state, self.functions)
 
     def visit_If(self, node):
@@ -334,20 +332,20 @@ class ProgramVisitor(ast.NodeVisitor):
         # If no exception raises
         try_block = node.body
         try_block_abstract_states = before_block_abstract_states.clone()
-        assess_list(try_block, try_block_abstract_states, self.functions)
-        self.abstract_state.lub(try_block_abstract_states, self.functions)
+        assess_list(try_block, self.stack, try_block_abstract_states, self.functions)
+        self.abstract_state.lub(try_block_abstract_states)
 
         # If exception raises during the execution
         helper = []
         for expr in try_block:
             helper.append(expr)
             current_abstract_states = before_block_abstract_states.clone()
-            assess_list(helper, current_abstract_states)
+            assess_list(helper, self.stack, current_abstract_states, self.functions)
 
             for handler in node.handlers:
                 # TODO should add scope var with the "as e"
                 handler_abstract_states = current_abstract_states.clone()
-                assess_list(handler.body, handler_abstract_states)
+                assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
                 self.abstract_state.lub(handler_abstract_states)
 
 
