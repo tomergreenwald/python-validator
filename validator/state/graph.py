@@ -346,11 +346,9 @@ class Graph(object):
         a vertex is in use if there is a path from it to the root vertex, or if it is a biological parent
         of any vertex which is in use
         also calls to compress indices to decrease vertices indices as can
-        TODO: extend this to delete constant too
         """
         used_vertices = set()
         q = deque([0])
-        
         
         while len(q):
             v = q.popleft()
@@ -401,6 +399,25 @@ class Graph(object):
     
         # rename vertices so that indices will be compressed
         self.compress_indices()
+        
+        # throw away constant that are not in use
+        used_constant = set()
+        for ver in self.vertices.values():
+            if ver.constant >= 0:
+                used_constant.add(ver.constant)
+        
+        for t, i in self.types_dict.values():
+            if i not in used_constant:
+                self.types_dict.pop(t)
+        
+        for i in self.all_cons.keys():
+            if i not in used_constant:
+                self.all_cons.pop(i)
+        
+        # compress constant indices
+        c_mapping = dict(zip(sorted(self.all_cons.keys()), range(len(self.all_cons))))
+        self.rename_constants_indices(c_mapping)
+        self.next_cons = max(self.all_cons.keys()) + 1
     
     def compress_indices(self):
         """
