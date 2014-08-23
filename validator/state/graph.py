@@ -345,8 +345,8 @@ class Graph(object):
         remove unused vertices from the graph
         a vertex is in use if there is a path from it to the root vertex, or if it is a biological parent
         of any vertex which is in use
+        also calls to compress indices to decrease vertices indices as can
         TODO: extend this to delete constant too
-        TODO: decrease vertices indices as can
         """
         used_vertices = set()
         q = deque([0])
@@ -399,29 +399,59 @@ class Graph(object):
             if v not in used_vertices:
                 self.vertices.pop(v)
     
-    def rename_vertices_indices(self, offset):
+        # rename vertices so that indices will be compressed
+        self.compress_indices()
+    
+    def compress_indices(self):
+        """
+        rename vertices names so the indices will be compressed
+        """
+        mapping = self.build_compressed_mapping()
+        self.rename_vertices_indices(self.build_compressed_mapping())
+        self.next_ind = max(self.vertices.keys()) + 1
+    
+    def rename_vertices_offset(self, offset):
         """
         rename each vertex index:
             x <- x + offset
         root vertex remain to be index 0
         """
+        mapping = dict([(x, x + offset) for x in self.vertices.values()])
+        self.rename_vertices_indices(mapping)
+    
+    def build_compressed_mapping(self):
+        """
+        returns dict from set like 0,1,4,5,8 to be 0,1,2,3,4
+        """
+        keys = sorted(self.vertices.keys())
+        vals = range(len(keys))
+        
+        return dict(zip(keys, vals))
+    
+    def rename_vertices_indices(self, mapping):
+        """
+        rename each vertex index:
+            x <- mapping[x]
+        root vertex remain to be index 0
+        """
+        # go over all parents
         for v in self.vertices.keys():
             for ee in self.vertices[v].all_parents.values():
                 for e in ee:
                     if e.parent > 0:
-                        e.parent += offset
+                        e.parent = mapping[e.parent]
                     if e.son > 0:
-                        e.son += offset
+                        e.son = mapping[e.son]
             
-        
+        new_vertices = dict()
         for v in self.vertices.keys():
             if v == 0:
                 continue
-            gv = self.vertices[v]
-            self.vertices[v + offset] = gv
-            self.vertices.pop(v)
+            gv = self.vertices.pop(v)
+            new_vertices[mapping[v]] = gv
         
-        self.next_ind += offset
+        self.vertices = new_vertices
+        self.next_ind = max(self.vertices.keys()) + 1
     
     def rename_constants_indices(self, offset):
         """
@@ -468,7 +498,9 @@ class Graph(object):
         """
         vertices_pairs = set()
         edges_pairs = set()
+        vertex_type = dict()
         
+        vertex_type[0] = 'common'
         q = deque([(0, 0)])
         while len(q):
             (x,y) = q.popleft()
@@ -478,7 +510,13 @@ class Graph(object):
                 e0 = self.vertices[x].sons[c]
                 e1 = other.vertices[y].sons[c]
                 edge_pairs.add((e0, e1))
-                q.append((e0.son, e1.son))
+                s0 = e0.son
+                s1 = e1.son
+                q.append((s0, s1))
+                vertex_type[s0] = 'common'
+                vertex_type[s1] = 'common'
+        
+        
         
         self.handle_common_edges(edge_pairs)
         
