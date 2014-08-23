@@ -334,20 +334,20 @@ class ProgramVisitor(ast.NodeVisitor):
         # If no exception raises
         try_block = node.body
         try_block_abstract_states = before_block_abstract_states.clone()
-        assess_list(try_block, try_block_abstract_states, self.functions)
-        self.abstract_state.lub(try_block_abstract_states, self.functions)
+        assess_list(try_block, self.stack, try_block_abstract_states, self.functions)
+        self.abstract_state.lub(try_block_abstract_states)
 
         # If exception raises during the execution
         helper = []
         for expr in try_block:
             helper.append(expr)
             current_abstract_states = before_block_abstract_states.clone()
-            assess_list(helper, current_abstract_states)
+            assess_list(helper, self.stack, current_abstract_states, self.functions)
 
             for handler in node.handlers:
                 # TODO should add scope var with the "as e"
                 handler_abstract_states = current_abstract_states.clone()
-                assess_list(handler.body, handler_abstract_states)
+                assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
                 self.abstract_state.lub(handler_abstract_states)
 
 
