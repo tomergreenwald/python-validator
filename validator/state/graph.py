@@ -378,19 +378,20 @@ class Graph(object):
         """
         rename each vertex index:
             x <- x + offset
+        root vertex remain to be index 0
         """
         for v in self.vertices.keys():
             for ee in self.vertices[v].all_parents.values():
                 for e in ee:
-                    if e.parent >= 0:
+                    if e.parent > 0:
                         e.parent += offset
-                    if e.son >= 0:
+                    if e.son > 0:
                         e.son += offset
             
-            if self.vertices[v].bio_edge.parent < 0:
-                self.vertices[v].bio_edge.son += offset
         
         for v in self.vertices.keys():
+            if v == 0:
+                continue
             gv = self.vertices[v]
             self.vertices[v + offset] = gv
             self.vertices.pop(v)
