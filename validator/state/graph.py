@@ -504,6 +504,8 @@ class Graph(object):
         """
         v0 = self.vertices[x]
         v1 = other.vertices[y]
+        
+        v0.knowledge.inplace_lub(v1.knowledge)
         # TODO continue to write this function
         
     
@@ -595,16 +597,21 @@ class Graph(object):
         common_edges = set()
         common_vertices = set()
         
+        # rename constants of other
+        self._merge_cons(other)
+        
+        # find the intersection of both graphs
         self._find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs)
+        
+        # lub pairs of equal vertices
+        for (y, x) in vertices_pairs:
+            self.vertex_lub(x, other, y)
         
         # perform lub between the common edges
         self._handle_common_edges(common_edges)
         
         # rename equal vertices of other graph
         other.rename_vertices_indices(dict(vertices_pairs))
-        
-        # rename constants of other
-        self._merge_cons(other)
         
         # add other graph vertices and edges to self graph
         self._add_other_graph(other, common_vertices)
