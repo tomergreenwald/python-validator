@@ -515,19 +515,14 @@ class Graph(object):
         for (e0, e1) in edge_pairs:
             e0.knowledge.inplace_lub(e1.knowledge)
     
-    def lub(self):
+    def find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs):
         """
-        performs lub between self and other
-        pairs are pairs of vertices that should be equal
-        self_inds are vertices that exists only in self
-        other_inds are vertices that exists only in other
+        result:
+            common_vertices: common vertices between self graph and other graph
+            common_edges: common edges between self graph and other graph
+            vertices_pairs: pairs (y,x) of vertices in cartesian(other.vertices.keys(), self.vertices.keys())
+                            which are the same vertices
         """
-        vertices_pairs = set()
-        edges_pairs = set()
-        vertex_type = dict()
-        
-        common_vertices = set()
-        
         common_vertices.add(0)
         
         q = deque([(0, 0)])
@@ -539,12 +534,25 @@ class Graph(object):
             for c in common:
                 e0 = self.vertices[y].sons[c]
                 e1 = other.vertices[x].sons[c]
-                edge_pairs.add((e0, e1))
+                common_edges.add((e0, e1))
                 s0 = e0.son
                 s1 = e1.son
                 q.append((s0, s1))
                 common_vertices.add(s0)
                 common_vertices.add(s1)
+    
+    def lub(self, other):
+        """
+        performs lub between self and other
+        pairs are pairs of vertices that should be equal
+        self_inds are vertices that exists only in self
+        other_inds are vertices that exists only in other
+        """
+        vertices_pairs = set()
+        common_edges = set()
+        common_vertices = set()
+        
+        self.find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs
         
         # perform lub between the common edges
         self.handle_common_edges(edge_pairs)
