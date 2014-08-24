@@ -103,7 +103,7 @@ class Graph(object):
         # new var won't be top
         self.vertices[vertex_ind].knowledge = LE(LE.L_MUST_HAVE)
     
-    def create_new_vertex(self, bio_parent = 0, label = ''):
+    def create_new_vertex(self, parent = 0, label = ''):
         """
         add new vertex to the graph, returns the new vertex index
         initialize the vertex with a label. no father, no constant, not TOP
@@ -111,13 +111,13 @@ class Graph(object):
         v_ind = self.next_ind
         self.next_ind += 1
         new_v = GraphVertex(v_ind, label)
-        new_e = GraphEdge(label, son = v_ind, par = bio_parent)
+        new_e = GraphEdge(label, son = v_ind, par = parent)
         self.vertices[v_ind] = new_v
         
         self.vertices[v_ind].all_parents.add_element(label, new_e)
-        if self.vertices[bio_parent].sons.has_key(label):
-            self.unlink_single_son(bio_parent, label)
-        self.vertices[bio_parent].sons[label] = new_e
+        if self.vertices[parent].sons.has_key(label):
+            self.unlink_single_son(parent, label)
+        self.vertices[parent].sons[label] = new_e
         
         return v_ind
     
@@ -186,12 +186,9 @@ class Graph(object):
     
     def propagate_const_to_son(self, vertex_ind, son_label):
         cons_ind = self.vertices[vertex_ind].constant
-        son_ind = self.vertices[vertex_ind].sons[son_label]
+        son_ind = self.vertices[vertex_ind].sons[son_label].son
         
         if cons_ind < 0:
-            return
-        
-        if son_ind < 0:
             return
             
         vertex_const = self.all_cons[cons_ind]
@@ -201,7 +198,7 @@ class Graph(object):
         except Exception:
             return
         
-        self.set_vertex_to_const(vertex_const, son_const)
+        self.set_vertex_to_const(son_ind, son_const)
     
     def can_have_son(self, vertex_ind, son_label):
         """
@@ -287,7 +284,7 @@ class Graph(object):
         of any vertex which is in use
         also calls to compress indices to decrease vertices indices as can
         """
-        used_vertices = set()
+        used_vertices = set([0])
         q = deque([0])
         
         while len(q):
@@ -309,7 +306,7 @@ class Graph(object):
                         
             if v not in used_vertices:
                 self.vertices.pop(v)
-    
+        
         # rename vertices so that indices will be compressed
         self.compress_indices()
         
@@ -319,7 +316,7 @@ class Graph(object):
             if ver.constant >= 0:
                 used_constant.add(ver.constant)
         
-        for t, i in self.types_dict.values():
+        for t, i in self.types_dict.items():
             if i not in used_constant:
                 self.types_dict.pop(t)
         
@@ -337,7 +334,7 @@ class Graph(object):
         rename vertices names so the indices will be compressed
         """
         mapping = self.build_compressed_mapping()
-        self.rename_vertices_indices(self.build_compressed_mapping())
+        self.rename_vertices_indices(mapping)
         self.next_ind = max(self.vertices.keys()) + 1
     
     def rename_vertices_offset(self, offset):
@@ -375,10 +372,12 @@ class Graph(object):
             
         new_vertices = dict()
         for v in self.vertices.keys():
-            if v == 0:
-                continue
             gv = self.vertices.pop(v)
-            new_vertices[mapping.get(v, v)] = gv
+            
+            if v == 0:
+                new_vertices[0] = gv
+            else:
+                new_vertices[mapping.get(v, v)] = gv
         
         self.vertices = new_vertices
         self.next_ind = max(self.vertices.keys()) + 1
