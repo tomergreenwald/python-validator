@@ -7,7 +7,6 @@ logging.basicConfig(level = logging.DEBUG)
 """
 TODO
 (maybe) need to solve the problem where a constant refers to itself
-need to understand what the knowledge field actually means
 """
 
 class SetDict(dict):
@@ -149,13 +148,6 @@ class Graph(object):
         self.vertices[v].knowledge.val = LE.L_TOP
         # TODO do we want to set constant to -1 and move its value to sons?
         # TODO do we want to mark all its sons edges to TOP?
-    
-    def get_knowledge(self, v):
-        """
-        TODO rewrite this function
-        returns knowledge of vertex
-        """
-        return self.vertices[v].knowledge
     
     def _get_rooted_const(self, vertex_ind):
         """
@@ -423,9 +415,6 @@ class Graph(object):
             # TODO make a set of all possible constants
             v0.constant = -1
             v0.knowledge = LE(LE.L_TOP)
-        
-        # TODO continue to write this function
-        
     
     def _handle_common_edges(self, edge_pairs):
         """
