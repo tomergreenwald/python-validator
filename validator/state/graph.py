@@ -1,4 +1,5 @@
 import logging
+import copy
 from collections import deque
 from lattice import LatticeElement as LE
 logging.basicConfig(level = logging.DEBUG)
@@ -27,7 +28,7 @@ class GraphEdge(object):
         self.label = label
         self.son = son
         self.parent = par
-        self.knowledge = know if know is not None else LE(LE.L_MUST_HAVE)
+        self.knowledge = copy.copy(know) if know is not None else LE(LE.L_MUST_HAVE)
     
     def __repr__(self):
         return '(%d)->(%d)\tlabel\t%s\tknowledge\t%s' \
@@ -37,7 +38,6 @@ class GraphVertex(object):
     def __init__(self, ind, label):
         self.ind = ind
         self.constant = -1
-        # self.bio_edge = GraphEdge(label, son = ind, par = bio_parent)
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
@@ -121,7 +121,7 @@ class Graph(object):
         
         return v_ind
     
-    def make_parent(self, son, par, label):
+    def make_parent(self, son, par, label, know = None):
         """
         this function refers to step parent (not biological)
         connect son and parent by an edge (directed from the son to the parent)
@@ -129,7 +129,7 @@ class Graph(object):
         if not self.vertices.has_key(son) or not self.vertices.has_key(par):
             raise KeyError()
         
-        new_edge = GraphEdge(label, son, par)
+        new_edge = GraphEdge(label, son, par, know)
         self.vertices[son].all_parents.add_element(label, new_edge)
         
         if self.vertices[par].sons.has_key(label):
@@ -449,6 +449,8 @@ class Graph(object):
         # go over the whole graph to find common vertices and edges
         while len(q):
             (x, y) = q.popleft()
+            # TODO consider the case where a son of vertex x exists and son y doesnt, but
+            # can be added due to constant
             vertices_pairs.add((y, x))
             common = set(self.vertices[x].sons.keys()).intersection(other.vertices[y].sons.keys())
             for c in common:
@@ -488,7 +490,13 @@ class Graph(object):
             for ee in other.vertices[v].all_parents.values():
                 for e in ee:
                     if e.son in common_vertices and e.parent in common_vertices:
-                        pass
+                        # by this point, vertices had already been renamed
+                        if self.vertices[e.parent].sons.has_key(e.label):
+                            if self.vertices[e.parent].sons[e.label].son != e.son:
+                                assert False
+                            pass
+                        else:
+                            self.make_parent(e.son, e.parent, e.label, LE(LE.L_MAY_HAVE))
                     else:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
     
@@ -501,6 +509,7 @@ class Graph(object):
             for ee in self.vertices[v].all_parents.values():
                 for e in ee:
                     if e.son in common_vertices and e.parent in common_vertices:
+                        # TODO consider this case
                         pass
                     else:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
