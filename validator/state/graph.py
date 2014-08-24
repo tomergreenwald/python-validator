@@ -121,27 +121,6 @@ class Graph(object):
         
         return v_ind
     
-    def make_bio_parent(self, son, par):
-        """
-        this function refers to biological parent
-        connect son and parent by an edge (directed from the son to the parent)
-        disconnect son from parent if needed (TODO: think if we are doing it right or if it is necessary at all. update: current 3 calls to this function are called with new vertex)
-        """
-        if not self.vertices.has_key(son) or not self.vertices.has_key(par):
-            raise KeyError()
-            
-        if self.vertices[son].all_parents:
-            raise Exception("[make_bio_parent] making parent of son who already has parents...")
-        
-        bedge = self.vertices[son].bio_edge
-        bedge.parent = par
-        # now biological edge contains all the information
-        self.vertices[son].all_parents.add_element(bedge.label, bedge)
-
-        if self.vertices[par].sons.has_key(bedge.label):
-            self.unlink_single_son(par, bedge.label)
-        self.vertices[par].sons[bedge.label] = bedge
-    
     def make_step_parent(self, son, par, label):
         """
         this function refers to step parent (not biological)
@@ -547,6 +526,11 @@ class Graph(object):
         v1 = other.vertices[y]
         
         v0.knowledge.inplace_lub(v1.knowledge)
+        
+        if v0.constant != v1.constant:
+            # TODO make a set of all possible constants
+            v0.constant = -1
+        
         # TODO continue to write this function
         
     
