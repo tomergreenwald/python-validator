@@ -83,7 +83,7 @@ class Graph(object):
         self.types_dict = dict()
         self.all_cons = dict()
         
-        self.create_new_vertex('')
+        self.create_new_vertex(label = '')
     
     def set_vertex_to_const(self, vertex_ind, const):
         """
@@ -103,7 +103,7 @@ class Graph(object):
         # new var won't be top
         self.vertices[vertex_ind].knowledge = LE(LE.L_MUST_HAVE)
     
-    def create_new_vertex(self, label = '', bio_parent = 0):
+    def create_new_vertex(self, bio_parent = 0, label = ''):
         """
         add new vertex to the graph, returns the new vertex index
         initialize the vertex with a label. no father, no constant, not TOP
@@ -208,7 +208,7 @@ class Graph(object):
         for att in path_to_const[::-1]:
             try:
                 root_const = root_const.__getattribute__(att)
-            except:
+            except Exception:
                 logging.debug('[_get_rooted_const] failed to get attribute %s \
                                    from type %s' %(att, type(root_const)))
                 return None
@@ -231,6 +231,25 @@ class Graph(object):
             return self.vertices[par].sons[lbl].knowledge
         raise Exception("called get_son_knowledge for nonexistent son. parent %d label %s" %(par, lbl))
     
+    def propagate_const_to_son(self, vertex_ind, son_label):
+        cons_ind = self.vertices[vertex_ind].constant
+        son_ind = self.vertices[vertex_ind].sons[son_label]
+        
+        if cons_ind < 0:
+            return
+        
+        if son_ind < 0:
+            return
+            
+        vertex_const = self.all_cons[cons_ind]
+        
+        try:
+            son_const = vertex_const.__getattribute__(son_label)
+        except Exception:
+            return
+        
+        self.set_vertex_to_const(vertex_const, son_const)
+    
     def can_have_son(self, vertex_ind, son_label):
         """
         returns True if the son can be legally added to a vertex
@@ -250,7 +269,7 @@ class Graph(object):
         try:
             son_const = vertex_const.__getattribute__(son_label)
             return 'const'
-        except:
+        except Exception:
             logging.debug('[can_have_son] failed to get attribute %s \
                                    from type %s' %(son_label, type(vertex_const)))
             return False
@@ -300,7 +319,7 @@ class Graph(object):
                         new_const = vertex_const.__getattribute__(lbl)
                         self.set_vertex_to_const(v, new_const)
                         need_to_set_top = False
-                    except:
+                    except Exception:
                         logging.debug('[unlink_single_son] failed to get \
                                        attribute %s from type %s' \
                                        %(lbl, type(new_const)))
@@ -316,7 +335,6 @@ class Graph(object):
         # has a non negative constant index
         self.vertices[vertex_ind].sons.pop(son_label)
         
-    
     def remove_vertex(self, vertex_ind):
         """
         remove a vertex from the graph. first by unlinking it from its sons, 
@@ -340,6 +358,29 @@ class Graph(object):
         
         return res[:-1]
 
+    def _propagate_constant_to_vertex(self, v):
+        """
+        call this when you need to explicitly know what is the constant of
+        some vertex
+        """
+        # TODO CONTINUE FROM HERE
+        
+        chain_to_const = []
+            
+        u = v
+        bedge = self.vertices[u].bio_edge
+        
+        while bedge.parent >= 0 and self.vertices[u].constant < 0:
+            unused_chain.append((bedge.parent, bedge.label))
+            u = bedge.parent
+            bedge = self.vertices[u].bio_edge
+            
+        if self.vertices[u].constant >= 0:
+            # u != v
+            for (vertex, lbl) in unused_chain[::-1]:
+                self.unlink_single_son(vertex, lbl)
+        # TODO CONTINUE FROM HERE
+        
     def collect_garbage(self):
         """
         remove unused vertices from the graph
@@ -619,16 +660,3 @@ class Graph(object):
         # modify self graph
         self._modify_existent_vertices(common_vertices)
         
-        
-"""
-import sys
-sys.path.append(r'D:\school\verify\project2\python-validator\validator\state')
-execfile(r'D:\school\verify\project2\python-validator\validator\state\graph.py')
-
-class T(object):
-    def __init__(self):
-        self.b = 5
-        self.a = self
-
-g = Graph(); g.create_new_vertex(); g.create_new_vertex('a'); g.make_bio_parent(1, 0); g.create_new_vertex('a'); g.make_bio_parent(2, 1); g.create_new_vertex('b'); g.make_bio_parent(3, 0); g.create_new_vertex('');  g.create_new_vertex('b'); g.make_bio_parent(5, 4); g.set_vertex_to_const(0, T())
-"""

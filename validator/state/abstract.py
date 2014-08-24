@@ -46,7 +46,7 @@ class AbstractState(object):
         else:
             father_ind = ROOT_VERTEX
         
-        var_ind = self.graph.create_new_vertex(basename, father_ind)
+        var_ind = self.graph.create_new_vertex(father_ind, basename)
         self.graph.set_top(var_ind)
         
         return var_ind
@@ -94,7 +94,8 @@ class AbstractState(object):
                     return self.add_var_and_set_to_top(var) 
                 elif have_son == 'const':
                     # this must be the case that the son is legal due to constant
-                    son_ind = self.graph.create_new_vertex(basename, father_ind)
+                    son_ind = self.graph.create_new_vertex(father_ind, basename)
+                    self.graph.propagate_const_to_son(father_ind, basename)
                     return son_ind
                 elif have_son == 'edge':
                     # this must be the case that the son already exists in the graph
@@ -172,7 +173,7 @@ class AbstractState(object):
             # this is the case when we create new attribute
             father_ind, errors = self._get_var_index(father)
         
-        var_ind = self.graph.create_new_vertex(basename, father_ind)
+        var_ind = self.graph.create_new_vertex(father_ind, basename)
         return var_ind, errors
             
     
