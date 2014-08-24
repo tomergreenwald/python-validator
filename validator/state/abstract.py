@@ -216,7 +216,7 @@ class AbstractState(object):
         
         # set var0 to point to var1 vertex
         # create new step father
-        self.graph.make_step_parent(var1_ind, father0_ind, basename)
+        self.graph.make_parent(var1_ind, father0_ind, basename)
         
         return errors
             

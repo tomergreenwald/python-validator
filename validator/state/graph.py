@@ -121,7 +121,7 @@ class Graph(object):
         
         return v_ind
     
-    def make_step_parent(self, son, par, label):
+    def make_parent(self, son, par, label):
         """
         this function refers to step parent (not biological)
         connect son and parent by an edge (directed from the son to the parent)
