@@ -234,17 +234,25 @@ class AbstractState(object):
         self.collect_garbage()
         other.collect_garbage()
         
+        # rename the vertices and constant names, so that vertex at index 1 
+        # and constant at index 0 will be next vertex/constant of other/self
         if self.graph.next_ind >= other.graph.next_ind:
-            other.graph.rename_vertices_offset(self.graph.next_ind + 1)
+            other.graph.rename_vertices_offset(self.graph.next_ind - 1)
         else:
-            self.graph.rename_vertices_offset(other.graph.next_ind + 1)
+            self.graph.rename_vertices_offset(other.graph.next_ind - 1)
         
         if self.graph.next_cons >= other.graph.next_cons:
-            other.graph.rename_constants_offset(self.graph.next_cons + 1)
+            other.graph.rename_constants_offset(self.graph.next_cons)
         else:
-            self.graph.rename_constants_offset(other.graph.next_cons + 1)
+            self.graph.rename_constants_offset(other.graph.next_cons)
         
-        self.graph.lub(self.other.graph)
+        print 'self'
+        print self.graph
+        print
+        print 'other'
+        print other.graph
+        
+        self.graph.lub(other.graph)
     
 """
 import sys; sys.path.append(r'D:\school\verify\project2\python-validator\validator\state'); execfile(r'D:\school\verify\project2\python-validator\validator\state\abstract.py')
@@ -257,5 +265,8 @@ class T(object):
 a = AbstractState(); a.set_var_to_const('x', T()); a.set_var_to_var('z', 'x.a.a.a.b.real.real'); a.set_var_to_const('y', Exception()); a.set_var_to_var('x.a.a.a.b', 'y.message'); 
 
 a._get_var_index('x.a.a.a.b.real')
+
+
+a = AbstractState(); a.set_var_to_const('x', 'aviel'); a._get_var_index('x.index'); a.set_var_to_const('x.t', 5); a2 = AbstractState(); a2.set_var_to_const('x', 'afdsfds'); a2.set_var_to_const('x.t', 5.6); a2.set_var_to_var('y', 'x.t')
 
 """

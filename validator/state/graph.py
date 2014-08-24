@@ -343,7 +343,7 @@ class Graph(object):
             x <- x + offset
         root vertex remain to be index 0
         """
-        mapping = dict([(x, x + offset) for x in self.vertices.values()])
+        mapping = dict([(x, x + offset) for x in self.vertices.keys()])
         self.rename_vertices_indices(mapping)
     
     def build_compressed_mapping(self):
@@ -407,10 +407,10 @@ class Graph(object):
         rename each constant index:
             x <- x + offset
         """
-        mapping = dict([(x, x + offset) for x in self.all_cons.values()])
+        mapping = dict([(x, x + offset) for x in self.all_cons.keys()])
         self.rename_constants_indices(mapping)
     
-    def vertex_lub(x, other, y):
+    def vertex_lub(self, x, other, y):
         """
         lub between self.vertices[x] and other.vertices[y]
         """
@@ -422,6 +422,7 @@ class Graph(object):
         if v0.constant != v1.constant:
             # TODO make a set of all possible constants
             v0.constant = -1
+            v0.knowledge = LE(LE.L_TOP)
         
         # TODO continue to write this function
         
@@ -448,17 +449,18 @@ class Graph(object):
         # go over the whole graph to find common vertices and edges
         while len(q):
             (x, y) = q.popleft()
-            vertices_pairs.add((x, y))
-            common = set(self.vertices[y].sons.keys()).intersection(other.vertices[x].sons.keys())
+            vertices_pairs.add((y, x))
+            common = set(self.vertices[x].sons.keys()).intersection(other.vertices[y].sons.keys())
             for c in common:
-                e0 = self.vertices[y].sons[c]
-                e1 = other.vertices[x].sons[c]
+                e0 = self.vertices[x].sons[c]
+                e1 = other.vertices[y].sons[c]
                 common_edges.add((e0, e1))
                 s0 = e0.son
                 s1 = e1.son
-                q.append((s0, s1))
-                common_vertices.add(s0)
-                common_vertices.add(s1)
+                if s0 != 0 and s1 != 0:
+                    q.append((s0, s1))
+                    common_vertices.add(s0)
+                    common_vertices.add(s1)
     
     def _merge_cons(self, other):
         """
@@ -466,7 +468,7 @@ class Graph(object):
         modifies other's constants
         """
         cons_pairs = []
-        for t,i in self.types_dict:
+        for t,i in self.types_dict.items():
             other_ind = other.types_dict.get(t, -1)
             if other_ind >= 0:
                 cons_pairs.append((other_ind, i))
