@@ -478,18 +478,40 @@ class Graph(object):
             # go over all edges of other graph, and if they are not common, lub their knowledge with L_MAY_HAVE
             for ee in other.vertices[v].all_parents.values():
                 for e in ee:
-                    if e.son in common_vertices and e.parent in common_vertices:
+                    print 'consider edge %s' %e
+                    son_common = e.son in common_vertices
+                    parent_common = e.parent in common_vertices
+                    
+                    if son_common and parent_common:
                         # by this point, vertices had already been renamed
+                        # check if this vertex exists also in self graph
                         if self.vertices[e.parent].sons.has_key(e.label):
                             if self.vertices[e.parent].sons[e.label].son != e.son:
                                 assert False
+                            # edge already exists in self graph, so this will be handled somewhere
                             pass
                         else:
+                            print 'new edge'
+                            # this edge is new, but connects two common vertices
                             self.make_parent(e.son, e.parent, e.label, LE(LE.L_MAY_HAVE))
                     else:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
+                        
+                        if not son_common and not parent_common:
+                            # both endpoints are not common, so this edge will be added when the vertices will be added
+                            pass
+                        elif not son_common:
+                            # only parent in graph. add son
+                            if self.vertices[e.parent].sons.has_key(e.label):
+                                self.unlink_single_son(e.parent, e.label)
+                            self.vertices[e.parent].sons[e.label] = e
+                        else:
+                            # only son in graph. add parent
+                            self.vertices[son].all_parents.add_element(e.label, e.parent)
+                            
+                    print 'done with edge'
     
-    def _modify_existent_vertices(self, common_vertices):
+    def _modify_existent_vertices(self, common_vertices, other):
         """
         vertices and edges that are in self graph and not in other's, should be modified
         """
@@ -497,10 +519,16 @@ class Graph(object):
             # go over all edges of self graph, and if they are not common, lub their knowledge with L_MAY_HAVE
             for ee in self.vertices[v].all_parents.values():
                 for e in ee:
+                    edge_is_new = True
+                    # check if this edge exists in other graph
+                    # the two endpoints should exists, and there should be a label connecting them
                     if e.son in common_vertices and e.parent in common_vertices:
-                        # TODO consider this case
-                        pass
-                    else:
+                        if other.vertices[e.parent].sons.has_key(e.label):
+                            if other.vertices[e.parent].sons[e.label].son != e.son:
+                                assert False
+                            edge_is_new = False
+                            
+                    if edge_is_new:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
     
     def lub(self, other):
@@ -534,5 +562,5 @@ class Graph(object):
         self._add_other_graph(other, common_vertices)
         
         # modify self graph
-        self._modify_existent_vertices(common_vertices)
+        self._modify_existent_vertices(common_vertices, other)
         
