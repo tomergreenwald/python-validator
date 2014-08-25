@@ -230,7 +230,10 @@ class AbstractState(object):
         """
         perform inplace lub (self = lub(self, other))
         """
-        # this is a good point to get rid of unused vertices
+        
+        self.graph.fill_graphs(other.graph)
+        
+        # this is a good point to get rid of unused vertices and constants
         self.collect_garbage()
         other.collect_garbage()
         

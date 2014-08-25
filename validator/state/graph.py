@@ -478,7 +478,6 @@ class Graph(object):
             # go over all edges of other graph, and if they are not common, lub their knowledge with L_MAY_HAVE
             for ee in other.vertices[v].all_parents.values():
                 for e in ee:
-                    print 'consider edge %s' %e
                     son_common = e.son in common_vertices
                     parent_common = e.parent in common_vertices
                     
@@ -491,7 +490,6 @@ class Graph(object):
                             # edge already exists in self graph, so this will be handled somewhere
                             pass
                         else:
-                            print 'new edge'
                             # this edge is new, but connects two common vertices
                             self.make_parent(e.son, e.parent, e.label, LE(LE.L_MAY_HAVE))
                     else:
@@ -508,8 +506,6 @@ class Graph(object):
                         else:
                             # only son in graph. add parent
                             self.vertices[son].all_parents.add_element(e.label, e.parent)
-                            
-                    print 'done with edge'
     
     def _modify_existent_vertices(self, common_vertices, other):
         """
@@ -563,4 +559,56 @@ class Graph(object):
         
         # modify self graph
         self._modify_existent_vertices(common_vertices, other)
+    
+    def fill_graphs(self, other):
+        """
+        if a vertex exists in both graphs, but explicitly in one and implicitly
+        in the other, we want to make sure that the vertex exists explicitly in
+        both graphs.
+        """
+        
+        q = deque([(0, 0)])
+        # go over the whole graph to find common vertices and edges
+        while len(q):
+            (x, y) = q.popleft()
+            x_sons = set(self.vertices[x].sons.keys())
+            y_sons = set(other.vertices[y].sons.keys())
+            
+            # go over all sons of x which are not exists in y yet
+            for only_x in x_sons.difference(y_sons):
+                father_ind = y
+                basename = self.vertices[x].sons[only_x].label
+                can_have = other.can_have_son(father_ind, basename)
+                
+                # check if the son should be exist as a son of y
+                if can_have == 'top' or can_have == 'const':
+                    var_ind = other.create_new_vertex(father_ind, basename)
+                    if can_have == 'top':
+                        other.set_top(var_ind)
+                    elif can_have == 'const':    
+                        other.propagate_const_to_son(father_ind, basename)
+                    
+                    q.append((self.vertices[x].sons[only_x].son, var_ind))
+            
+            # do the same, but for the opposite graphs role
+            for only_y in y_sons.difference(x_sons):
+                father_ind = x
+                basename = other.vertices[y].sons[only_y].label
+                can_have = self.can_have_son(father_ind, basename)
+                
+                if can_have == 'top' or can_have == 'const':
+                    var_ind = self.create_new_vertex(father_ind, basename)
+                    if can_have == 'top':
+                        self.set_top(var_ind)
+                    elif can_have == 'const':    
+                        self.propagate_const_to_son(father_ind, basename)
+                    
+                    q.append((var_ind, other.vertices[y].sons[only_y].son))
+
+            common = x_sons.intersection(y_sons)
+            for c in common:
+                s0 = self.vertices[x].sons[c].son
+                s1 = other.vertices[y].sons[c].son
+                if s0 != 0 and s1 != 0:
+                    q.append((s0, s1))
         
