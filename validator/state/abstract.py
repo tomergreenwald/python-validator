@@ -107,6 +107,16 @@ class AbstractState(object):
             # father is not part of the graph
             return -1
     
+    def query(self, var_name, add_tops = True):
+        """
+        returns list of possible errors and alerts when querying a
+        variable/attribute.
+        if add_tops is True, then the graph is fixed, so the variable
+        will exists legally in the graph
+        """
+        (i, r) = self._get_var_index(var_name, add_tops)
+        return r
+    
     def _get_var_index(self, var_name, add_tops = True):
         """
         returns vertex index if we can
