@@ -54,6 +54,8 @@ class AbstractState(object):
     def remove_var(self, var):
         """
         call this when a variable is not relevant anymore
+        TODO call to graph's remove_vertex
+             think what should we do with querying the var. when this function will be called?
         """
         pass
     
