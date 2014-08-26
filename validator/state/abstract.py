@@ -54,7 +54,6 @@ class AbstractState(object):
     def remove_var(self, var):
         """
         call this when a variable is not relevant anymore
-        TODO implement some kind of garbage collector to release saved constants
         """
         pass
     
@@ -142,6 +141,7 @@ class AbstractState(object):
                 
                 if son_knowledge.val != LE.L_MUST_HAVE:
                     res.append(("Alert", "var %s attribute %s" %(var_to_father(f), var_to_basename(f))))
+                    # TODO change val to be LE.L_MUST_HAVE ?
                     
         
         return (self._expression_to_vertex_index(var_name), res)
@@ -248,12 +248,6 @@ class AbstractState(object):
             other.graph.rename_constants_offset(self.graph.next_cons)
         else:
             self.graph.rename_constants_offset(other.graph.next_cons)
-        
-        print 'self'
-        print self.graph
-        print
-        print 'other'
-        print other.graph
         
         self.graph.lub(other.graph)
     

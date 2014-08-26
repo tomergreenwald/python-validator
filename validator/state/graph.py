@@ -106,6 +106,7 @@ class Graph(object):
         """
         add new vertex to the graph, returns the new vertex index
         initialize the vertex with a label. no father, no constant, not TOP
+        TODO write this function using make_parent function
         """
         v_ind = self.next_ind
         self.next_ind += 1
@@ -154,6 +155,7 @@ class Graph(object):
         received a vertex index
         return the constant which this vertex correspond to, or None if there
         is no such constant
+        TODO what if None is the constant?
         """
         cons_ind = self.vertices[vertex_ind].constant
         vertex_const = self.all_cons.get(cons_ind, None)
@@ -171,6 +173,7 @@ class Graph(object):
     def get_son_knowledge(self, par, lbl):
         """
         like get_son_index, but instead of returning the son index, returns the knowledge of that edge
+        TODO check if the exception is necessary
         """
         if self.vertices[par].sons.has_key(lbl):
             return self.vertices[par].sons[lbl].knowledge
@@ -228,8 +231,6 @@ class Graph(object):
         
         for lbl in self.vertices[vertex_ind].sons.keys():
             self.unlink_single_son(vertex_ind, lbl)
-        
-        return
     
     def unlink_single_son(self, vertex_ind, son_label):
         """
@@ -565,6 +566,8 @@ class Graph(object):
         if a vertex exists in both graphs, but explicitly in one and implicitly
         in the other, we want to make sure that the vertex exists explicitly in
         both graphs.
+        a vertex can exist implicitly if it can be a son due to constant, or
+        due to TOP of its father
         """
         
         q = deque([(0, 0)])
