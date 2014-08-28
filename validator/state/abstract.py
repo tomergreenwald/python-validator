@@ -57,7 +57,7 @@ class AbstractState(object):
     
     def _expression_to_vertex_index(self, var):
         """
-        receive an expression like f!g!x.a.b.c.a.b.c.a.b.c
+        receive an expression like f#g#x.a.b.c.a.b.c.a.b.c
         returns the index of the vertex corresponding to it
         logic:
             if the variable exists in vars_set, returns its index
