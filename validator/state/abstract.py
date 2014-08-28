@@ -45,13 +45,15 @@ class AbstractState(object):
         
         return var_ind
     
-    def remove_var(self, var):
+    def remove_var(self, var, add_tops = True):
         """
         call this when a variable is not relevant anymore
-        TODO call to graph's remove_vertex
-             think what should we do with querying the var. when this function will be called?
+        if add_tops is True, the path to this vertex will be considered as L_MUST_HAVE
         """
-        pass
+        (i, r) = self._get_var_index(var, add_tops)
+        if i >= 0:
+            self.graph.remove_vertex(i)
+        return r
     
     def _expression_to_vertex_index(self, var):
         """
