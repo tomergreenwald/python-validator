@@ -145,10 +145,11 @@ class Graph(object):
     def set_top(self, v):
         """
         set a var to be TOP
+        set its constant to be -1
         """
         self.vertices[v].knowledge.val = LE.L_TOP
-        # TODO do we want to set constant to -1 and move its value to sons?
-        # TODO do we want to mark all its sons edges to TOP?
+        self.vertices[v].constant = -1
+        # TODO do we want to mark all its sons edges to L_MAY_HAVE?
     
     def _get_rooted_const(self, vertex_ind):
         """
@@ -446,8 +447,6 @@ class Graph(object):
         # go over the whole graph to find common vertices and edges
         while len(q):
             (x, y) = q.popleft()
-            # TODO consider the case where a son of vertex x exists and son y doesnt, but
-            # can be added due to constant
             vertices_pairs.add((y, x))
             common = set(self.vertices[x].sons.keys()).intersection(other.vertices[y].sons.keys())
             for c in common:
