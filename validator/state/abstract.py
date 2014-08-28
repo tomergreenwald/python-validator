@@ -8,6 +8,18 @@ from lattice import LatticeElement as LE
 ROOT_VERTEX = 0
 
 class AbstractState(object):
+    """
+    API methods:
+        returns list of errors:
+            remove_var(var_name)
+            query(var_name)
+            set_var_to_const(var_name, val)
+            set_var_to_var(var0, var1)
+        other functions:
+            add_var_and_set_to_top(var_name)
+            lub(other)
+            clone()
+    """
     def __init__(self):
         """
         """
