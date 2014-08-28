@@ -173,11 +173,18 @@ class Graph(object):
     def get_son_knowledge(self, par, lbl):
         """
         like get_son_index, but instead of returning the son index, returns the knowledge of that edge
-        TODO check if the exception is necessary
         """
         if self.vertices[par].sons.has_key(lbl):
             return self.vertices[par].sons[lbl].knowledge
-        raise Exception("called get_son_knowledge for nonexistent son. parent %d label %s" %(par, lbl))
+        assert False
+    
+    def set_son_knowledge_to_must(self, par, lbl):
+        """
+        set the knowledge of an edge labelled lbl, with parent par, to be L_MUST_HAVE
+        """
+        if self.vertices[par].sons.has_key(lbl):
+            self.vertices[par].sons[lbl].knowledge.val = LE.L_MUST_HAVE
+        assert False
     
     def propagate_const_to_son(self, vertex_ind, son_label):
         cons_ind = self.vertices[vertex_ind].constant

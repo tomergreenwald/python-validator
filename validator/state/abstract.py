@@ -153,7 +153,9 @@ class AbstractState(object):
                 
                 if son_knowledge.val != LE.L_MUST_HAVE:
                     res.append(("Alert", "var %s attribute %s" %(var_to_father(f), var_to_basename(f))))
-                    # TODO change val to be LE.L_MUST_HAVE ?
+                    if add_tops:
+                        # change knowledge of edge to be L_MUST_HAVE
+                        self.graph.set_son_knowledge_to_must(old_f_ind, basename)
                     
         
         return (self._expression_to_vertex_index(var_name), res)
