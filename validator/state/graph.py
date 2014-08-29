@@ -2,7 +2,6 @@ import logging
 import copy
 from collections import deque
 from lattice import LatticeElement as LE
-from utils import MyNone
 # logging.basicConfig(level = logging.DEBUG)
 
 """
@@ -44,7 +43,6 @@ class GraphEdge(object):
 class GraphVertex(object):
     def __init__(self, ind, label):
         self.ind = ind
-        self.constant = -1
         self.all_constants = set()
         self.sons = dict()
         self.all_parents = SetDict()
@@ -61,7 +59,7 @@ class GraphVertex(object):
             self.sons.pop(lbl)
     
     def __repr__(self):
-        return 'const\t%d\tknowledge\t%s\n' %(self.constant, self.knowledge) + \
+        return 'knowledge\t%s\n' %(self.knowledge) + \
                'all constants:\t%s\n' %self.all_constants + \
                'sons:\n%s\n' %('\n'.join(['\t%s' %x for x in self.sons.values()])) + \
                'parents:\n%s' %('\n'.join(['\t%s' %x for x in self.all_parents.values()]))
@@ -100,7 +98,6 @@ class Graph(object):
         add the constant to the constants pull if necessary (a constant of a new type)
         mark this vertex as non top
         """
-        # self.vertices[vertex_ind].constant = cons_ind
         self.vertices[vertex_ind].all_constants.clear()
         
         self._add_const_to_vertex(vertex_ind, const)
@@ -163,7 +160,6 @@ class Graph(object):
         set its constant to be -1
         """
         self.vertices[v].knowledge.val = LE.L_TOP
-        self.vertices[v].constant = -1
         self.vertices[v].all_constants.clear()
         # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
         # this function is called only on new vertices, but we need to reconsider this
@@ -178,12 +174,6 @@ class Graph(object):
                              for cons_ind in self.vertices[vertex_ind].all_constants])
 
         return vertex_consts
-        """
-        cons_ind = self.vertices[vertex_ind].constant
-        vertex_const = self.all_cons.get(cons_ind, MyNone())
-        
-        return vertex_const
-        """
     
     def get_son_index(self, par, lbl):
         """
@@ -215,7 +205,6 @@ class Graph(object):
         when vertex_ind is equal to a constant, and we want its son labelled son_label
         to have a constant too
         """
-        # TODO propagate a set of consts instead of a single one
         # get all possible constants of father
         possible_consts = self._get_vertex_consts(vertex_ind)
         if len(possible_consts) == 0:
@@ -255,10 +244,6 @@ class Graph(object):
         vertex_consts = self._get_vertex_consts(vertex_ind)
         if len(vertex_consts) == 0:
             return SonKnowledge.FALSE
-        """
-        if isinstance(vertex_const, MyNone):
-            return False
-        """
         
         # check for how many possible constants the label can belong
         success = 0
@@ -291,7 +276,6 @@ class Graph(object):
         need to implement some kind of garbage collector to remove sons too
         this suppose to happen when this vertex is overwritten
         """
-        
         for lbl in self.vertices[vertex_ind].sons.keys():
             self.unlink_single_son(vertex_ind, lbl)
     
@@ -370,10 +354,6 @@ class Graph(object):
         used_constant = set()
         for ver in self.vertices.values():
             used_constant.update(ver.all_constants)
-            """
-            if ver.constant >= 0:
-                used_constant.add(ver.constant)
-            """
         
         for t, i in self.types_dict.items():
             if i not in used_constant:
@@ -452,10 +432,6 @@ class Graph(object):
                 new_cons_set.add(mapping.get(c, c))
             
             self.vertices[v].all_constants = new_cons_set
-            """
-            if self.vertices[v].constant >= 0:
-                self.vertices[v].constant = mapping.get(self.vertices[v].constant, self.vertices[v].constant)
-            """
             
         new_all_cons = dict()
         for c in self.all_cons.keys():
@@ -490,14 +466,6 @@ class Graph(object):
             self.set_top(v0)
         else:
             v0.all_constants.update(v1.all_constants)
-        
-        """
-        if v0.constant != v1.constant:
-            # TODO make a set of all possible constants
-            # v0.constant = -1
-            # v0.knowledge = LE(LE.L_TOP)
-            self.set_top(x)
-        """
     
     def _handle_common_edges(self, edge_pairs):
         """

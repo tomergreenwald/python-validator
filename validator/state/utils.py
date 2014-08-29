@@ -21,7 +21,3 @@ def var_to_basename(var_name):
     if last_dot < 0:
         return var_name
     return var_name[last_dot + 1:]
-    
-class MyNone(object):
-    pass
-    
