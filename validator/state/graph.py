@@ -2,7 +2,8 @@ import logging
 import copy
 from collections import deque
 from lattice import LatticeElement as LE
-logging.basicConfig(level = logging.DEBUG)
+from utils import MyNone
+# logging.basicConfig(level = logging.DEBUG)
 
 """
 TODO
@@ -154,12 +155,11 @@ class Graph(object):
     def _get_rooted_const(self, vertex_ind):
         """
         received a vertex index
-        return the constant which this vertex correspond to, or None if there
+        return the constant which this vertex correspond to, or MyNone if there
         is no such constant
-        TODO what if None is the constant?
         """
         cons_ind = self.vertices[vertex_ind].constant
-        vertex_const = self.all_cons.get(cons_ind, None)
+        vertex_const = self.all_cons.get(cons_ind, MyNone())
         
         return vertex_const
     
@@ -216,7 +216,7 @@ class Graph(object):
             return 'top'
             
         vertex_const = self._get_rooted_const(vertex_ind)
-        if vertex_const is None:
+        if isinstance(vertex_const, MyNone):
             return False
         
         try:
@@ -235,7 +235,6 @@ class Graph(object):
         need to implement some kind of garbage collector to remove sons too
         this suppose to happen when this vertex is overwritten
         """
-        vertex_const = self._get_rooted_const(vertex_ind)
         
         for lbl in self.vertices[vertex_ind].sons.keys():
             self.unlink_single_son(vertex_ind, lbl)
