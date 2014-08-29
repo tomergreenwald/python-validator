@@ -107,18 +107,13 @@ class Graph(object):
         """
         add new vertex to the graph, returns the new vertex index
         initialize the vertex with a label. no father, no constant, not TOP
-        TODO write this function using make_parent function
         """
         v_ind = self.next_ind
         self.next_ind += 1
         new_v = GraphVertex(v_ind, label)
-        new_e = GraphEdge(label, son = v_ind, par = parent)
         self.vertices[v_ind] = new_v
         
-        self.vertices[v_ind].all_parents.add_element(label, new_e)
-        if self.vertices[parent].sons.has_key(label):
-            self.unlink_single_son(parent, label)
-        self.vertices[parent].sons[label] = new_e
+        self.make_parent(v_ind, parent, label)
         
         return v_ind
     
@@ -150,7 +145,8 @@ class Graph(object):
         """
         self.vertices[v].knowledge.val = LE.L_TOP
         self.vertices[v].constant = -1
-        # TODO do we want to mark all its sons edges to L_MAY_HAVE?
+        # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
+        # this function is called only on new vertices, but we need to reconsider this
     
     def _get_rooted_const(self, vertex_ind):
         """
@@ -421,8 +417,9 @@ class Graph(object):
         
         if v0.constant != v1.constant:
             # TODO make a set of all possible constants
-            v0.constant = -1
-            v0.knowledge = LE(LE.L_TOP)
+            # v0.constant = -1
+            # v0.knowledge = LE(LE.L_TOP)
+            self.set_top(x)
     
     def _handle_common_edges(self, edge_pairs):
         """
