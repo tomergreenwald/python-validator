@@ -1,7 +1,7 @@
 import ast
 
 from validator.state.abs_state import AbstractState
-from validator.representation import ClassRepresentation
+
 
 class Frame(object):
     def __init__(self, frame_name):
@@ -260,39 +260,9 @@ def initialize_abstract_state(abstract_state):
     abstract_state.set_var_to_const('root#False', False)
     abstract_state.set_var_to_const('root#None', None)
 
-class ClassDefVisitor(ast.NodeVisitor):
-    """
-    Handles class definitions. Creates new class in classes dictionary and set it's name,
-    super class, methods and statics
-    """
-
-    def __init__(self, classes):
-        super(ClassDefVisitor, self).__init__()
-        self.clazz = None
-        self.classes = classes
-
-    def visit_ClassDef(self, node):
-        self.clazz = ClassRepresentation(node.name, node.bases[0].id)
-        self.classes[node.name] = self.clazz
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node):
-        #FunctionDefVisitor(self.functions).visit(node)
-        args = [a.id for a in node.args.args]
-
-        if len(args) > 0 and args[0] is 'self':
-            self.clazz.methods[node.name] = node
-        else:
-            self.clazz.static_methods[node.name] = node
-
-    def visit_Assign(self, node):
-        handle_assign(node, self.clazz.static_vars)
-
-
-
 
 class ProgramVisitor(ast.NodeVisitor):
-    def __init__(self, stack=Stack(), abstract_state=None, functions={}, classes = {}):
+    def __init__(self, stack=Stack(), abstract_state=None, functions={}):
         """
         Should visit all the program
         """
@@ -304,15 +274,14 @@ class ProgramVisitor(ast.NodeVisitor):
             self.abstract_state = abstract_state
         self.stack = stack
         self.functions = functions
-        self.classes = classes
 
     def visit_ClassDef(self, node):
-        #"""
+        """
         if len(node.bases) is not 1:
             raise Exception('Multiple inheritance does not supported (%s)' % node.name)
-        ClassDefVisitor(self.classes).visit(node)
-        #"""
-        #raise Exception('Call visit is not supported yet')
+        ClassDefVisitor().visit(node)
+        """
+        raise Exception('Call visit is not supported yet')
 
     def visit_FunctionDef(self, node):
         # TODO - should be stack either
@@ -333,11 +302,9 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles for loop.
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
-        #register_assignment(self.stack, self.abstract_state, node.iter.elts[0], node.target.id)
-        # FIXME: I selectede the first element in the list but we need to LUB all of it and then use this value
         register_assignment(self.stack, self.abstract_state, ast.Assign(
             targets=[ast.Name(id=node.target, ctx=ast.Store())],
-            value=node.iter), node.target.id)
+            value=node.iter.id + '_vars_lub'), node.target.id)
         assess_list(node.body, self.stack, self.abstract_state, self.functions)
 
     def visit_If(self, node):

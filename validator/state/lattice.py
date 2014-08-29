@@ -40,7 +40,7 @@ class LatticeElement(object):
             raise VerifierError("Attribute does not exist")
     
     def inplace_lub(self, p):
-        self.element = self.lub(self, p)
+        self.val = self.lub(self, p).val
     
     @staticmethod
     def lub(p0, p1):
