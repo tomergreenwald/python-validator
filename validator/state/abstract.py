@@ -1,6 +1,6 @@
 from copy import deepcopy
 import logging
-from graph import Graph
+from graph import Graph, SonKnowledge
 from utils import *
 from state_exceptions import *
 from lattice import LatticeElement as LE
@@ -101,16 +101,16 @@ class AbstractState(object):
             
         if father_ind >= 0:
             have_son = self.graph.can_have_son(father_ind, basename)
-            if have_son:
-                if have_son == 'top':
+            if have_son != SonKnowledge.FALSE:
+                if have_son == SonKnowledge.TOP:
                     # father is TOP, so will be its son
                     return self.add_var_and_set_to_top(var, father_ind) 
-                elif have_son == 'const':
+                elif have_son == SonKnowledge.CONST or have_son == SonKnowledge.MAYBE_CONST:
                     # this must be the case that the son is legal due to constant
                     son_ind = self.graph.create_new_vertex(father_ind, basename)
                     self.graph.propagate_const_to_son(father_ind, basename)
                     return son_ind
-                elif have_son == 'edge':
+                elif have_son == SonKnowledge.EDGE:
                     # this must be the case that the son already exists in the graph
                     son_ind = self.graph.get_son_index(father_ind, basename)
                     return son_ind
