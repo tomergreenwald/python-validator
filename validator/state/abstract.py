@@ -172,6 +172,28 @@ class AbstractState(object):
         
         return (self._expression_to_vertex_index(var_name), res)
     
+    def _test_father_mutability(self, father_name, father_ind, add_tops = True):
+        """
+        call this before adding an attribute to a vertex, to test
+        its mutability
+        if add_tops is True, then the mutability will be set to L_MUST_HAVE
+        """
+        errors = []
+        mutable = self.graph.get_mutable(father_ind)
+        fix_mutable = False
+        
+        if mutable.val == LE.L_MUST_NOT_HAVE:
+            errors.append(("Error", "var %s is immutable" %(father_name)))
+            fix_mutable = True
+        elif mutable.val == LE.L_MAY_HAVE:
+            errors.append(("Alert", "var %s might be immutable" %(father_name)))
+            fix_mutable = True
+        
+        if add_tops and fix_mutable:
+            self.graph.set_mutable(father_ind)
+        
+        return errors
+    
     def _cleanup_var_vertex(self, var_name):
         """
         receives a var name. returns an index of a vertex representing this var
@@ -198,6 +220,10 @@ class AbstractState(object):
         else:
             # this is the case when we create new attribute
             father_ind, errors = self._get_var_index(father)
+        
+        # check if father is mutable
+        m_errors = self._test_father_mutability(father, father_ind)
+        errors.extend(m_errors)
         
         var_ind = self.graph.create_new_vertex(father_ind, basename)
         return var_ind, errors
@@ -239,6 +265,10 @@ class AbstractState(object):
         if var0_ind >= 0:
             # vertex already exists
             self.graph.unlink_single_son(father0_ind, basename)
+        else:
+            # check if father is mutable
+            m_errors = self._test_father_mutability(father, father_ind)
+            errors.extend(m_errors)
         
         # set var0 to point to var1 vertex
         # create new step father

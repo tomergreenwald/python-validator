@@ -164,6 +164,19 @@ class Graph(object):
         """
         return self.vertices[v].knowledge.val == LE.L_TOP
     
+    def set_mutable(self, v):
+        """
+        set vertex v to be mutable
+        """
+        self.vertices[v].mutable = LE(LE.L_MUST_HAVE)
+    
+    def get_mutable(self, v):
+        """
+        get mutability of a vertex
+        returns an element from the lattice
+        """
+        return self.vertices[v].mutable
+    
     def set_top(self, v):
         """
         set a var to be TOP
