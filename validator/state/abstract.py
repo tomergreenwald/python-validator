@@ -33,24 +33,28 @@ class AbstractState(object):
         """
         return deepcopy(self)
     
-    def add_var_and_set_to_top(self, var):
+    def add_var_and_set_to_top(self, var, given_father = -1):
         """
         adding a variable to the state, and mark it as top
         return the vertex index of var
+        if given_father is not -1, then the function assumes that var is son of given_father
         """
-        var_ind = self._expression_to_vertex_index(var)
-        if var_ind >= 0:
-            # think what should we do here... do we want to set the var to top? probably not, but remember it...
-            # self.graph.set_top(var_ind)
-            return var_ind
-        
         basename = var_to_basename(var)
-        
         father = var_to_father(var)
-        if father:
-            father_ind = self.add_var_and_set_to_top(father)
+        
+        if given_father < 0:
+            var_ind = self._expression_to_vertex_index(var)
+            if var_ind >= 0:
+                # think what should we do here... do we want to set the var to top? probably not, but remember it...
+                # self.graph.set_top(var_ind)
+                return var_ind
+        
+            if father:
+                father_ind = self.add_var_and_set_to_top(father)
+            else:
+                father_ind = ROOT_VERTEX
         else:
-            father_ind = ROOT_VERTEX
+            father_ind = given_father
         
         var_ind = self.graph.create_new_vertex(father_ind, basename)
         self.graph.set_top(var_ind)
@@ -100,7 +104,7 @@ class AbstractState(object):
             if have_son:
                 if have_son == 'top':
                     # father is TOP, so will be its son
-                    return self.add_var_and_set_to_top(var) 
+                    return self.add_var_and_set_to_top(var, father_ind) 
                 elif have_son == 'const':
                     # this must be the case that the son is legal due to constant
                     son_ind = self.graph.create_new_vertex(father_ind, basename)
@@ -287,5 +291,9 @@ a._get_var_index('x.a.a.a.b.real')
 
 
 a = AbstractState(); a.set_var_to_const('x', 'aviel'); a._get_var_index('x.index'); a.set_var_to_const('x.t', 5); a2 = AbstractState(); a2.set_var_to_const('x', 'afdsfds'); a2.set_var_to_const('x.t', 5.6); a2.set_var_to_var('y', 'x.t')
+
+
+a = AbstractState(); a.set_var_to_const('x', object()); a2 = AbstractState(); a2.set_var_to_const('x', Exception()); a.lub(a2)
+
 
 """
