@@ -42,43 +42,6 @@ class CallFunction(ast.NodeVisitor):
             pass
 
 
-class ClassDefVisitor(ast.NodeVisitor):
-    """
-    Handles class definitions. Creates new class in classes dictionary and set it's name,
-    super class, methods and statics
-    """
-
-    def __init__(self):
-        super(ClassDefVisitor, self).__init__()
-        self.clazz = None
-
-    def visit_ClassDef(self, node):
-        self.clazz = ClassRepresentation(node.name, node.bases[0].id)
-        classes[node.name] = self.clazz
-        self.generic_visit(node)
-
-    def visit_FunctionDef(self, node):
-        m = MethodRepresentation(node.name, node)
-
-        args = [a.id for a in node.args.args]
-        defaults = node.args.defaults
-        for i in xrange(len(args) - len(defaults)):
-            obj = ObjectRepr(args[i])
-            obj.simple = object
-            m.arguments.append(obj)
-        for i in xrange(len(defaults)):
-            obj = ObjectRepr(args[-len(defaults):][i])
-            AssignVisitor(obj).visit(defaults[i])
-            m.arguments.append(obj)
-
-        if len(args) > 0 and args[0] is 'self':
-            self.clazz.methods[node.name] = m
-        else:
-            self.clazz.static_methods[node.name] = m
-
-    def visit_Assign(self, node):
-        handle_assign(node, self.clazz.static_vars)
-
 
 def call_function(method, args, kwargs):
     CallFunction(method, args, kwargs).visit(method.code)
