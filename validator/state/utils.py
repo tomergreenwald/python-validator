@@ -1,3 +1,16 @@
+import copy
+import types
+
+PRIMITIVES = set([eval('types.%s' %x) for x in dir(types) if x.endswith('Type')])
+
+def is_primitive(obj):
+    clone = copy.deepcopy(obj)
+    try:
+        clone.fdsfsdfdsfdsfdsfdsfdsfds = 5
+        return False
+    except:
+        return True
+
 def var_to_father(var_name):
     """
     converts var of form: f#g#h#x.a.b to be f#g#h#x.a

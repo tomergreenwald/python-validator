@@ -2,6 +2,7 @@ import logging
 import copy
 from collections import deque
 from lattice import LatticeElement as LE
+from utils import is_primitive
 # logging.basicConfig(level = logging.DEBUG)
 
 """
@@ -15,7 +16,7 @@ class SonKnowledge(object):
     CONST = 1
     MAYBE_CONST = 2
     EDGE = 3
-
+    
 class SetDict(dict):
     """
     implements a dictionary that maps keys to sets
@@ -44,6 +45,7 @@ class GraphVertex(object):
     def __init__(self, ind, label):
         self.ind = ind
         self.all_constants = set()
+        self.mutable = LE(LE.L_BOTOM) # default is to don't know about mutability
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
@@ -59,7 +61,7 @@ class GraphVertex(object):
             self.sons.pop(lbl)
     
     def __repr__(self):
-        return 'knowledge\t%s\n' %(self.knowledge) + \
+        return 'knowledge\t%s\tmutable\t%s\n' %(self.knowledge, self.mutable) + \
                'all constants:\t%s\n' %self.all_constants + \
                'sons:\n%s\n' %('\n'.join(['\t%s' %x for x in self.sons.values()])) + \
                'parents:\n%s' %('\n'.join(['\t%s' %x for x in self.all_parents.values()]))
@@ -99,6 +101,7 @@ class Graph(object):
         mark this vertex as non top
         """
         self.vertices[vertex_ind].all_constants.clear()
+        self.vertices[vertex_ind].mutable = LE(LE.L_BOTOM)
         
         self._add_const_to_vertex(vertex_ind, const)
     
@@ -118,6 +121,13 @@ class Graph(object):
         self.vertices[vertex_ind].all_constants.add(cons_ind)
         # new var won't be top
         self.vertices[vertex_ind].knowledge = LE(LE.L_MUST_HAVE)
+        
+        # update mutability of vertex, based on the constant
+        primitive = is_primitive(const)
+        if primitive:
+            self.vertices[vertex_ind].mutable.inplace_lub(LE(LE.L_MUST_NOT_HAVE))
+        else:
+            self.vertices[vertex_ind].mutable.inplace_lub(LE(LE.L_MUST_HAVE))
     
     def create_new_vertex(self, parent = 0, label = ''):
         """
@@ -161,8 +171,10 @@ class Graph(object):
         """
         self.vertices[v].knowledge.val = LE.L_TOP
         self.vertices[v].all_constants.clear()
+        self.vertices[v].mutable = LE(LE.L_BOTOM)
         # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
-        # this function is called only on new vertices, but we need to reconsider this
+        # this function is called only on new vertices, and on vertices that are lubbed,
+        # so the edges handling is done by someone else. but we need to reconsider this
     
     def _get_vertex_consts(self, vertex_ind):
         """
@@ -463,9 +475,12 @@ class Graph(object):
         
         if v0.knowledge.val == LE.L_TOP or v1.knowledge.val == LE.L_TOP:
             # if one of the vertices is TOP, so will be their lub
+            # the following line also clears all_constants and mutability
             self.set_top(v0)
         else:
+            # otherwise, just merge their possible constants
             v0.all_constants.update(v1.all_constants)
+            v0.mutable.inplace_lub(v1.mutable)
     
     def _handle_common_edges(self, edge_pairs):
         """
