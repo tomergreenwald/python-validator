@@ -3,6 +3,7 @@ import ast
 from validator.state.abs_state import AbstractState
 from validator.representation import ClassRepresentation
 
+
 class Frame(object):
     def __init__(self, frame_name):
         self.frame_name = frame_name
@@ -260,6 +261,7 @@ def initialize_abstract_state(abstract_state):
     abstract_state.set_var_to_const('root#False', False)
     abstract_state.set_var_to_const('root#None', None)
 
+
 class ClassDefVisitor(ast.NodeVisitor):
     """
     Handles class definitions. Creates new class in classes dictionary and set it's name,
@@ -277,7 +279,7 @@ class ClassDefVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_FunctionDef(self, node):
-        #FunctionDefVisitor(self.functions).visit(node)
+        # FunctionDefVisitor(self.functions).visit(node)
         args = [a.id for a in node.args.args]
 
         if len(args) > 0 and args[0] is 'self':
@@ -289,10 +291,8 @@ class ClassDefVisitor(ast.NodeVisitor):
         handle_assign(node, self.clazz.static_vars)
 
 
-
-
 class ProgramVisitor(ast.NodeVisitor):
-    def __init__(self, stack=Stack(), abstract_state=None, functions={}, classes = {}):
+    def __init__(self, stack=Stack(), abstract_state=None, functions={}, classes={}):
         """
         Should visit all the program
         """
@@ -307,7 +307,7 @@ class ProgramVisitor(ast.NodeVisitor):
         self.classes = classes
 
     def visit_ClassDef(self, node):
-        #"""
+        # """
         if len(node.bases) is not 1:
             raise Exception('Multiple inheritance does not supported (%s)' % node.name)
         ClassDefVisitor(self.classes).visit(node)
@@ -333,7 +333,7 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles for loop.
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
-        #register_assignment(self.stack, self.abstract_state, node.iter.elts[0], node.target.id)
+        # register_assignment(self.stack, self.abstract_state, node.iter.elts[0], node.target.id)
         # FIXME: I selectede the first element in the list but we need to LUB all of it and then use this value
         register_assignment(self.stack, self.abstract_state, ast.Assign(
             targets=[ast.Name(id=node.target, ctx=ast.Store())],
