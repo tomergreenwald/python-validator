@@ -60,6 +60,13 @@ for i in [1,2,3]:
 #func1(a)
 a1 = func1(2, 1, def2 = 'stringy')
 #check = bfunc
+
+
+#class A(object):
+#    def __init__(self):
+#        self.a = 1
+
+#ttt = A()
 """
 simple = simpler.make_simple(code)
 print simple
