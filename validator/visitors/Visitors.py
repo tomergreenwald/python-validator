@@ -294,8 +294,8 @@ class ClassDefVisitor(ast.NodeVisitor):
             self.clazz.static_methods[node.name] = node
 
     def visit_Assign(self, node):
-        # CR - won't compile, number of arguments doesn't fit
-        # CR - things should be consist with the stack
+        # TODO - won't compile, number of arguments doesn't fit
+        # TODO - things should be consist with the stack
         handle_assign(node, self.clazz.static_vars)
 
 
