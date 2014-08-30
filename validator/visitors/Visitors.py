@@ -167,7 +167,7 @@ class CallVisitor(ast.NodeVisitor):
         if node.func.id in self.classes:
             return init_object(self.abstract_state, self.classes[node.func.id], node.args, node.keywords, self.stack, self.functions)
 
-        # TODO - What about method call?
+        # TODO - method calls will work?
 
         raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
@@ -423,16 +423,16 @@ def init_object(abstract_state, clazz, args, keywords, stack, functions):
     """
     # TODO should do something with the stack?
     # TODO functions is correct? what should we pass?
-    # TODO handle super call
     abstract_state_cpy = abstract_state.clone()
     if 'self' in abstract_state:
-        # TODO should delete
+        # TODO should delete 'self' from the abstract state
         pass
     abstract_state_cpy.set_var_to_const('self', 'object')   # TODO this is how it should be done?
 
     iter_clazz = clazz
-    while '__init__' not in iter_clazz.methods or iter_clazz is 'object':   # TODO how do we represent object?
+    while '__init__' not in iter_clazz.methods or iter_clazz is 'object':
         iter_clazz = iter_clazz.base
-    evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
-    # we already init 'self' as 'object'
-    # TODO should take the return the abstract state of 'self'
+    if iter_clazz is not 'object':
+        evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
+    # else - we already init 'self' as 'object'
+    # TODO should return the abstract state of 'self'
