@@ -165,7 +165,7 @@ class CallVisitor(ast.NodeVisitor):
                                      self.abstract_state,
                                      self.functions)
         if node.func.id in self.classes:
-            return init_object(self.classes[node.func.id], node.args, node.keywords, self.stack, self.functions)
+            return init_object(self.abstract_state, self.classes[node.func.id], node.args, node.keywords, self.stack, self.functions)
 
         # TODO - What about method call?
 
@@ -412,17 +412,22 @@ def handle_assign(node, stack, abstract_state, functions, classes):
     assign_visitor.visit(node.value)
 
 
-def init_object(clazz, args, keywords, stack, functions):
+def init_object(abstract_state, clazz, args, keywords, stack, functions):
     """
     :param clazz: The ClassRepresentation of the class
     """
     # TODO should do something with the stack?
     # TODO functions is correct? what should we pass?
-    abstract_state = AbstractState()
-    # TODO is this correct? new abstract state?
-    if '__init__' in clazz.methods:
-        evaluate_function(clazz.methods['__init__'], args, keywords, stack, abstract_state, functions)
-        # TODO should take the attribute of 'self' from the abstract_state and return them 
-    else:
-        # TODO should add the builtins attributes
+    # TODO handle super call
+    abstract_state_cpy = abstract_state.clone()
+    if 'self' in abstract_state:
+        # TODO should delete
         pass
+    abstract_state_cpy.set_var_to_const('self', 'object')   # TODO this is how it should be done?
+    
+    iter_clazz = clazz
+    while '__init__' not in iter_clazz.methods or iter_clazz is 'object':   # TODO how do we represent object?
+        iter_clazz = iter_clazz.base
+    evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
+    # we already init 'self' as 'object'
+    # TODO should take the return the abstract state of 'self'
