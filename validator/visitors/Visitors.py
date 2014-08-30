@@ -152,25 +152,28 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
 
 
 class CallVisitor(ast.NodeVisitor):
-    def __init__(self, stack, abstract_state, functions):
+    def __init__(self, stack, abstract_state, functions, classes):
         super(CallVisitor, self).__init__()
         self.abstract_state = abstract_state
         self.functions = functions
         self.stack = stack
+        self.classes
 
     def visit_Call(self, node):
-        if node.func.id not in self.functions:
-            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
-                          self.functions)
+        if node.func.id in self.functions:
+            return evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack,
+                                     self.abstract_state,
+                                     self.functions)
+
+        raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
 
 class AssignVisitor(CallVisitor):
-    def __init__(self, name, stack, abstract_state, functions):
+    def __init__(self, name, stack, abstract_state, functions, classes):
         """
         Handle assign calls. Adds to the object the relavent methods and attributes
         """
-        super(AssignVisitor, self).__init__(stack, abstract_state, functions)
+        super(AssignVisitor, self).__init__(stack, abstract_state, functions, classes)
         self.name = name
 
     def visit_Attribute(self, node):
@@ -240,8 +243,9 @@ class AssignVisitor(CallVisitor):
 
 
 class ExprVisitor(CallVisitor):
-    def __init__(self, stack, abstract_state, functions):
-        super(ExprVisitor, self).__init__(stack, abstract_state, functions)
+    def __init__(self, stack, abstract_state, functions, classes):
+        super(ExprVisitor, self).__init__(stack, abstract_state, functions, classes)
+
 
 class FunctionDefVisitor(ast.NodeVisitor):
     def __init__(self, context):
@@ -315,14 +319,14 @@ class ProgramVisitor(ast.NodeVisitor):
         FunctionDefVisitor(self.functions).visit(node)
 
     def visit_Expr(self, node):
-        ExprVisitor(self.stack, self.abstract_state, self.functions).visit(node)
+        ExprVisitor(self.stack, self.abstract_state, self.functions, self.classes).visit(node)
 
     def visit_Assign(self, node):
         """
         Handles assignment to variable.
         :param node: Current assignment node.
         """
-        handle_assign(node, self.stack, self.abstract_state, self.functions)
+        handle_assign(node, self.stack, self.abstract_state, self.functions, self.classes)
 
     def visit_For(self, node):
         """
