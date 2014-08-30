@@ -151,10 +151,6 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
     stack.pop(abstract_state)
 
 
-def init_object(clazz):
-    pass
-
-
 class CallVisitor(ast.NodeVisitor):
     def __init__(self, stack, abstract_state, functions, classes):
         super(CallVisitor, self).__init__()
@@ -169,7 +165,9 @@ class CallVisitor(ast.NodeVisitor):
                                      self.abstract_state,
                                      self.functions)
         if node.func.id in self.classes:
-            return init_object(self.classes[node.func.id])
+            return init_object(self.classes[node.func.id], node.args, node.keywords, self.stack, self.functions)
+
+        # TODO - What about method call?
 
         raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
@@ -396,6 +394,7 @@ def assess_list(entries, stack, abstract_state, functions):
     :param entries: A list of entries to process.
     :param abstract_state: AbstractState to initialize the ProgramVisitor with.
     """
+    # TODO functions is static functions? what about class methods?
     visitor = ProgramVisitor(stack, abstract_state, functions)
     for entry in entries:
         visitor.visit(entry)
@@ -411,3 +410,19 @@ def handle_assign(node, stack, abstract_state, functions, classes):
 
     assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
     assign_visitor.visit(node.value)
+
+
+def init_object(clazz, args, keywords, stack, functions):
+    """
+    :param clazz: The ClassRepresentation of the class
+    """
+    # TODO should do something with the stack?
+    # TODO functions is correct? what should we pass?
+    abstract_state = AbstractState()
+    # TODO is this correct? new abstract state?
+    if '__init__' in clazz.methods:
+        evaluate_function(clazz.methods['__init__'], args, keywords, stack, abstract_state, functions)
+        # TODO should take the attribute of 'self' from the abstract_state and return them 
+    else:
+        # TODO should add the builtins attributes
+        pass
