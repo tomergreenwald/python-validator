@@ -121,7 +121,7 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         level = 1
     else:
         level = 0
-    # TODO the node can be const
+        # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         actual_from_name = actual_var_name(stack, abstract_state, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
@@ -172,9 +172,6 @@ class AssignVisitor(CallVisitor):
         """
         super(AssignVisitor, self).__init__(stack, abstract_state, functions)
         self.name = name
-        self.abstract_state = abstract_state
-        self.functions = functions
-        self.stack = stack
 
     def visit_Attribute(self, node):
         """
@@ -245,7 +242,6 @@ class AssignVisitor(CallVisitor):
 class ExprVisitor(CallVisitor):
     def __init__(self, stack, abstract_state, functions):
         super(ExprVisitor, self).__init__(stack, abstract_state, functions)
-
 
 class FunctionDefVisitor(ast.NodeVisitor):
     def __init__(self, context):
