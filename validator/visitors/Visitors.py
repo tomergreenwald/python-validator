@@ -166,6 +166,8 @@ class CallVisitor(ast.NodeVisitor):
                                      self.functions)
         if node.func.id in self.classes:
             return init_object(self.abstract_state, self.classes[node.func.id], node.args, node.keywords, self.stack, self.functions)
+        if node.func.id is 'super':
+            # TODO use stack and self.classes to extract the parent
 
         # TODO - method calls will work?
 
