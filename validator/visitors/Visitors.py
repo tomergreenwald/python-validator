@@ -151,19 +151,25 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
     stack.pop(abstract_state)
 
 
+def init_object(clazz):
+    pass
+
+
 class CallVisitor(ast.NodeVisitor):
     def __init__(self, stack, abstract_state, functions, classes):
         super(CallVisitor, self).__init__()
         self.abstract_state = abstract_state
         self.functions = functions
         self.stack = stack
-        self.classes
+        self.classes = classes
 
     def visit_Call(self, node):
         if node.func.id in self.functions:
             return evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack,
                                      self.abstract_state,
                                      self.functions)
+        if node.func.id in self.classes:
+            return init_object(self.classes[node.func.id])
 
         raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
@@ -393,7 +399,7 @@ def assess_list(entries, stack, abstract_state, functions):
         visitor.visit(entry)
 
 
-def handle_assign(node, stack, abstract_state, functions):
+def handle_assign(node, stack, abstract_state, functions, classes):
     """
     Handles assign - creates the relevant object and connects it to the context.
     """
@@ -401,5 +407,5 @@ def handle_assign(node, stack, abstract_state, functions):
         # The simpler simples it
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
-    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions)
+    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
     assign_visitor.visit(node.value)
