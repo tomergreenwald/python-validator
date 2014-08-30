@@ -282,7 +282,7 @@ class ClassDefVisitor(ast.NodeVisitor):
         # FunctionDefVisitor(self.functions).visit(node)
         args = [a.id for a in node.args.args]
 
-        if len(args) > 0 and args[0] is 'self':
+        if args and args[0] is 'self':
             self.clazz.methods[node.name] = node
         else:
             self.clazz.static_methods[node.name] = node
