@@ -278,7 +278,12 @@ class ClassDefVisitor(ast.NodeVisitor):
         self.classes = classes
 
     def visit_ClassDef(self, node):
-        self.clazz = ClassRepresentation(node.name, node.bases[0].id)
+        if node.bases[0].id == 'object':
+            self.clazz = ClassRepresentation(node.name, node.bases[0].id)
+        else:
+            if node.bases[0].id not in self.classes:
+                raise Exception('Can not find super class')     # Compile error or init from outer library
+            self.clazz = ClassRepresentation(node.name, self.classes[node.bases[0].id])
         self.classes[node.name] = self.clazz
         self.generic_visit(node)
 
@@ -424,7 +429,7 @@ def init_object(abstract_state, clazz, args, keywords, stack, functions):
         # TODO should delete
         pass
     abstract_state_cpy.set_var_to_const('self', 'object')   # TODO this is how it should be done?
-    
+
     iter_clazz = clazz
     while '__init__' not in iter_clazz.methods or iter_clazz is 'object':   # TODO how do we represent object?
         iter_clazz = iter_clazz.base
