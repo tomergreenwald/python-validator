@@ -56,9 +56,7 @@ class GraphVertex(object):
             self.all_parents.pop(lbl)
     
     def remove_son(self, lbl, edge):
-        self.sons[lbl].remove(edge)
-        if not self.sons[lbl]:
-            self.sons.pop(lbl)
+        self.sons.pop(lbl)
     
     def __repr__(self):
         return 'knowledge\t%s\tmutable\t%s\n' %(self.knowledge, self.mutable) + \
@@ -391,7 +389,7 @@ class Graph(object):
         # compress constant indices
         c_mapping = dict(zip(sorted(self.all_cons.keys()), range(len(self.all_cons))))
         self.rename_constants_indices(c_mapping)
-        self.next_cons = max(self.all_cons.keys()) + 1
+        self.next_cons = max(self.all_cons.keys() + [-1]) + 1
     
     def compress_indices(self):
         """
@@ -467,7 +465,7 @@ class Graph(object):
         for t in self.types_dict.keys():
             self.types_dict[t] = mapping.get(self.types_dict[t], self.types_dict[t])
         
-        self.next_cons = max(self.all_cons.keys()) + 1
+        self.next_cons = max(self.all_cons.keys() + [-1]) + 1
     
     def rename_constants_offset(self, offset):
         """
@@ -556,7 +554,7 @@ class Graph(object):
                 self.all_cons[i] = c
         
         # constants were added
-        self.next_cons = max(self.all_cons.keys()) + 1
+        self.next_cons = max(self.all_cons.keys() + [-1]) + 1
     
     def _add_other_graph(self, other, common_vertices):
         """
@@ -598,6 +596,9 @@ class Graph(object):
                         else:
                             # only son in graph. add parent
                             self.vertices[son].all_parents.add_element(e.label, e.parent)
+        
+        # vertices were added
+        self.next_ind = max(self.vertices.keys()) + 1
     
     def _modify_existent_vertices(self, common_vertices, other):
         """
@@ -705,4 +706,34 @@ class Graph(object):
                 s1 = other.vertices[y].sons[c].son
                 if s0 != 0 and s1 != 0:
                     q.append((s0, s1))
+    
+    def get_main_vars(self):
+        """
+        returns a list of the main variables
+        this is simply the labels on the sons of root vertex
+        """
+        res = []
+        for edge in self.vertices[0].sons.values():
+            if edge.son != 0:
+                res.append(edge.label)
+        return res
+    
+    def add_graph(self, other):
+        """
+        add other graph to self, after self graph is already prepared for it
+        """
+        # rename constants of other
+        self._merge_cons(other)
+        
+        # merge root vertex. we already cleaned up self root vertex
+        for (lbl, edge) in other.vertices[0].sons.items():
+            self.vertices[0].sons[lbl] = edge
+        
+        # add other vertices
+        for v in other.vertices.keys():
+            if v != 0:
+                self.vertices[v] = other.vertices[v]
+        
+        # vertices were added
+        self.next_ind = max(self.vertices.keys()) + 1
         
