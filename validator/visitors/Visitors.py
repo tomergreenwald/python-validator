@@ -1,7 +1,7 @@
 import ast
 
 from validator.state.abs_state import AbstractState
-from validator.representation import ClassRepresentation
+from validator.representation.ClassRepresentation import ClassRepresentation
 
 
 class Frame(object):
@@ -125,17 +125,24 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         actual_from_name = actual_var_name(stack, abstract_state, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
+        print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
+        print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])), to_var=actual_to_name)
     stack.current_frame().register(actual_to_name)
+
 
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
     stack.insert(Frame(function.name))
     arguments = []
+    if function.args.args[0].id is "self":
+        advance_self = 1
+    else:
+        advance_self = 0
     for i in xrange(len(args)):
         arguments.append(i)
-        register_assignment(stack, abstract_state, args[i], function.args.args[i].id, True)
+        register_assignment(stack, abstract_state, args[i], function.args.args[i + advance_self].id, True)
     for i in xrange(len(function.args.defaults)):
         arg_index = i + len(function.args.args) - len(function.args.defaults)
         arg = function.args.args[arg_index]
@@ -146,35 +153,38 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
                 register_assignment(stack, abstract_state, keyword.value, keyword.arg, True)
         if not found:
             default = function.args.defaults[i]
-            register_assignment(stack, abstract_state, default, function.args.args[arg_index].id, True)
+            register_assignment(stack, abstract_state, default, function.args.args[arg_index + advance_self].id, True)
     assess_list(function.body, stack, abstract_state, functions)
     stack.pop(abstract_state)
 
 
 class CallVisitor(ast.NodeVisitor):
-    def __init__(self, stack, abstract_state, functions):
+    def __init__(self, stack, abstract_state, functions, classes):
         super(CallVisitor, self).__init__()
         self.abstract_state = abstract_state
-        self.functions = functions
         self.stack = stack
+        self.functions = functions
+        self.classes = classes
 
     def visit_Call(self, node):
-        if node.func.id not in self.functions:
+        function_name = node.func.id
+        if function_name in self.classes:
+            evaluate_function(self.classes[function_name].methods["__init__"], node.args, node.keywords, self.stack, self.abstract_state,
+                              self.functions)
+        elif function_name in self.functions:
+            evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
+                              self.functions)
+        else:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
-                          self.functions)
 
 
 class AssignVisitor(CallVisitor):
-    def __init__(self, name, stack, abstract_state, functions):
+    def __init__(self, name, stack, abstract_state, functions, classes):
         """
         Handle assign calls. Adds to the object the relavent methods and attributes
         """
-        super(AssignVisitor, self).__init__(stack, abstract_state, functions)
+        super(AssignVisitor, self).__init__(stack, abstract_state, functions, classes)
         self.name = name
-        self.abstract_state = abstract_state
-        self.functions = functions
-        self.stack = stack
 
     def visit_Attribute(self, node):
         """
@@ -243,8 +253,8 @@ class AssignVisitor(CallVisitor):
 
 
 class ExprVisitor(CallVisitor):
-    def __init__(self, stack, abstract_state, functions):
-        super(ExprVisitor, self).__init__(stack, abstract_state, functions)
+    def __init__(self, stack, abstract_state, functions, classes):
+        super(ExprVisitor, self).__init__(stack, abstract_state, functions, classes)
 
 
 class FunctionDefVisitor(ast.NodeVisitor):
@@ -288,7 +298,8 @@ class ClassDefVisitor(ast.NodeVisitor):
             self.clazz.static_methods[node.name] = node
 
     def visit_Assign(self, node):
-        handle_assign(node, self.clazz.static_vars)
+        #handle_assign(node, self.clazz.static_vars)
+        pass
 
 
 class ProgramVisitor(ast.NodeVisitor):
@@ -319,14 +330,14 @@ class ProgramVisitor(ast.NodeVisitor):
         FunctionDefVisitor(self.functions).visit(node)
 
     def visit_Expr(self, node):
-        ExprVisitor(self.stack, self.abstract_state, self.functions).visit(node)
+        ExprVisitor(self.stack, self.abstract_state, self.functions, self.classes).visit(node)
 
     def visit_Assign(self, node):
         """
         Handles assignment to variable.
         :param node: Current assignment node.
         """
-        handle_assign(node, self.stack, self.abstract_state, self.functions)
+        handle_assign(node, self.stack, self.abstract_state, self.functions, self.classes)
 
     def visit_For(self, node):
         """
@@ -393,7 +404,7 @@ def assess_list(entries, stack, abstract_state, functions):
         visitor.visit(entry)
 
 
-def handle_assign(node, stack, abstract_state, functions):
+def handle_assign(node, stack, abstract_state, functions, classes):
     """
     Handles assign - creates the relevant object and connects it to the context.
     """
@@ -401,5 +412,5 @@ def handle_assign(node, stack, abstract_state, functions):
         # The simpler simples it
         raise Exception('Multiple targets does not supported (%s)' % node.name)
 
-    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions)
+    assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
     assign_visitor.visit(node.value)
