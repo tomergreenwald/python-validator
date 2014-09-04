@@ -1,7 +1,7 @@
 import ast
 
 from validator.state.abs_state import AbstractState
-from validator.representation import ClassRepresentation
+from validator.representation.ClassRepresentation import ClassRepresentation
 
 
 class Frame(object):
@@ -121,21 +121,28 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         level = 1
     else:
         level = 0
-        # TODO the node can be const
+    # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         actual_from_name = actual_var_name(stack, abstract_state, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
+        print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
+        print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])), to_var=actual_to_name)
     stack.current_frame().register(actual_to_name)
+
 
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
     stack.insert(Frame(function.name))
     arguments = []
+    if function.args.args[0].id is "self":
+        advance_self = 1
+    else:
+        advance_self = 0
     for i in xrange(len(args)):
         arguments.append(i)
-        register_assignment(stack, abstract_state, args[i], function.args.args[i].id, True)
+        register_assignment(stack, abstract_state, args[i], function.args.args[i + advance_self].id, True)
     for i in xrange(len(function.args.defaults)):
         arg_index = i + len(function.args.args) - len(function.args.defaults)
         arg = function.args.args[arg_index]
@@ -146,7 +153,7 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
                 register_assignment(stack, abstract_state, keyword.value, keyword.arg, True)
         if not found:
             default = function.args.defaults[i]
-            register_assignment(stack, abstract_state, default, function.args.args[arg_index].id, True)
+            register_assignment(stack, abstract_state, default, function.args.args[arg_index + advance_self].id, True)
     assess_list(function.body, stack, abstract_state, functions)
     stack.pop(abstract_state)
 
@@ -155,24 +162,20 @@ class CallVisitor(ast.NodeVisitor):
     def __init__(self, stack, abstract_state, functions, classes):
         super(CallVisitor, self).__init__()
         self.abstract_state = abstract_state
-        self.functions = functions
         self.stack = stack
+        self.functions = functions
         self.classes = classes
 
     def visit_Call(self, node):
-        if node.func.id in self.functions:
-            return evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack,
-                                     self.abstract_state,
-                                     self.functions)
-        if node.func.id in self.classes:
-            return init_object(self.abstract_state, self.classes[node.func.id], node.args, node.keywords, self.stack, self.functions)
-        if node.func.id is 'super':
-            # TODO use stack and self.classes to extract the parent
-            pass
-
-        # TODO - method calls will work?
-
-        raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
+        function_name = node.func.id
+        if function_name in self.classes:
+            evaluate_function(self.classes[function_name].methods["__init__"], node.args, node.keywords, self.stack, self.abstract_state,
+                              self.functions)
+        elif function_name in self.functions:
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
+                          self.functions)
+        else:
+            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
 
 class AssignVisitor(CallVisitor):
@@ -282,7 +285,7 @@ class ClassDefVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node):
         if node.bases[0].id == 'object':
-            self.clazz = ClassRepresentation(node.name, node.bases[0].id)
+        self.clazz = ClassRepresentation(node.name, node.bases[0].id)
         else:
             if node.bases[0].id not in self.classes:
                 raise Exception('Can not find super class')     # Compile error or init from outer library
