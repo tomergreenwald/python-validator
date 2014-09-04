@@ -172,8 +172,8 @@ class CallVisitor(ast.NodeVisitor):
             evaluate_function(self.classes[function_name].methods["__init__"], node.args, node.keywords, self.stack, self.abstract_state,
                               self.functions)
         elif function_name in self.functions:
-            evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
-                              self.functions)
+        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
+                          self.functions)
         else:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
@@ -284,7 +284,12 @@ class ClassDefVisitor(ast.NodeVisitor):
         self.classes = classes
 
     def visit_ClassDef(self, node):
+        if node.bases[0].id == 'object':
         self.clazz = ClassRepresentation(node.name, node.bases[0].id)
+        else:
+            if node.bases[0].id not in self.classes:
+                raise Exception('Can not find super class')     # Compile error or init from outer library
+            self.clazz = ClassRepresentation(node.name, self.classes[node.bases[0].id])
         self.classes[node.name] = self.clazz
         self.generic_visit(node)
 
@@ -292,14 +297,15 @@ class ClassDefVisitor(ast.NodeVisitor):
         # FunctionDefVisitor(self.functions).visit(node)
         args = [a.id for a in node.args.args]
 
-        if len(args) > 0 and args[0] is 'self':
+        if args and args[0] is 'self':
             self.clazz.methods[node.name] = node
         else:
             self.clazz.static_methods[node.name] = node
 
     def visit_Assign(self, node):
-        #handle_assign(node, self.clazz.static_vars)
-        pass
+        # TODO - won't compile, number of arguments doesn't fit
+        # TODO - things should be consist with the stack
+        handle_assign(node, self.clazz.static_vars)
 
 
 class ProgramVisitor(ast.NodeVisitor):
@@ -399,6 +405,7 @@ def assess_list(entries, stack, abstract_state, functions):
     :param entries: A list of entries to process.
     :param abstract_state: AbstractState to initialize the ProgramVisitor with.
     """
+    # TODO functions is static functions? what about class methods?
     visitor = ProgramVisitor(stack, abstract_state, functions)
     for entry in entries:
         visitor.visit(entry)
@@ -414,3 +421,24 @@ def handle_assign(node, stack, abstract_state, functions, classes):
 
     assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
     assign_visitor.visit(node.value)
+
+
+def init_object(abstract_state, clazz, args, keywords, stack, functions):
+    """
+    :param clazz: The ClassRepresentation of the class
+    """
+    # TODO should do something with the stack?
+    # TODO functions is correct? what should we pass?
+    abstract_state_cpy = abstract_state.clone()
+    if 'self' in abstract_state:
+        # TODO should delete 'self' from the abstract state
+        pass
+    abstract_state_cpy.set_var_to_const('self', 'object')   # TODO this is how it should be done?
+
+    iter_clazz = clazz
+    while '__init__' not in iter_clazz.methods or iter_clazz is 'object':
+        iter_clazz = iter_clazz.base
+    if iter_clazz is not 'object':
+        evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
+    # else - we already init 'self' as 'object'
+    # TODO should return the abstract state of 'self'

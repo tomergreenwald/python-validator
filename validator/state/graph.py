@@ -2,7 +2,7 @@ import logging
 import copy
 from collections import deque
 from lattice import LatticeElement as LE
-from utils import MyNone
+from utils import is_primitive
 # logging.basicConfig(level = logging.DEBUG)
 
 """
@@ -10,6 +10,13 @@ TODO
 (maybe) need to solve the problem where a constant refers to itself
 """
 
+class SonKnowledge(object):
+    FALSE = -1
+    TOP = 0
+    CONST = 1
+    MAYBE_CONST = 2
+    EDGE = 3
+    
 class SetDict(dict):
     """
     implements a dictionary that maps keys to sets
@@ -37,7 +44,8 @@ class GraphEdge(object):
 class GraphVertex(object):
     def __init__(self, ind, label):
         self.ind = ind
-        self.constant = -1
+        self.all_constants = set()
+        self.mutable = LE(LE.L_BOTOM) # default is to don't know about mutability
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
@@ -48,12 +56,11 @@ class GraphVertex(object):
             self.all_parents.pop(lbl)
     
     def remove_son(self, lbl, edge):
-        self.sons[lbl].remove(edge)
-        if not self.sons[lbl]:
-            self.sons.pop(lbl)
+        self.sons.pop(lbl)
     
     def __repr__(self):
-        return 'const\t%d\tknowledge\t%s\n' %(self.constant, self.knowledge) + \
+        return 'knowledge\t%s\tmutable\t%s\n' %(self.knowledge, self.mutable) + \
+               'all constants:\t%s\n' %self.all_constants + \
                'sons:\n%s\n' %('\n'.join(['\t%s' %x for x in self.sons.values()])) + \
                'parents:\n%s' %('\n'.join(['\t%s' %x for x in self.all_parents.values()]))
 
@@ -91,6 +98,16 @@ class Graph(object):
         add the constant to the constants pull if necessary (a constant of a new type)
         mark this vertex as non top
         """
+        self.vertices[vertex_ind].all_constants.clear()
+        self.vertices[vertex_ind].mutable = LE(LE.L_BOTOM)
+        
+        self._add_const_to_vertex(vertex_ind, const)
+    
+    def _add_const_to_vertex(self, vertex_ind, const):
+        """
+        add possible const to vertex
+        mark the vertex as non TOP
+        """
         t = type(const)
         cons_ind = self.types_dict.get(t, -1)
         if cons_ind < 0:
@@ -99,9 +116,16 @@ class Graph(object):
             self.types_dict[t] = cons_ind
             self.all_cons[cons_ind] = const
         
-        self.vertices[vertex_ind].constant = cons_ind
+        self.vertices[vertex_ind].all_constants.add(cons_ind)
         # new var won't be top
         self.vertices[vertex_ind].knowledge = LE(LE.L_MUST_HAVE)
+        
+        # update mutability of vertex, based on the constant
+        primitive = is_primitive(const)
+        if primitive:
+            self.vertices[vertex_ind].mutable.inplace_lub(LE(LE.L_MUST_NOT_HAVE))
+        else:
+            self.vertices[vertex_ind].mutable.inplace_lub(LE(LE.L_MUST_HAVE))
     
     def create_new_vertex(self, parent = 0, label = ''):
         """
@@ -138,26 +162,41 @@ class Graph(object):
         """
         return self.vertices[v].knowledge.val == LE.L_TOP
     
+    def set_mutable(self, v):
+        """
+        set vertex v to be mutable
+        """
+        self.vertices[v].mutable = LE(LE.L_MUST_HAVE)
+    
+    def get_mutable(self, v):
+        """
+        get mutability of a vertex
+        returns an element from the lattice
+        """
+        return self.vertices[v].mutable
+    
     def set_top(self, v):
         """
         set a var to be TOP
         set its constant to be -1
         """
         self.vertices[v].knowledge.val = LE.L_TOP
-        self.vertices[v].constant = -1
+        self.vertices[v].all_constants.clear()
+        self.vertices[v].mutable = LE(LE.L_BOTOM)
         # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
-        # this function is called only on new vertices, but we need to reconsider this
+        # this function is called only on new vertices, and on vertices that are lubbed,
+        # so the edges handling is done by someone else. but we need to reconsider this
     
-    def _get_rooted_const(self, vertex_ind):
+    def _get_vertex_consts(self, vertex_ind):
         """
         received a vertex index
         return the constant which this vertex correspond to, or MyNone if there
         is no such constant
         """
-        cons_ind = self.vertices[vertex_ind].constant
-        vertex_const = self.all_cons.get(cons_ind, MyNone())
-        
-        return vertex_const
+        vertex_consts = set([self.all_cons.get(cons_ind) \
+                             for cons_ind in self.vertices[vertex_ind].all_constants])
+
+        return vertex_consts
     
     def get_son_index(self, par, lbl):
         """
@@ -181,24 +220,38 @@ class Graph(object):
         """
         if self.vertices[par].sons.has_key(lbl):
             self.vertices[par].sons[lbl].knowledge.val = LE.L_MUST_HAVE
-        assert False
+        else:
+            assert False
     
     def propagate_const_to_son(self, vertex_ind, son_label):
-        cons_ind = self.vertices[vertex_ind].constant
-        son_ind = self.vertices[vertex_ind].sons[son_label].son
-        
-        if cons_ind < 0:
+        """
+        when vertex_ind is equal to a constant, and we want its son labelled son_label
+        to have a constant too
+        """
+        # get all possible constants of father
+        possible_consts = self._get_vertex_consts(vertex_ind)
+        if len(possible_consts) == 0:
             return
             
-        vertex_const = self.all_cons[cons_ind]
+        son_ind = self.vertices[vertex_ind].sons[son_label].son
         
-        try:
-            son_const = vertex_const.__getattribute__(son_label)
-        except Exception:
-            return
+        maybe_edge = False
         
-        self.set_vertex_to_const(son_ind, son_const)
-    
+        for c in possible_consts:
+            try:
+                # add possible constant to son
+                son_const = c.__getattribute__(son_label)
+                self._add_const_to_vertex(son_ind, son_const)
+            except:
+                # there exists a constant for father, for which the label is illegal
+                maybe_edge = True
+                pass
+        
+        if maybe_edge:
+            # if there is a father constant for which the son cannot be labelled due
+            # to constant, we mark this edge as L_MAY_HAVE
+            self.vertices[vertex_ind].sons[son_label].knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
+        
     def can_have_son(self, vertex_ind, son_label):
         """
         returns True if the son can be legally added to a vertex
@@ -206,22 +259,37 @@ class Graph(object):
         the way we know the son can exists
         """
         if self.vertices[vertex_ind].sons.has_key(son_label):
-            return 'edge'
+            return SonKnowledge.EDGE
         
         if self.is_top(vertex_ind):
-            return 'top'
+            return SonKnowledge.TOP
             
-        vertex_const = self._get_rooted_const(vertex_ind)
-        if isinstance(vertex_const, MyNone):
-            return False
+        vertex_consts = self._get_vertex_consts(vertex_ind)
+        if len(vertex_consts) == 0:
+            return SonKnowledge.FALSE
         
-        try:
-            son_const = vertex_const.__getattribute__(son_label)
-            return 'const'
-        except Exception:
-            logging.debug('[can_have_son] failed to get attribute %s \
-                                   from type %s' %(son_label, type(vertex_const)))
-            return False
+        # check for how many possible constants the label can belong
+        success = 0
+        failed = 0
+        for c in vertex_consts:
+            try:
+                son_const = c.__getattribute__(son_label)
+                success += 1
+            except:
+                failed += 1
+            
+            if success > 0 and failed > 0:
+                break
+        
+        # if there is no constant that this label can belongs to
+        if success == 0:
+            return SonKnowledge.FALSE
+        elif failed == 0:
+            # this implies success > 0
+            return SonKnowledge.CONST
+        else:
+            # success > 0 and failed > 0
+            return SonKnowledge.MAYBE_CONST
     
     def unlink_vertex(self, vertex_ind):
         """
@@ -231,7 +299,6 @@ class Graph(object):
         need to implement some kind of garbage collector to remove sons too
         this suppose to happen when this vertex is overwritten
         """
-        
         for lbl in self.vertices[vertex_ind].sons.keys():
             self.unlink_single_son(vertex_ind, lbl)
     
@@ -309,8 +376,7 @@ class Graph(object):
         # throw away constant that are not in use
         used_constant = set()
         for ver in self.vertices.values():
-            if ver.constant >= 0:
-                used_constant.add(ver.constant)
+            used_constant.update(ver.all_constants)
         
         for t, i in self.types_dict.items():
             if i not in used_constant:
@@ -323,7 +389,7 @@ class Graph(object):
         # compress constant indices
         c_mapping = dict(zip(sorted(self.all_cons.keys()), range(len(self.all_cons))))
         self.rename_constants_indices(c_mapping)
-        self.next_cons = max(self.all_cons.keys()) + 1
+        self.next_cons = max(self.all_cons.keys() + [-1]) + 1
     
     def compress_indices(self):
         """
@@ -384,9 +450,12 @@ class Graph(object):
             x <- mapping[x]
         """
         for v in self.vertices.keys():
-            if self.vertices[v].constant >= 0:
-                self.vertices[v].constant = mapping.get(self.vertices[v].constant, self.vertices[v].constant)
-        
+            new_cons_set = set()
+            for c in self.vertices[v].all_constants:
+                new_cons_set.add(mapping.get(c, c))
+            
+            self.vertices[v].all_constants = new_cons_set
+            
         new_all_cons = dict()
         for c in self.all_cons.keys():
             cv = self.all_cons.pop(c)
@@ -396,7 +465,7 @@ class Graph(object):
         for t in self.types_dict.keys():
             self.types_dict[t] = mapping.get(self.types_dict[t], self.types_dict[t])
         
-        self.next_cons = max(self.all_cons.keys()) + 1
+        self.next_cons = max(self.all_cons.keys() + [-1]) + 1
     
     def rename_constants_offset(self, offset):
         """
@@ -415,11 +484,14 @@ class Graph(object):
         
         v0.knowledge.inplace_lub(v1.knowledge)
         
-        if v0.constant != v1.constant:
-            # TODO make a set of all possible constants
-            # v0.constant = -1
-            # v0.knowledge = LE(LE.L_TOP)
-            self.set_top(x)
+        if v0.knowledge.val == LE.L_TOP or v1.knowledge.val == LE.L_TOP:
+            # if one of the vertices is TOP, so will be their lub
+            # the following line also clears all_constants and mutability
+            self.set_top(v0)
+        else:
+            # otherwise, just merge their possible constants
+            v0.all_constants.update(v1.all_constants)
+            v0.mutable.inplace_lub(v1.mutable)
     
     def _handle_common_edges(self, edge_pairs):
         """
@@ -460,6 +532,7 @@ class Graph(object):
         """
         merge constant indices between self and other, if the constant are of the same type
         modifies other's constants
+        adds other constants to self
         """
         cons_pairs = []
         for t,i in self.types_dict.items():
@@ -468,6 +541,20 @@ class Graph(object):
                 cons_pairs.append((other_ind, i))
         
         other.rename_constants_indices(dict(cons_pairs))
+        
+        # add other consts to self
+        known_consts = set(self.all_cons.keys())
+        
+        for t,i in other.types_dict.items():
+            if i not in known_consts:
+                self.types_dict[t] = i
+        
+        for i,c in other.all_cons.items():
+            if i not in known_consts:
+                self.all_cons[i] = c
+        
+        # constants were added
+        self.next_cons = max(self.all_cons.keys() + [-1]) + 1
     
     def _add_other_graph(self, other, common_vertices):
         """
@@ -509,6 +596,9 @@ class Graph(object):
                         else:
                             # only son in graph. add parent
                             self.vertices[son].all_parents.add_element(e.label, e.parent)
+        
+        # vertices were added
+        self.next_ind = max(self.vertices.keys()) + 1
     
     def _modify_existent_vertices(self, common_vertices, other):
         """
@@ -586,11 +676,11 @@ class Graph(object):
                 can_have = other.can_have_son(father_ind, basename)
                 
                 # check if the son should be exist as a son of y
-                if can_have == 'top' or can_have == 'const':
+                if can_have == SonKnowledge.TOP or can_have == SonKnowledge.CONST or can_have == SonKnowledge.MAYBE_CONST:
                     var_ind = other.create_new_vertex(father_ind, basename)
-                    if can_have == 'top':
+                    if can_have == SonKnowledge.TOP:
                         other.set_top(var_ind)
-                    elif can_have == 'const':    
+                    elif can_have == SonKnowledge.CONST or can_have == SonKnowledge.MAYBE_CONST:    
                         other.propagate_const_to_son(father_ind, basename)
                     
                     q.append((self.vertices[x].sons[only_x].son, var_ind))
@@ -601,11 +691,11 @@ class Graph(object):
                 basename = other.vertices[y].sons[only_y].label
                 can_have = self.can_have_son(father_ind, basename)
                 
-                if can_have == 'top' or can_have == 'const':
+                if can_have == SonKnowledge.TOP or can_have == SonKnowledge.CONST or can_have == SonKnowledge.MAYBE_CONST:
                     var_ind = self.create_new_vertex(father_ind, basename)
-                    if can_have == 'top':
+                    if can_have == SonKnowledge.TOP:
                         self.set_top(var_ind)
-                    elif can_have == 'const':    
+                    elif can_have == SonKnowledge.CONST or can_have == SonKnowledge.MAYBE_CONST:
                         self.propagate_const_to_son(father_ind, basename)
                     
                     q.append((var_ind, other.vertices[y].sons[only_y].son))
@@ -616,4 +706,34 @@ class Graph(object):
                 s1 = other.vertices[y].sons[c].son
                 if s0 != 0 and s1 != 0:
                     q.append((s0, s1))
+    
+    def get_main_vars(self):
+        """
+        returns a list of the main variables
+        this is simply the labels on the sons of root vertex
+        """
+        res = []
+        for edge in self.vertices[0].sons.values():
+            if edge.son != 0:
+                res.append(edge.label)
+        return res
+    
+    def add_graph(self, other):
+        """
+        add other graph to self, after self graph is already prepared for it
+        """
+        # rename constants of other
+        self._merge_cons(other)
+        
+        # merge root vertex. we already cleaned up self root vertex
+        for (lbl, edge) in other.vertices[0].sons.items():
+            self.vertices[0].sons[lbl] = edge
+        
+        # add other vertices
+        for v in other.vertices.keys():
+            if v != 0:
+                self.vertices[v] = other.vertices[v]
+        
+        # vertices were added
+        self.next_ind = max(self.vertices.keys()) + 1
         

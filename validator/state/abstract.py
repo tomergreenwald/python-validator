@@ -1,6 +1,6 @@
 from copy import deepcopy
 import logging
-from graph import Graph
+from graph import Graph, SonKnowledge
 from utils import *
 from state_exceptions import *
 from lattice import LatticeElement as LE
@@ -101,16 +101,16 @@ class AbstractState(object):
             
         if father_ind >= 0:
             have_son = self.graph.can_have_son(father_ind, basename)
-            if have_son:
-                if have_son == 'top':
+            if have_son != SonKnowledge.FALSE:
+                if have_son == SonKnowledge.TOP:
                     # father is TOP, so will be its son
                     return self.add_var_and_set_to_top(var, father_ind) 
-                elif have_son == 'const':
+                elif have_son == SonKnowledge.CONST or have_son == SonKnowledge.MAYBE_CONST:
                     # this must be the case that the son is legal due to constant
                     son_ind = self.graph.create_new_vertex(father_ind, basename)
                     self.graph.propagate_const_to_son(father_ind, basename)
                     return son_ind
-                elif have_son == 'edge':
+                elif have_son == SonKnowledge.EDGE:
                     # this must be the case that the son already exists in the graph
                     son_ind = self.graph.get_son_index(father_ind, basename)
                     return son_ind
@@ -172,6 +172,28 @@ class AbstractState(object):
         
         return (self._expression_to_vertex_index(var_name), res)
     
+    def _test_father_mutability(self, father_name, father_ind, add_tops = True):
+        """
+        call this before adding an attribute to a vertex, to test
+        its mutability
+        if add_tops is True, then the mutability will be set to L_MUST_HAVE
+        """
+        errors = []
+        mutable = self.graph.get_mutable(father_ind)
+        fix_mutable = False
+        
+        if mutable.val == LE.L_MUST_NOT_HAVE:
+            errors.append(("Error", "var %s is immutable" %(father_name)))
+            fix_mutable = True
+        elif mutable.val == LE.L_MAY_HAVE:
+            errors.append(("Alert", "var %s might be immutable" %(father_name)))
+            fix_mutable = True
+        
+        if add_tops and fix_mutable:
+            self.graph.set_mutable(father_ind)
+        
+        return errors
+    
     def _cleanup_var_vertex(self, var_name):
         """
         receives a var name. returns an index of a vertex representing this var
@@ -198,6 +220,10 @@ class AbstractState(object):
         else:
             # this is the case when we create new attribute
             father_ind, errors = self._get_var_index(father)
+        
+        # check if father is mutable
+        m_errors = self._test_father_mutability(father, father_ind)
+        errors.extend(m_errors)
         
         var_ind = self.graph.create_new_vertex(father_ind, basename)
         return var_ind, errors
@@ -239,6 +265,10 @@ class AbstractState(object):
         if var0_ind >= 0:
             # vertex already exists
             self.graph.unlink_single_son(father0_ind, basename)
+        else:
+            # check if father is mutable
+            m_errors = self._test_father_mutability(father, father_ind)
+            errors.extend(m_errors)
         
         # set var0 to point to var1 vertex
         # create new step father
@@ -265,6 +295,15 @@ class AbstractState(object):
         
         # rename the vertices and constant names, so that vertex at index 1 
         # and constant at index 0 will be next vertex/constant of other/self
+        self.rename_indices(other)
+        
+        self.graph.lub(other.graph)
+    
+    def rename_indices(self, other):
+        """
+        rename vertices and constants indices of self and other,
+        so there will be no mutual indices
+        """
         if self.graph.next_ind >= other.graph.next_ind:
             other.graph.rename_vertices_offset(self.graph.next_ind - 1)
         else:
@@ -274,8 +313,24 @@ class AbstractState(object):
             other.graph.rename_constants_offset(self.graph.next_cons)
         else:
             self.graph.rename_constants_offset(other.graph.next_cons)
+    
+    def add_state(self, other):
+        """
+        add another state to the current state, possibly overriding existing 
+        variables
+        """
+        main_vars = other.graph.get_main_vars()
+        for var_name in main_vars:
+            # remove main variable from graph
+            self.remove_var(var_name, False)
         
-        self.graph.lub(other.graph)
+        # prepare to merge the two graphs...
+        self.collect_garbage()
+        other.collect_garbage()
+        self.rename_indices(other)
+        
+        self.graph.add_graph(other.graph)
+        
     
 """
 import sys; sys.path.append(r'D:\school\verify\project2\python-validator\validator\state'); execfile(r'D:\school\verify\project2\python-validator\validator\state\abstract.py')
