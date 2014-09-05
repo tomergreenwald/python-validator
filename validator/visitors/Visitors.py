@@ -54,7 +54,6 @@ def get_variable_name(stack, abstract_state, name):
         raise Exception('Name (%s) is not a local or a global variable for the stack - %s' % name, stack)
 
 
-# TODO: shouldn't it use the stack somehow?
 def get_node_name(node):
     """
     Generates the fully qualified name for a given node. If the node contains a 'value' attribute then it is a complex
@@ -83,7 +82,7 @@ def var_name_list(stack, var, level=0):
     return names
 
 
-def actual_var_name(stack, abstract_state, var, level=0):
+def actual_var_name(stack, var, level=0):
     """
     Generates a fully qualified name for a local or a global variable.
     Throws exception if the variable was no previously set to the abstract state.
@@ -92,10 +91,10 @@ def actual_var_name(stack, abstract_state, var, level=0):
     :param var: Variable name.
     :return: Fully qualified variable name.
     """
-    names = var_name_list(stack, var, level)
-    for name in names:
-        if abstract_state.has_var(name):
-            return name
+    if var in stack.frames[-(level + 1)].variables:
+        return stack.current_frame().frame_name + "#" + var
+    if var in stack.frames[0]:
+        return stack.frames[0].frame_name + "#" + var
     raise Exception("Referenced variable was not assigned previuosly - [%s] - %s" % (str(stack.frame_names()), var))
 
 
@@ -116,21 +115,20 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     :param from_var: AST node to extract type and data from.
     :param to_var_name: variable name to assign data to.
     """
-    actual_to_name = stack_var_name(stack, to_var_name)
+    actual_to_name = actual_var_name(stack, to_var_name)
     if split_stack:
         level = 1
     else:
         level = 0
-        # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
-        actual_from_name = actual_var_name(stack, abstract_state, from_var.id, level)
+        actual_from_name = actual_var_name(stack, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
         print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
         print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
                                                        to_var=actual_to_name)
-    stack.current_frame().register(actual_to_name)
+    stack.current_frame().register(to_var_name)
 
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
@@ -194,7 +192,6 @@ class AssignVisitor(CallVisitor):
         Handles attribute node.
         :param node: Attribute Node.
         """
-        # TODO: it may be set_var_to_const
         self.abstract_state.set_var_to_var(self.name,
                                            actual_var_name(self.stack, self.abstract_state, get_node_name(node)))
 
