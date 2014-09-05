@@ -98,7 +98,7 @@ def stack_var_name(stack, var, level=0):
     return var_name_list(stack, var, level)[0]
 
 
-def register_assignment(stack, abstract_state, from_var, to_var_name, split_stack=False):
+def register_assignment(stack, abstract_state, from_var, to_var_name, split_stack=False, new_object=None):
     """
     Registers an assignment from one variable (or const value) to another to a given AbstractState.
     :param abstract_state: AbstractState to register assignment to.
@@ -118,22 +118,20 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
             actual_from_name = actual_var_name(stack, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
         print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
-    else:
+    elif from_var is not None:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
         print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
                                                        to_var=actual_to_name)
-
-
-def evaluate_function(function, args, keywords, stack, abstract_state, functions):
-    stack.insert(Frame(function.name))
-    arguments = []
-    if len(function.args.args) > 0 and function.args.args[0].id is "self":
-        advance_self = 1
     else:
-        advance_self = 0
+        abstract_state.set_var_to_const(actual_to_name, new_object)
+        print "assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=actual_to_name)
+
+
+def handle_kwargs(abstract_state, args, function, keywords, stack):
+    arguments = []
     for i in xrange(len(args)):
         arguments.append(i)
-        register_assignment(stack, abstract_state, args[i], function.args.args[i + advance_self].id, True)
+        register_assignment(stack, abstract_state, args[i], function.args.args[i].id, True)
     for i in xrange(len(function.args.defaults)):
         arg_index = i + len(function.args.args) - len(function.args.defaults)
         arg = function.args.args[arg_index]
@@ -144,7 +142,12 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
                 register_assignment(stack, abstract_state, keyword.value, keyword.arg, True)
         if not found:
             default = function.args.defaults[i]
-            register_assignment(stack, abstract_state, default, function.args.args[arg_index + advance_self].id, True)
+            register_assignment(stack, abstract_state, default, function.args.args[arg_index].id, True)
+
+
+def evaluate_function(function, args, keywords, stack, abstract_state, functions):
+    stack.insert(Frame(function.name))
+    handle_kwargs(abstract_state, args, function, keywords, stack)
     assess_list(function.body, stack, abstract_state, functions)
     stack.pop(abstract_state)
 
@@ -159,16 +162,37 @@ class CallVisitor(ast.NodeVisitor):
         self.classes = classes
 
     def visit_Call(self, node):
-        function_name = node.func.id
-        if function_name in self.classes:
-            init_object(self.abstract_state, self.classes[function_name], node.args, node.keywords,
-                        self.stack,
-                        self.functions)
-        elif function_name in self.functions:
-            evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
-                              self.functions)
+        if type(node.func) is ast.Name:
+            function_name = node.func.id
+            if function_name in self.classes:
+                init_object(self.name, self.abstract_state, self.classes[function_name], node.args, node.keywords,
+                            self.stack,
+                            self.functions)
+            elif function_name in self.functions:
+                evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack,
+                                  self.abstract_state,
+                                  self.functions)
+            else:
+                raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
+
+        elif type(node.func) is ast.Attribute:
+            function_name = node.func.attr
+            _self = node.func.value.id
+            #should return a list of contexts saved for each method (one per method impl)
+            methods = self.abstract_state.get_method_data(_self, function_name)
+            if len(methods) > 0:
+                abstract_state_clean = self.abstract_state.clone()
+                for method in methods:
+                    abstract_state_cpy = abstract_state_clean.clone()
+                    evaluate_function(method, [self].extend(node.args), node.keywords, self.stack, abstract_state_cpy,
+                                      self.functions)
+                    self.abstract_state.lub(abstract_state_cpy)
+            else:
+                raise Exception(
+                    'Method {method} was called for {obj}, but no implementation exists'.format(method=function_name,
+                                                                                                obj=_self))
         else:
-            raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
+            raise Exception("not supported")
 
         if self.name and self.abstract_state.has_var("ret_val"):
             register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
@@ -444,15 +468,14 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     """
     :param clazz: The ClassRepresentation of the class
     """
-    if 'self' in abstract_state:
-        raise Exception('Someone did not clean self, or self is program variable')
-    abstract_state.set_var_to_const(actual_var_name(stack, 'self'), object())
+    #abstract_state.set_var_to_const(actual_var_name(stack, target), object())
+    register_assignment(stack, abstract_state, None, target, new_object=object())
 
     iter_clazz = clazz
-    while '__init__' not in iter_clazz.methods or iter_clazz is not 'object':
+    while iter_clazz is not 'object' and '__init__' not in iter_clazz.methods:
         iter_clazz = iter_clazz.base
     if iter_clazz is not 'object':
-        evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state, functions)
+        evaluate_function(iter_clazz.methods['__init__'], [target] + args, keywords, stack, abstract_state, functions)
 
-    abstract_state.set_var_to_var('ret_val', actual_var_name(stack, 'self'))
-    abstract_state.forget_var(actual_var_name(stack, 'self'))
+    for method in clazz.methods:
+        abstract_state.set_method_to_var(actual_var_name(stack, target), method)
