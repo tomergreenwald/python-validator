@@ -82,7 +82,7 @@ def actual_var_name(stack, var, level=0):
     :return: Fully qualified variable name.
     """
     if var in stack.frames[-(level + 1)].variables:
-        return stack.current_frame().frame_name + "#" + var
+        return stack.frames[-(level + 1)].frame_name + "#" + var
     if var in stack.frames[0].variables:
         return stack.frames[0].frame_name + "#" + var
     raise Exception("Referenced variable was not assigned previuosly - [%s] - %s" % (str(stack.frame_names()), var))
@@ -184,7 +184,8 @@ class CallVisitor(ast.NodeVisitor):
                 abstract_state_clean = self.abstract_state.clone()
                 for method in methods:
                     abstract_state_cpy = abstract_state_clean.clone()
-                    evaluate_function(method, [self].extend(node.args), node.keywords, self.stack, abstract_state_cpy,
+                    evaluate_function(method, [ast.Name(id=_self)] + node.args, node.keywords, self.stack,
+                                      abstract_state_cpy,
                                       self.functions)
                     self.abstract_state.lub(abstract_state_cpy)
             else:
@@ -215,7 +216,7 @@ class AssignVisitor(CallVisitor):
         :param node: Attribute Node.
         """
         self.abstract_state.set_var_to_var(self.name,
-                                           actual_var_name(self.stack, self.abstract_state, get_node_name(node)))
+                                           actual_var_name(self.stack, node.value.id) + "." + node.attr)
 
     def visit_Str(self, node):
         """
@@ -477,5 +478,5 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     if iter_clazz is not 'object':
         evaluate_function(iter_clazz.methods['__init__'], [target] + args, keywords, stack, abstract_state, functions)
 
-    for method in clazz.methods:
+    for method in clazz.methods.values():
         abstract_state.set_method_to_var(actual_var_name(stack, target), method)
