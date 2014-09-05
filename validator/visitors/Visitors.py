@@ -112,7 +112,10 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     else:
         level = 0
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
-        actual_from_name = actual_var_name(stack, from_var.id, level)
+        if from_var.id is "ret_val":
+            actual_from_name = "ret_val"
+        else:
+            actual_from_name = actual_var_name(stack, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
         print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
     else:
@@ -168,7 +171,8 @@ class CallVisitor(ast.NodeVisitor):
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
         if self.name and self.abstract_state.has_var("ret_val"):
-            self.abstract_state.set_var_to_var(self.name, "ret_val")
+            register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
+            #self.abstract_state.set_var_to_var(actual_var_name(self.stack, self.name), "ret_val")
             self.abstract_state.forget_var("ret_val")
 
 
@@ -394,14 +398,14 @@ class ProgramVisitor(ast.NodeVisitor):
                 self.abstract_state.lub(handler_abstract_states)
 
     def visit_Return(self, node):
+        to_name = actual_var_name(self.stack, getattr(node.value, node.value._fields[0]))
         if self.abstract_state.has_var('ret_val'):
             temp_state = self.abstract_state.clone()
-            temp_state.set_var_to_var('ret_val',
-                                      actual_var_name(self.stack, getattr(node.value, node.value._fields[0])))
+            temp_state.set_var_to_var('ret_val', to_name)
             self.abstract_state.lub(temp_state)
         else:
-            self.abstract_state.set_var_to_var('ret_val',
-                                               actual_var_name(self.stack, getattr(node.value, node.value._fields[0])))
+            self.abstract_state.set_var_to_var('ret_val', to_name)
+        print "assigned {from_var} to {to_var}".format(from_var=to_name, to_var="ret_val")
 
 
 def assess_list(entries, stack, abstract_state, functions):
