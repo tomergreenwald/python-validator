@@ -134,7 +134,7 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
     stack.insert(Frame(function.name))
     arguments = []
-    if function.args.args[0].id is "self":
+    if len(function.args.args) > 0 and function.args.args[0].id is "self":
         advance_self = 1
     else:
         advance_self = 0
@@ -157,8 +157,9 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
 
 
 class CallVisitor(ast.NodeVisitor):
-    def __init__(self, stack, abstract_state, functions, classes):
+    def __init__(self, name, stack, abstract_state, functions, classes):
         super(CallVisitor, self).__init__()
+        self.name = name
         self.abstract_state = abstract_state
         self.stack = stack
         self.functions = functions
@@ -167,9 +168,9 @@ class CallVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         function_name = node.func.id
         if function_name in self.classes:
-            evaluate_function(self.classes[function_name].methods["__init__"], node.args, node.keywords, self.stack,
-                              self.abstract_state,
-                              self.functions)
+            init_object(self.name, self.abstract_state, self.classes[function_name], node.args, node.keywords, self.stack,
+                        self.functions)
+
         elif function_name in self.functions:
             evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
                               self.functions)
@@ -182,8 +183,7 @@ class AssignVisitor(CallVisitor):
         """
         Handle assign calls. Adds to the object the relavent methods and attributes
         """
-        super(AssignVisitor, self).__init__(stack, abstract_state, functions, classes)
-        self.name = name
+        super(AssignVisitor, self).__init__(name, stack, abstract_state, functions, classes)
 
     def visit_Attribute(self, node):
         """
@@ -322,6 +322,7 @@ class ProgramVisitor(ast.NodeVisitor):
             self.stack = Stack()
         self.functions = functions
         self.classes = classes
+        self.return_value = None
 
     def visit_ClassDef(self, node):
         # """
@@ -332,7 +333,6 @@ class ProgramVisitor(ast.NodeVisitor):
         #raise Exception('Call visit is not supported yet')
 
     def visit_FunctionDef(self, node):
-        # TODO - should be stack either
         FunctionDefVisitor(self.functions).visit(node)
 
     def visit_Expr(self, node):
@@ -350,11 +350,7 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles for loop.
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
-        # register_assignment(self.stack, self.abstract_state, node.iter.elts[0], node.target.id)
-        # FIXME: I selectede the first element in the list but we need to LUB all of it and then use this value
-        register_assignment(self.stack, self.abstract_state, ast.Assign(
-            targets=[ast.Name(id=node.target, ctx=ast.Store())],
-            value=node.iter), node.target.id)
+        register_assignment(self.stack, self.abstract_state, node.iter + '_vars_lub', node.target.id)
         assess_list(node.body, self.stack, self.abstract_state, self.functions)
 
     def visit_If(self, node):
@@ -398,6 +394,9 @@ class ProgramVisitor(ast.NodeVisitor):
                 assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
                 self.abstract_state.lub(handler_abstract_states)
 
+    def visit_Return(self, node):
+        self.return_value = getattr(node.value, node.value._fields[0])
+
 
 def assess_list(entries, stack, abstract_state, functions):
     """
@@ -409,6 +408,7 @@ def assess_list(entries, stack, abstract_state, functions):
     visitor = ProgramVisitor(stack, abstract_state, functions)
     for entry in entries:
         visitor.visit(entry)
+    return visitor.return_value
 
 
 def handle_assign(node, stack, abstract_state, functions, classes):
@@ -423,22 +423,20 @@ def handle_assign(node, stack, abstract_state, functions, classes):
     assign_visitor.visit(node.value)
 
 
-def init_object(abstract_state, clazz, args, keywords, stack, functions):
+def init_object(target, abstract_state, clazz, args, keywords, stack, functions):
     """
     :param clazz: The ClassRepresentation of the class
     """
-    # TODO should do something with the stack?
-    # TODO functions is correct? what should we pass?
     abstract_state_cpy = abstract_state.clone()
     if 'self' in abstract_state:
-        # TODO should delete 'self' from the abstract state
-        pass
-    abstract_state_cpy.set_var_to_const('self', 'object')   # TODO this is how it should be done?
+        raise Exception('Someone did not clean self, or self is program variable')
+    abstract_state_cpy.set_var_to_const('root#self', 'object')
 
     iter_clazz = clazz
-    while '__init__' not in iter_clazz.methods or iter_clazz is 'object':
+    while '__init__' not in iter_clazz.methods or iter_clazz is not 'object':
         iter_clazz = iter_clazz.base
     if iter_clazz is not 'object':
         evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
-        # else - we already init 'self' as 'object'
-        # TODO should return the abstract state of 'self'
+
+    abstract_state.set_var_to_var(target, 'root#self')
+    abstract_state.forget_var('root#self')
