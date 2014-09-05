@@ -237,14 +237,23 @@ class AssignVisitor(CallVisitor):
         Handles tuple node.
         :param node: Tuple Node.
         """
-        register_assignment(self.stack, self.abstract_state, node, self.name)
+        register_assignment(self.stack, self.abstract_state, node, self.name)  # Register the name as list
+
+        list_lub = self.name + '_vars_lub'
+
+        if node.elts:
+            register_assignment(self.stack, self.abstract_state, node.elts[0], list_lub)
+        for item in node.elts[1:]:
+            clone = self.abstract_state.clone()
+            register_assignment(self.stack, clone, item, list_lub)
+            self.abstract_state.lub(clone)
 
     def visit_Dict(self, node):
         """
         Handles dictionary node.
         :param node: Dictionary Node.
         """
-        register_assignment(self.stack, self.abstract_state, node, self.name)
+        raise Exception("Dictionary is not supported yet")
 
 
 class ExprVisitor(CallVisitor):
