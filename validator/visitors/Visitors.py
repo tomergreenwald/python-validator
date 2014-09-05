@@ -157,7 +157,7 @@ def evaluate_function(function, args, keywords, stack, abstract_state, functions
 
 
 class CallVisitor(ast.NodeVisitor):
-    def __init__(self, name, stack, abstract_state, functions, classes):
+    def __init__(self, stack, abstract_state, functions, classes, name=None):
         super(CallVisitor, self).__init__()
         self.name = name
         self.abstract_state = abstract_state
@@ -168,7 +168,8 @@ class CallVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         function_name = node.func.id
         if function_name in self.classes:
-            init_object(self.name, self.abstract_state, self.classes[function_name], node.args, node.keywords, self.stack,
+            init_object(self.name, self.abstract_state, self.classes[function_name], node.args, node.keywords,
+                        self.stack,
                         self.functions)
 
         elif function_name in self.functions:
@@ -183,7 +184,7 @@ class AssignVisitor(CallVisitor):
         """
         Handle assign calls. Adds to the object the relavent methods and attributes
         """
-        super(AssignVisitor, self).__init__(name, stack, abstract_state, functions, classes)
+        super(AssignVisitor, self).__init__(stack, abstract_state, functions, classes, name=name)
 
     def visit_Attribute(self, node):
         """
@@ -263,7 +264,6 @@ class FunctionDefVisitor(ast.NodeVisitor):
 
 
 def initialize_abstract_state(abstract_state):
-    # TODO - it should be in Aviel's code
     abstract_state.set_var_to_const('root#True', True)
     abstract_state.set_var_to_const('root#False', False)
     abstract_state.set_var_to_const('root#None', None)
@@ -358,7 +358,7 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles if/elif/else cases by assessing every option and than calculating the Least Upper Bound for them all.
         :param node: Current if node.
         """
-        if len(node.orelse) == 0:
+        if not node.orelse:
             before_if_states = self.abstract_state.clone()
             assess_list(node.body, self.stack, self.abstract_state, self.functions)
             self.abstract_state.lub(before_if_states)
@@ -369,7 +369,13 @@ class ProgramVisitor(ast.NodeVisitor):
             self.abstract_state.lub(orelse_state)
 
     def visit_TryFinally(self, node):
-        assess_list(node.body, self.abstract_state, self.functions, self.functions)
+        before_block_abstract_states = self.abstract_state.clone()
+        helper = []
+        for expr in node.body:
+            helper.append(expr)
+            current_abstract_states = before_block_abstract_states.clone()
+            assess_list(helper, self.stack, current_abstract_states, self.functions)
+            self.abstract_state.lub(current_abstract_states)
         assess_list(node.finalbody, self.abstract_state, self.functions, self.functions)
 
     def visit_TryExcept(self, node):
@@ -389,7 +395,7 @@ class ProgramVisitor(ast.NodeVisitor):
             assess_list(helper, self.stack, current_abstract_states, self.functions)
 
             for handler in node.handlers:
-                # TODO should add scope var with the "as e"
+                self.abstract_state.set_var_to_const(handler.name.id, 'exception')
                 handler_abstract_states = current_abstract_states.clone()
                 assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
                 self.abstract_state.lub(handler_abstract_states)
@@ -404,7 +410,6 @@ def assess_list(entries, stack, abstract_state, functions):
     :param entries: A list of entries to process.
     :param abstract_state: AbstractState to initialize the ProgramVisitor with.
     """
-    # TODO functions is static functions? what about class methods?
     visitor = ProgramVisitor(stack, abstract_state, functions)
     for entry in entries:
         visitor.visit(entry)
@@ -438,5 +443,6 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     if iter_clazz is not 'object':
         evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
 
-    abstract_state.set_var_to_var(target, 'root#self')
+    if target:
+        abstract_state.set_var_to_var(target, 'root#self')
     abstract_state.forget_var('root#self')
