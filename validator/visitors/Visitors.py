@@ -44,16 +44,6 @@ class Stack(object):
         return len(self.frames)
 
 
-def get_variable_name(stack, abstract_state, name):
-    fully_qualizfied_name = "#".join(stack) + "_" + name
-    if abstract_state.has_var(fully_qualizfied_name):
-        return fully_qualizfied_name
-    elif abstract_state.has_var(name):
-        return name
-    else:
-        raise Exception('Name (%s) is not a local or a global variable for the stack - %s' % name, stack)
-
-
 def get_node_name(node):
     """
     Generates the fully qualified name for a given node. If the node contains a 'value' attribute then it is a complex
@@ -168,15 +158,18 @@ class CallVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         function_name = node.func.id
         if function_name in self.classes:
-            init_object(self.name, self.abstract_state, self.classes[function_name], node.args, node.keywords,
+            init_object(self.abstract_state, self.classes[function_name], node.args, node.keywords,
                         self.stack,
                         self.functions)
-
         elif function_name in self.functions:
             evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
                               self.functions)
         else:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
+
+        if self.name and self.abstract_state.has_var("ret_val"):
+            self.abstract_state.set_var_to_var(self.name, "ret_val")
+            self.abstract_state.forget_var("ret_val")
 
 
 class AssignVisitor(CallVisitor):
@@ -401,7 +394,14 @@ class ProgramVisitor(ast.NodeVisitor):
                 self.abstract_state.lub(handler_abstract_states)
 
     def visit_Return(self, node):
-        self.return_value = getattr(node.value, node.value._fields[0])
+        if self.abstract_state.has_var('ret_val'):
+            temp_state = self.abstract_state.clone()
+            temp_state.set_var_to_var('ret_val',
+                                      actual_var_name(self.stack, getattr(node.value, node.value._fields[0])))
+            self.abstract_state.lub(temp_state)
+        else:
+            self.abstract_state.set_var_to_var('ret_val',
+                                               actual_var_name(self.stack, getattr(node.value, node.value._fields[0])))
 
 
 def assess_list(entries, stack, abstract_state, functions):
@@ -413,7 +413,6 @@ def assess_list(entries, stack, abstract_state, functions):
     visitor = ProgramVisitor(stack, abstract_state, functions)
     for entry in entries:
         visitor.visit(entry)
-    return visitor.return_value
 
 
 def handle_assign(node, stack, abstract_state, functions, classes):
@@ -432,17 +431,15 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     """
     :param clazz: The ClassRepresentation of the class
     """
-    abstract_state_cpy = abstract_state.clone()
     if 'self' in abstract_state:
         raise Exception('Someone did not clean self, or self is program variable')
-    abstract_state_cpy.set_var_to_const('root#self', 'object')
+    abstract_state.set_var_to_const(actual_var_name(stack, 'self'), object())
 
     iter_clazz = clazz
     while '__init__' not in iter_clazz.methods or iter_clazz is not 'object':
         iter_clazz = iter_clazz.base
     if iter_clazz is not 'object':
-        evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
+        evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state, functions)
 
-    if target:
-        abstract_state.set_var_to_var(target, 'root#self')
-    abstract_state.forget_var('root#self')
+    abstract_state.set_var_to_var('ret_val', actual_var_name(stack, 'self'))
+    abstract_state.forget_var(actual_var_name(stack, 'self'))
