@@ -189,6 +189,8 @@ class AssignVisitor(CallVisitor):
 
     def visit_Attribute(self, node):
         """
+        example: x = y.a
+
         Handles attribute node.
         :param node: Attribute Node.
         """
@@ -310,7 +312,7 @@ class ClassDefVisitor(ast.NodeVisitor):
 
 
 class ProgramVisitor(ast.NodeVisitor):
-    def __init__(self, stack=Stack(), abstract_state=None, functions={}, classes={}):
+    def __init__(self, stack=None, abstract_state=None, functions={}, classes={}):
         """
         Should visit all the program
         """
@@ -320,7 +322,10 @@ class ProgramVisitor(ast.NodeVisitor):
             initialize_abstract_state(self.abstract_state)
         else:
             self.abstract_state = abstract_state
-        self.stack = stack
+        if stack:
+            self.stack = stack
+        else:
+            self.stack = Stack()
         self.functions = functions
         self.classes = classes
 
