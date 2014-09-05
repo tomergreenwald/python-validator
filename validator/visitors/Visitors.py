@@ -14,7 +14,7 @@ class Frame(object):
 
     def clear(self, abstract_state):
         for variable in self.variables:
-            abstract_state.forget_var(variable)
+            abstract_state.forget_var(self.frame_name + "#" + variable)
 
 
 class Stack(object):
@@ -93,7 +93,7 @@ def actual_var_name(stack, var, level=0):
     """
     if var in stack.frames[-(level + 1)].variables:
         return stack.current_frame().frame_name + "#" + var
-    if var in stack.frames[0]:
+    if var in stack.frames[0].variables:
         return stack.frames[0].frame_name + "#" + var
     raise Exception("Referenced variable was not assigned previuosly - [%s] - %s" % (str(stack.frame_names()), var))
 
@@ -115,6 +115,7 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     :param from_var: AST node to extract type and data from.
     :param to_var_name: variable name to assign data to.
     """
+    stack.current_frame().register(to_var_name)
     actual_to_name = actual_var_name(stack, to_var_name)
     if split_stack:
         level = 1
@@ -128,7 +129,6 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
         print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
                                                        to_var=actual_to_name)
-    stack.current_frame().register(to_var_name)
 
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
@@ -225,16 +225,13 @@ class AssignVisitor(CallVisitor):
         # TODO handle Subscript should do the logic on 'var_that_represents_the_list_items'
         register_assignment(self.stack, self.abstract_state, node, self.name)  # Register the name as list
 
-        var_name_that_represents_the_list_items = self.name + '_vars_lub'
+        list_lub = self.name + '_vars_lub'
+
         if node.elts:
-            register_assignment(self.stack, self.abstract_state, ast.Assign(
-                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=ast.Store())],
-                value=node.elts[0]), var_name_that_represents_the_list_items)
+            register_assignment(self.stack, self.abstract_state, node.elts[0], list_lub)
         for item in node.elts[1:]:
             clone = self.abstract_state.clone()
-            register_assignment(self.stack, clone, ast.Assign(
-                targets=[ast.Name(id=var_name_that_represents_the_list_items, ctx=ast.Store())],
-                value=item), var_name_that_represents_the_list_items)
+            register_assignment(self.stack, clone, item, list_lub)
             self.abstract_state.lub(clone)
 
     def visit_Tuple(self, node):
