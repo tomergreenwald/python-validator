@@ -121,16 +121,16 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         level = 1
     else:
         level = 0
-    # TODO the node can be const
+        # TODO the node can be const
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
         actual_from_name = actual_var_name(stack, abstract_state, from_var.id, level)
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
         print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
-        print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])), to_var=actual_to_name)
+        print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
+                                                       to_var=actual_to_name)
     stack.current_frame().register(actual_to_name)
-
 
 
 def evaluate_function(function, args, keywords, stack, abstract_state, functions):
@@ -169,11 +169,12 @@ class CallVisitor(ast.NodeVisitor):
     def visit_Call(self, node):
         function_name = node.func.id
         if function_name in self.classes:
-            evaluate_function(self.classes[function_name].methods["__init__"], node.args, node.keywords, self.stack, self.abstract_state,
+            evaluate_function(self.classes[function_name].methods["__init__"], node.args, node.keywords, self.stack,
+                              self.abstract_state,
                               self.functions)
         elif function_name in self.functions:
-        evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
-                          self.functions)
+            evaluate_function(self.functions[node.func.id], node.args, node.keywords, self.stack, self.abstract_state,
+                              self.functions)
         else:
             raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
 
@@ -285,7 +286,7 @@ class ClassDefVisitor(ast.NodeVisitor):
 
     def visit_ClassDef(self, node):
         if node.bases[0].id == 'object':
-        self.clazz = ClassRepresentation(node.name, node.bases[0].id)
+            self.clazz = ClassRepresentation(node.name, node.bases[0].id)
         else:
             if node.bases[0].id not in self.classes:
                 raise Exception('Can not find super class')     # Compile error or init from outer library
@@ -440,5 +441,5 @@ def init_object(abstract_state, clazz, args, keywords, stack, functions):
         iter_clazz = iter_clazz.base
     if iter_clazz is not 'object':
         evaluate_function(iter_clazz.methods['__init__'], args, keywords, stack, abstract_state_cpy, functions)
-    # else - we already init 'self' as 'object'
-    # TODO should return the abstract state of 'self'
+        # else - we already init 'self' as 'object'
+        # TODO should return the abstract state of 'self'
