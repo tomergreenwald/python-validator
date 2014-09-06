@@ -123,6 +123,10 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
             abstract_state.set_var_to_const(actual_to_name, tuple())
             print "assigned {var_type} to {to_var}".format(var_type=tuple(),
                                                            to_var=actual_to_name)
+        elif type(from_var) is ast.Dict:
+            abstract_state.set_var_to_const(actual_to_name, dict())
+            print "assigned {var_type} to {to_var}".format(var_type=dict(),
+                                                           to_var=actual_to_name)
         else:
             abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
             print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
@@ -283,7 +287,23 @@ class AssignVisitor(CallVisitor):
         Handles dictionary node.
         :param node: Dictionary Node.
         """
-        raise Exception("Dictionary is not supported yet")
+        register_assignment(self.stack, self.abstract_state, node, self.name)
+
+        keys_lub = self.name + '_keys_lub'
+        if node.keys:
+            register_assignment(self.stack, self.abstract_state, node.keys[0], keys_lub)
+        for item in node.keys[1:]:
+            clone = self.abstract_state.clone()
+            register_assignment(self.stack, clone, item, keys_lub)
+            self.abstract_state.lub(clone)
+
+        values_lub = self.name + '_values_lub'
+        if node.values:
+            register_assignment(self.stack, self.abstract_state, node.values[0], values_lub)
+        for item in node.values[1:]:
+            clone = self.abstract_state.clone()
+            register_assignment(self.stack, clone, item, values_lub)
+            self.abstract_state.lub(clone)
 
 
 class ExprVisitor(CallVisitor):
