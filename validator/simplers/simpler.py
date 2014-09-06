@@ -167,17 +167,15 @@ def simple(node):
         should_simple_again = True
         return call_args_simpler(node)
 
-    if isinstance(node.value, ast.List) or isinstance(node.value, ast.Tuple):
+    if type(node.value) in [ast.List, ast.Tuple]:
         list_extractor = []
-        should_return = False
         for v in node.value.elts:
             if not isinstance(v, ast.Name):
-                should_return = True
+                should_simple_again = True
                 tmp_var_name = random_tmp_var()
                 list_extractor.append(ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=v))
                 node.value.elts[node.value.elts.index(v)] = ast.Name(id=tmp_var_name, ctx=Load())
-        if should_return:
-            return list_extractor + [node]
+        return list_extractor + [node]
 
     return node
 
@@ -223,6 +221,9 @@ class CodeSimpler(ast.NodeTransformer):
                 ast.Return(value=ast.Name(id=tmp_var_name, ctx=Load()))
             ]
         return node
+    
+    def visit_Dict(self, node):
+        print 'asd'
 
 
 class BinOpHelper(ast.NodeVisitor):
