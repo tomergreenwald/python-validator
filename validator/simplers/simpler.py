@@ -177,6 +177,22 @@ def simple(node):
                 node.value.elts[i] = ast.Name(id=tmp_var_name, ctx=Load())
         return list_extractor + [node]
 
+    if type(node.value) is ast.Dict:
+        dict_extractor = []
+        for i, k in enumerate(node.value.keys):
+            v = node.value.values[i]
+            if not isinstance(k, ast.Name):
+                should_simple_again = True
+                tmp_var_name = random_tmp_var()
+                dict_extractor.append(ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=k))
+                node.value.keys[i] = ast.Name(id=tmp_var_name, ctx=Load())
+            if not isinstance(v, ast.Name):
+                should_simple_again = True
+                tmp_var_name = random_tmp_var()
+                dict_extractor.append(ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=v))
+                node.value.values[i] = ast.Name(id=tmp_var_name, ctx=Load())
+        return dict_extractor + [node]
+
     return node
 
 
@@ -221,7 +237,7 @@ class CodeSimpler(ast.NodeTransformer):
                 ast.Return(value=ast.Name(id=tmp_var_name, ctx=Load()))
             ]
         return node
-    
+
     def visit_Dict(self, node):
         print 'asd'
 
