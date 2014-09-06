@@ -119,9 +119,14 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         abstract_state.set_var_to_var(actual_to_name, actual_from_name)
         print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
     elif from_var is not None:
-        abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
-        print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
-                                                       to_var=actual_to_name)
+        if type(from_var) is ast.Tuple:
+            abstract_state.set_var_to_const(actual_to_name, tuple())
+            print "assigned {var_type} to {to_var}".format(var_type=tuple(),
+                                                           to_var=actual_to_name)
+        else:
+            abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
+            print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
+                                                           to_var=actual_to_name)
     else:
         abstract_state.set_var_to_const(actual_to_name, new_object)
         print "assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=actual_to_name)
