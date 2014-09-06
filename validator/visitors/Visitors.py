@@ -187,10 +187,16 @@ class CallVisitor(ast.NodeVisitor):
         elif type(node.func) is ast.Attribute:
             function_name = node.func.attr
             _self = node.func.value.id
-            if function_name is 'append':   # Assume this is list
+            if function_name is 'append':
+                """
+                This is append support. It assumes that _self is list.
+                if there is not _self_var_lub it means that this is the first element added to the list,
+                so it register it. Else, it lub the new element.
+                """
                 if _self + '_var_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
                         actual_var_name(self.stack, _self + '_var_lub')):
                     clone = self.abstract_state.clone()
+                    clone.forget_var(actual_var_name(self.stack, _self + '_var_lub'))
                     register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
                     self.abstract_state.lub(clone)
                     print 'LUB for %s_var_lub' % _self
