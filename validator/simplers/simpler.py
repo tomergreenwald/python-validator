@@ -46,9 +46,9 @@ def should_call_args_simpler(node):
 
 
 def should_target_simpler(node):
-    return isinstance(node, _ast.Assign) and not (isinstance(node.targets[0], _ast.Name) 
-                                                  or (isinstance(node.targets[0], _ast.Attribute) 
-                                                  and isinstance(node.targets[0].value, _ast.Name)))
+    return isinstance(node, _ast.Assign) and not (isinstance(node.targets[0], _ast.Name)
+                                                  or (isinstance(node.targets[0], _ast.Attribute)
+                                                      and isinstance(node.targets[0].value, _ast.Name)))
 
 
 def call_args_simpler(node):
@@ -57,18 +57,18 @@ def call_args_simpler(node):
         if not isinstance(a, _ast.Name):
             tmp_var_name = random_tmp_var()
             new_nodes.append(ast.Assign(
-                                        targets=[ast.Name(id=tmp_var_name, ctx=Store())],
-                                        value=a
-                                        ))
+                targets=[ast.Name(id=tmp_var_name, ctx=Store())],
+                value=a
+            ))
             node.value.args[index] = ast.Name(id=tmp_var_name, ctx=Load())
     for k in node.value.keywords:
         if not isinstance(k.value, _ast.Name):
             tmp_var_name = random_tmp_var()
             new_nodes.append(ast.Assign(
-                                        targets=[ast.Name(id=tmp_var_name, ctx=Store())],
-                                        value = k.value
-                                        )
-                             )
+                targets=[ast.Name(id=tmp_var_name, ctx=Store())],
+                value=k.value
+            )
+            )
             k.value = ast.Name(id=tmp_var_name, ctx=Load())
     return new_nodes + [node]
 
@@ -79,9 +79,10 @@ def assign_tuple_simpler(node):
     return_nodes = [ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=node.value)]
     for v, index in zip(node.targets[0].elts, xrange(len(node.targets[0].elts))):
         return_nodes.append(ast.Assign(targets=[ast.Name(id=v.id, ctx=Store())],
-                                       value=Subscript(value=Name(id=tmp_var_name, ctx=Load()), slice=Index(value=Num(n=index))),
+                                       value=Subscript(value=Name(id=tmp_var_name, ctx=Load()),
+                                                       slice=Index(value=Num(n=index))),
                                        ctx=Load()
-                                       ))
+        ))
     return return_nodes
 
 
@@ -165,10 +166,10 @@ def simple(node):
     if should_call_args_simpler(node):
         should_simple_again = True
         return call_args_simpler(node)
-    
+
     if isinstance(node.value, ast.List) or isinstance(node.value, ast.Tuple):
         list_extractor = []
-        should_return=False
+        should_return = False
         for v in node.value.elts:
             if not isinstance(v, ast.Name):
                 should_return = True
@@ -204,12 +205,24 @@ class CodeSimpler(ast.NodeTransformer):
 
             tmp_var_name = random_tmp_var()
             list_assign_node = ast.Assign(
-                                          targets=[ast.Name(id=tmp_var_name, ctx=Store())],
-                                          value=node.iter
-                                          )
+                targets=[ast.Name(id=tmp_var_name, ctx=Store())],
+                value=node.iter
+            )
             node.iter = ast.Name(id=tmp_var_name, ctx=Load())
             return list_assign_node, node
         return self.generic_visit(node)
+
+    def visit_Return(self, node):
+        if type(node.value) is not ast.Name:
+            global should_simple_again
+            should_simple_again = True
+
+            tmp_var_name = random_tmp_var()
+            return [
+                ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=node.value),
+                ast.Return(value=ast.Name(id=tmp_var_name, ctx=Load()))
+            ]
+        return node
 
 
 class BinOpHelper(ast.NodeVisitor):
@@ -253,5 +266,5 @@ def make_simple(code):
         should_simple_again = False
         visitor = BinOpTransformer()
         visitor.visit(ast_tree)
-    
+
     return astor.codegen.to_source(ast_tree)
