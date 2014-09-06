@@ -187,20 +187,32 @@ class CallVisitor(ast.NodeVisitor):
         elif type(node.func) is ast.Attribute:
             function_name = node.func.attr
             _self = node.func.value.id
-            #should return a list of contexts saved for each method (one per method impl)
-            methods = self.abstract_state.get_method_data(_self, function_name)
-            if len(methods) > 0:
-                abstract_state_clean = self.abstract_state.clone()
-                for method in methods:
-                    abstract_state_cpy = abstract_state_clean.clone()
-                    evaluate_function(method, [ast.Name(id=_self)] + node.args, node.keywords, self.stack,
-                                      abstract_state_cpy,
-                                      self.functions)
-                    self.abstract_state.lub(abstract_state_cpy)
+            if function_name is 'append':   # Assume this is list
+                if _self + '_var_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
+                        actual_var_name(self.stack, _self + '_var_lub')):
+                    clone = self.abstract_state.clone()
+                    register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
+                    self.abstract_state.lub(clone)
+                    print 'LUB for %s_var_lub' % _self
+                else:
+                    register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_var_lub')
+                    print _self + '_var_lub has created with %s' % node.args[0]
             else:
-                raise Exception(
-                    'Method {method} was called for {obj}, but no implementation exists'.format(method=function_name,
-                                                                                                obj=_self))
+                #should return a list of contexts saved for each method (one per method impl)
+                methods = self.abstract_state.get_method_data(_self, function_name)
+                if len(methods) > 0:
+                    abstract_state_clean = self.abstract_state.clone()
+                    for method in methods:
+                        abstract_state_cpy = abstract_state_clean.clone()
+                        evaluate_function(method, [ast.Name(id=_self)] + node.args, node.keywords, self.stack,
+                                          abstract_state_cpy,
+                                          self.functions)
+                        self.abstract_state.lub(abstract_state_cpy)
+                else:
+                    raise Exception(
+                        'Method {method} was called for {obj}, but no implementation exists'.format(
+                            method=function_name,
+                            obj=_self))
         else:
             raise Exception("not supported")
 
