@@ -169,12 +169,12 @@ def simple(node):
 
     if type(node.value) in [ast.List, ast.Tuple]:
         list_extractor = []
-        for v in node.value.elts:
+        for i, v in enumerate(node.value.elts):
             if not isinstance(v, ast.Name):
                 should_simple_again = True
                 tmp_var_name = random_tmp_var()
                 list_extractor.append(ast.Assign(targets=[ast.Name(id=tmp_var_name, ctx=Store())], value=v))
-                node.value.elts[node.value.elts.index(v)] = ast.Name(id=tmp_var_name, ctx=Load())
+                node.value.elts[i] = ast.Name(id=tmp_var_name, ctx=Load())
         return list_extractor + [node]
 
     return node
