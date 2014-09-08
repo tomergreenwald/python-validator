@@ -49,6 +49,7 @@ class GraphVertex(object):
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
+        self.metadata = SetDict()
     
     def remove_parent(self, lbl, edge):
         self.all_parents[lbl].remove(edge)
@@ -492,6 +493,13 @@ class Graph(object):
             # otherwise, just merge their possible constants
             v0.all_constants.update(v1.all_constants)
             v0.mutable.inplace_lub(v1.mutable)
+        
+        # merge metadata from other vertex
+        for k1 in v1.metadata.keys():
+            if v0.metadata.has_key(k1):
+                v0.metadata[k1].update(v1.metadata[k1])
+            else:
+                v0.metadata[k1] = v1.metadata[k1]
     
     def _handle_common_edges(self, edge_pairs):
         """
@@ -736,4 +744,16 @@ class Graph(object):
         
         # vertices were added
         self.next_ind = max(self.vertices.keys()) + 1
+    
+    def add_metadata(self, vertex_ind, key, meta):
+        """
+        add meta to metadata[key] of vertex vertex_ind
+        """
+        self.vertices[vertex_ind].metadata.add_element(key, meta)
+    
+    def get_metadata(self, vertex_ind, key):
+        """
+        get meta of vertex vertex_ind, with key key
+        """
+        return self.vertices[vertex_ind].metadata.get(key, set())
         

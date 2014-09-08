@@ -331,6 +331,23 @@ class AbstractState(object):
         
         self.graph.add_graph(other.graph)
         
+    def register_method_metadata(self, var_name, method_name, metadata):
+        """
+        add metadata to a variable name, to be associated with method method_name
+        """
+        var_ind, errors = self._get_var_index(var_name)
+        self.graph.add_metadata(var_ind, method_name, metadata)
+        
+        return errors
+    
+    def get_method_metadata(self, var_name, method_name):
+        """
+        returns a set of possible metadatas associated with method_name of var_name
+        """
+        var_ind, errors = self._get_var_index(var_name)
+        res = self.graph.get_metadata(var_ind, method_name)
+        
+        return (res, errors)
     
 """
 import sys; sys.path.append(r'D:\school\verify\project2\python-validator\validator\state'); execfile(r'D:\school\verify\project2\python-validator\validator\state\abstract.py')
