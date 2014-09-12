@@ -247,8 +247,16 @@ class AssignVisitor(CallVisitor):
 
     def visit_Subscript(self, node):
         if type(node.ctx) is ast.Load:
-            if not self.abstract_state.has_var(actual_var_name(self.stack, node.value.id + '_vars_lub')):
-                raise Exception('List does not exists or empty')
+            try:
+                self.abstract_state.has_var(actual_var_name(self.stack, node.value.id))
+            except:
+                raise Exception('List %s does not exists' % node.value.id)
+
+            try:
+                self.abstract_state.has_var(actual_var_name(self.stack, node.value.id + '_vars_lub'))
+            except:
+                raise Exception('Try to load value from empty list %s' % node.value.id)
+
             self.visit_Name(ast.Name(id=node.value.id + '_vars_lub', ctx=ast.Load()))
         else:
             print 'Shakshuka'
