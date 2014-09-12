@@ -546,7 +546,7 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     while iter_clazz is not 'object' and '__init__' not in iter_clazz.methods:
         iter_clazz = iter_clazz.base
     if iter_clazz is not 'object':
-        evaluate_function(iter_clazz.methods['__init__'], [target] + args, keywords, stack, abstract_state, functions)
+        evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords, stack, abstract_state, functions)
 
     for method in clazz.methods.values():
         abstract_state.set_method_to_var(actual_var_name(stack, target), method)
