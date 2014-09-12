@@ -48,7 +48,8 @@ def should_call_args_simpler(node):
 def should_target_simpler(node):
     return isinstance(node, _ast.Assign) and not (isinstance(node.targets[0], _ast.Name)
                                                   or (isinstance(node.targets[0], _ast.Attribute)
-                                                      and isinstance(node.targets[0].value, _ast.Name)))
+                                                      and isinstance(node.targets[0].value, _ast.Name))
+                                                  or isinstance(node.targets[0], _ast.Subscript))
 
 
 def call_args_simpler(node):
