@@ -245,6 +245,14 @@ class AssignVisitor(CallVisitor):
         self.abstract_state.set_var_to_var(self.name,
                                            actual_var_name(self.stack, node.value.id) + "." + node.attr)
 
+    def visit_Subscript(self, node):
+        if type(node.ctx) is ast.Load:
+            if not self.abstract_state.has_var(node.value.id + '_vars_lub'):
+                raise Exception('List does not exists or empty')
+            self.visit_Name(ast.Name(id=node.value.id + '_vars_lub', ctx=ast.Load()))
+        else:
+            print 'Shakshuka'
+
     def visit_Str(self, node):
         """
         Handles string node.
