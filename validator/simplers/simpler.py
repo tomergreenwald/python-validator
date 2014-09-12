@@ -239,7 +239,7 @@ class CodeSimpler(ast.NodeTransformer):
         return node
 
     def visit_Dict(self, node):
-        print 'asd'
+        raise Exception('Dictionary is not supported')
 
 
 class BinOpHelper(ast.NodeVisitor):
