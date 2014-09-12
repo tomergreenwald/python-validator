@@ -521,18 +521,15 @@ def handle_assign(node, stack, abstract_state, functions, classes):
     if type(node.targets[0]) is ast.Subscript:
         try:
             actual_var_name(stack, node.targets[0].value.id)
+            actual_var_name(stack, node.targets[0].value.id + '_vars_lub')
         except:
             raise Exception('Try to store value in uninitialized list')
 
-        exists = True
-        try:
-            actual_var_name(stack, node.targets[0].value.id + '_vars_lub')
-        except:
-            exists = False
+        abstract_state_clone = abstract_state.clone()
 
-        if not exists:
-            assign_visitor = AssignVisitor(node.targets[0].value.id + '_vars_lub', stack, abstract_state, functions, classes)
-            assign_visitor.visit(node.value)
+        assign_visitor = AssignVisitor(node.targets[0].value.id + '_vars_lub', stack, abstract_state, functions, classes)
+        assign_visitor.visit(node.value)
+        abstract_state.lub(abstract_state_clone)
     else:
         assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
         assign_visitor.visit(node.value)
