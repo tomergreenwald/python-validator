@@ -267,7 +267,7 @@ class AbstractState(object):
             self.graph.unlink_single_son(father0_ind, basename)
         else:
             # check if father is mutable
-            m_errors = self._test_father_mutability(father, father_ind)
+            m_errors = self._test_father_mutability(father_var0, father0_ind)
             errors.extend(m_errors)
         
         # set var0 to point to var1 vertex
