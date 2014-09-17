@@ -1,6 +1,6 @@
 import ast
 
-from validator.state.abs_state import AbstractState
+from validator.state.abstract import AbstractState
 from validator.representation.ClassRepresentation import ClassRepresentation
 
 
@@ -14,7 +14,7 @@ class Frame(object):
 
     def clear(self, abstract_state):
         for variable in self.variables:
-            abstract_state.forget_var(self.frame_name + "#" + variable)
+            abstract_state.remove_var(self.frame_name + "#" + variable)
 
 
 class Stack(object):
@@ -222,10 +222,10 @@ class CallVisitor(ast.NodeVisitor):
         else:
             raise Exception("not supported")
 
-        if self.name and self.abstract_state.has_var("ret_val"):
+        if self.name and self.abstract_state.query("ret_val", False):
             register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
             #self.abstract_state.set_var_to_var(actual_var_name(self.stack, self.name), "ret_val")
-            self.abstract_state.forget_var("ret_val")
+            self.abstract_state.remove_var("ret_val", False)
 
 
 class AssignVisitor(CallVisitor):
@@ -549,4 +549,4 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
         evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords, stack, abstract_state, functions)
 
     for method in clazz.methods.values():
-        abstract_state.set_method_to_var(actual_var_name(stack, target), method)
+        abstract_state.register_method_metadata(actual_var_name(stack, target), actual_var_name(stack, target), method)
