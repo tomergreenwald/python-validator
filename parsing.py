@@ -14,11 +14,11 @@ class A(object):
 
 class B(A):
     def __init__(self):
-        A(self)
+        super(B, self).__init__()
         self.y = 2
 
 b = B()
-#b.x + b.y
+b.x + b.y
 """
 simple = simpler.make_simple(code)
 print simple
