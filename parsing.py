@@ -9,18 +9,19 @@ varz = {}
 
 code = """
 class A(object):
-    def __init__(self, b):
-        self.a = 1
-        self.b = b
+    def __init__(self):
+        self.x = 1
 
-ttt = A("hello")
-y = ttt
-x =  ttt.a
-x =  ttt.b
-x =  ttt.c
+class B(A):
+    def __init__(self):
+        A(self)
+        self.y = 2
+
+b = B()
+#b.x + b.y
 """
 simple = simpler.make_simple(code)
-#print simple
+print simple
 ast_tree = ast.parse(simple)
 visitor = ProgramVisitor()
 visitor.visit(ast_tree)
