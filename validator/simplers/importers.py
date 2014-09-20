@@ -1,4 +1,7 @@
-__author__ = 'Oded'
+"""
+This code take a python package and unit all of it's code to one module.
+It checks what is the right call order and order the code so it fits.
+"""
 
 import os
 
