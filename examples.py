@@ -16,7 +16,7 @@ a.x
 examples.append(
     Example(code1, 'Basic exmple, should create object of type A and state that the object does not have attribute x')
 )
-
+#Fails because the abstract state mishandles attributes
 code1_5 = """
 class A(object):
     def __init__(self, b):
@@ -34,7 +34,7 @@ examples.append(
             'The second assignment should state that ttt does not have attribute c'
     )
 )
-
+#Fails because __add__ was not defined anywhere
 code2 = """
 class A(object):
     def __init__(self):
@@ -52,7 +52,7 @@ examples.append(
             'The second add should state that a does not have attribute z'
     )
 )
-
+#Fails because isalpha was not defined anywhere
 code3 = """
 class A(object):
     def __init__(self, x, y):
