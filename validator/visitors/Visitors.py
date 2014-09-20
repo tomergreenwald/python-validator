@@ -115,8 +115,12 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         if from_var.id is "ret_val":
             actual_from_name = "ret_val"
         else:
-            actual_from_name = actual_var_name(stack, from_var.id, level)
-        abstract_state.set_var_to_var(actual_to_name, actual_from_name)
+            if type(from_var) is ast.Attribute:
+                actual_from_name = from_var.id
+            else:
+                actual_from_name = actual_var_name(stack, from_var.id, level)
+        errors = abstract_state.set_var_to_var(actual_to_name, actual_from_name)
+        print errors
         print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
     elif from_var is not None:
         if type(from_var) is ast.Tuple:
@@ -222,7 +226,7 @@ class CallVisitor(ast.NodeVisitor):
         else:
             raise Exception("not supported")
 
-        if self.name and self.abstract_state.query("ret_val", False):
+        if self.name and len(self.abstract_state.query("ret_val", False)) == 0:
             register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
             #self.abstract_state.set_var_to_var(actual_var_name(self.stack, self.name), "ret_val")
             self.abstract_state.remove_var("ret_val", False)
@@ -242,8 +246,10 @@ class AssignVisitor(CallVisitor):
         Handles attribute node.
         :param node: Attribute Node.
         """
-        self.abstract_state.set_var_to_var(self.name,
-                                           actual_var_name(self.stack, node.value.id) + "." + node.attr)
+        name = actual_var_name(self.stack, node.value.id) + "#" + node.attr
+        temp_node = ast.Attribute(id=name, ctx=ast.Store())
+        register_assignment(self.stack, self.abstract_state, temp_node, self.name)
+
 
     def visit_Subscript(self, node):
         if type(node.ctx) is ast.Load:
