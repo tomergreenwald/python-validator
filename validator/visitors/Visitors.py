@@ -51,7 +51,7 @@ def get_node_name(node):
     are the node's name (depends on whether the node represents an attribute or a variable).
     """
     if hasattr(node, 'value'):
-        return get_node_name(node.value) + '.' + node.attr
+        return get_node_name(node.value) + '#' + node.attr
     if hasattr(node, 'attr'):
         return node.attr
     return node.id
