@@ -96,7 +96,7 @@ examples.append(
             'and a.foo_y() should state that a does not have attribute foo_y'
     )
 )
-
+#fails for the same reason as 4
 code5 = """
 class A(object):
     def __init__(self):
@@ -118,7 +118,7 @@ examples.append(
             'Demonstrates that the method know each other'
     )
 )
-
+#fails for the same reason as 4
 code6 = """
 class A(object):
     def __init__(self):
@@ -138,7 +138,7 @@ examples.append(
     Example(code6,
             'Demonstrates adding attributes on the fly')
 )
-
+#fails for the same reason as 4 and 2
 code7 = """
 class A(object):
     def __init__(self):
@@ -157,7 +157,7 @@ examples.append(
     Example(code7,
             'Demonstrates using two different classes. a.x + b.y should be fine, the last call should state that b.x does not exists')
 )
-
+#fails for the same reason as 1
 code8 = """
 class A(object):
     def __init__(self):
@@ -175,7 +175,7 @@ examples.append(
     Example(code8,
             'Demonstrate class inheritance - although B extends A, since B did not call to super ctor, b.x should not exists')
 )
-
+#fails because we mis-handle the super call
 code9 = """
 class A(object):
     def __init__(self):
@@ -193,7 +193,7 @@ examples.append(
     Example(code9,
             'In this example, b.x+b.y should work, since we called the super ctor')
 )
-
+#fails because the abstract state doesn't lub well
 code10 = """
 class A(object):
     def __init__(self):
@@ -209,7 +209,7 @@ examples.append(
     Example(code10,
             'List example')
 )
-
+#fails for the same reason as 10
 code11 = """
 class A(object):
     def __init__(self):
@@ -226,7 +226,7 @@ examples.append(
     Example(code11,
             'List example2')
 )
-
+#fails because we mis-treat attribute assignment
 code12 = """
 class A(object):
     def __init__(self):
