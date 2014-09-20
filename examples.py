@@ -70,7 +70,8 @@ examples.append(
             'a.y.isalpha() should state that a.y does not have attribute isalpha()'
     )
 )
-
+#Fails because the abstract state doesn't recognize the registration of root#a at init_object
+#you can see that there is an ereor print where there shouldn't be one
 code4 = """
 class A(object):
     def __init__(self):
