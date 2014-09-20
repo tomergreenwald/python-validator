@@ -97,7 +97,7 @@ examples.append(
             'and a.foo_y() should state that a does not have attribute foo_y'
     )
 )
-#fails for the same reason as 4
+
 code5 = """
 class A(object):
     def __init__(self):
@@ -119,7 +119,7 @@ examples.append(
             'Demonstrates that the method know each other'
     )
 )
-#fails for the same reason as 4
+
 code6 = """
 class A(object):
     def __init__(self):
@@ -139,7 +139,8 @@ examples.append(
     Example(code6,
             'Demonstrates adding attributes on the fly')
 )
-#fails for the same reason as 4 and 2
+#fails for the same reason as 2
+#we don't identify that members do not exist
 code7 = """
 class A(object):
     def __init__(self):
@@ -158,7 +159,7 @@ examples.append(
     Example(code7,
             'Demonstrates using two different classes. a.x + b.y should be fine, the last call should state that b.x does not exists')
 )
-#fails for the same reason as 1
+#fails for the same reason as 7
 code8 = """
 class A(object):
     def __init__(self):
