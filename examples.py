@@ -70,8 +70,9 @@ examples.append(
             'a.y.isalpha() should state that a.y does not have attribute isalpha()'
     )
 )
-#Fails because the abstract state doesn't recognize the registration of root#a at init_object
-#you can see that there is an ereor print where there shouldn't be one
+# For some reason we get an error while registering foo_x because the abstract state doesn't recognize root#a
+# but when we register foo_x it recognizes root#a, maybe because it is during the preciuos registration it created
+# root#a
 code4 = """
 class A(object):
     def __init__(self):
@@ -96,7 +97,7 @@ examples.append(
             'and a.foo_y() should state that a does not have attribute foo_y'
     )
 )
-#fails for the same reason as 4
+
 code5 = """
 class A(object):
     def __init__(self):
@@ -118,7 +119,7 @@ examples.append(
             'Demonstrates that the method know each other'
     )
 )
-#fails for the same reason as 4
+
 code6 = """
 class A(object):
     def __init__(self):
@@ -138,7 +139,8 @@ examples.append(
     Example(code6,
             'Demonstrates adding attributes on the fly')
 )
-#fails for the same reason as 4 and 2
+#fails for the same reason as 2
+#we don't identify that members do not exist
 code7 = """
 class A(object):
     def __init__(self):
@@ -157,7 +159,7 @@ examples.append(
     Example(code7,
             'Demonstrates using two different classes. a.x + b.y should be fine, the last call should state that b.x does not exists')
 )
-#fails for the same reason as 1
+#fails for the same reason as 7
 code8 = """
 class A(object):
     def __init__(self):

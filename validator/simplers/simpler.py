@@ -30,7 +30,7 @@ def should_attr_simpler(node):
 
 def should_call_simpler(node):
     return isinstance(node.value, _ast.Call) and isinstance(node.value.func, _ast.Attribute) \
-        and (isinstance(node.value.func.value, _ast.Attribute) or isinstance(node.value.func.value, _ast.Call))
+        and (isinstance(node.value.func.value, _ast.Attribute) or (isinstance(node.value.func.value, _ast.Call) and node.value.func.value.func.id is not 'super'))
 
 
 def should_call_args_simpler(node):

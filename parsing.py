@@ -11,15 +11,18 @@ code = """
 class A(object):
     def __init__(self):
         self.x = 1
+
+class B(A):
+    def __init__(self):
+        super(B, self).__init__()
         self.y = 2
 
-a = A()
-a.x + a.y
-a.x + a.z
+b = B()
+b.x + b.y
 """
 
 simple = simpler.make_simple(code)
-#print simple
+print simple
 ast_tree = ast.parse(simple)
 visitor = ProgramVisitor()
 visitor.visit(ast_tree)
