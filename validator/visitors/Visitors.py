@@ -82,10 +82,16 @@ def actual_var_name(stack, var, level=0):
     :param var: Variable name.
     :return: Fully qualified variable name.
     """
+    frame_name = None
     if var in stack.frames[-(level + 1)].variables:
-        return stack.frames[-(level + 1)].frame_name + "#" + var
+        frame_name = stack.frames[-(level + 1)].frame_name
     if var in stack.frames[0].variables:
-        return stack.frames[0].frame_name + "#" + var
+        frame_name = stack.frames[0].frame_name
+
+    if frame_name:
+        if frame_name.startswith("__init__"):
+            frame_name = frame_name.replace("__init__", "root")
+        return frame_name + "#" + var
     raise Exception("Referenced variable was not assigned previuosly - [%s] - %s" % (str(stack.frame_names()), var))
 
 
