@@ -191,7 +191,10 @@ class CallVisitor(ast.NodeVisitor):
                                   self.functions)
             else:
                 raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-
+        elif type(node.func) is ast.Attribute and node.func.attr is '__init__':     # Super Call!
+            evaluate_function(self.classes[node.func.value.args[0].id].base.methods['__init__'],
+                              [ast.Name(id='self', ctx=ast.Store())] + node.args, node.keywords, self.stack,
+                              self.abstract_state, self.functions)
         elif type(node.func) is ast.Attribute:
             function_name = node.func.attr
             _self = node.func.value.id
@@ -351,6 +354,7 @@ class AssignVisitor(CallVisitor):
 class ExprVisitor(CallVisitor):
     def __init__(self, stack, abstract_state, functions, classes):
         super(ExprVisitor, self).__init__(stack, abstract_state, functions, classes)
+
     """
     def visit_Expr(self, node):
         name = actual_var_name(self.stack, node.value.value.id) + "#" + node.value.attr
@@ -539,7 +543,8 @@ def handle_assign(node, stack, abstract_state, functions, classes):
 
         abstract_state_clone = abstract_state.clone()
 
-        assign_visitor = AssignVisitor(node.targets[0].value.id + '_vars_lub', stack, abstract_state, functions, classes)
+        assign_visitor = AssignVisitor(node.targets[0].value.id + '_vars_lub', stack, abstract_state, functions,
+                                       classes)
         assign_visitor.visit(node.value)
         abstract_state.lub(abstract_state_clone)
     else:
@@ -562,9 +567,11 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     while iter_clazz is not 'object' and '__init__' not in iter_clazz.methods:
         iter_clazz = iter_clazz.base
     if iter_clazz is not 'object':
-        evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords, stack, abstract_state, functions)
+        evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords,
+                          stack, abstract_state, functions)
 
     for method in clazz.methods.values():
         print "registering method - {method} to {var}".format(method=method.name, var=target)
-        errors = abstract_state.register_method_metadata(actual_var_name(stack, target), actual_var_name(stack, target), method)
+        errors = abstract_state.register_method_metadata(actual_var_name(stack, target), actual_var_name(stack, target),
+                                                         method)
         print errors
