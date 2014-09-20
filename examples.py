@@ -17,6 +17,24 @@ examples.append(
     Example(code1, 'Basic exmple, should create object of type A and state that the object does not have attribute x')
 )
 
+code1_5 = """
+class A(object):
+    def __init__(self, b):
+        self.a = 1
+        self.b = b
+
+ttt = A("hello")
+x = ttt.a
+y = ttt.c
+"""
+examples.append(
+    Example(code1_5,
+            'Should create object of type A with two attributes - a and b. '
+            'The first assignment should work since attribute a exists, '
+            'The second assignment should state that ttt does not have attribute c'
+    )
+)
+
 code2 = """
 class A(object):
     def __init__(self):
