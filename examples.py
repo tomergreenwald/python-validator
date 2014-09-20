@@ -52,7 +52,7 @@ examples.append(
             'The second add should state that a does not have attribute z'
     )
 )
-#Fails because isalpha was not defined anywhere
+#fails for the same reason as 2
 code3 = """
 class A(object):
     def __init__(self, x, y):
