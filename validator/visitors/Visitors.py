@@ -191,7 +191,10 @@ class CallVisitor(ast.NodeVisitor):
                                   self.functions)
             else:
                 raise Exception('Class or function not found %s' % (node.func.id))  # Maybe should be top?
-
+        elif type(node.func) is ast.Attribute and node.func.attr is '__init__':     # Super Call!
+            evaluate_function(self.classes[node.func.value.args[0].id].base.methods['__init__'],
+                              [ast.Name(id='self', ctx=ast.Store())] + node.args, node.keywords, self.stack,
+                              self.abstract_state, self.functions)
         elif type(node.func) is ast.Attribute:
             function_name = node.func.attr
             _self = node.func.value.id
