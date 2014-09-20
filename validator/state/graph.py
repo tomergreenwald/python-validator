@@ -308,7 +308,7 @@ class Graph(object):
         returns True if this vertex has only a single parent
         """
         return len(self.vertices[ind].all_parents) == 1 and \
-               len(self.vertices[ind].all_perents.values()[0]) == 1
+               len(self.vertices[ind].all_parents.values()[0]) == 1
     
     def unlink_single_son(self, vertex_ind, son_label):
         """
