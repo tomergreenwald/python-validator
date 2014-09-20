@@ -205,7 +205,7 @@ class CallVisitor(ast.NodeVisitor):
                     print _self + '_var_lub has created with %s' % node.args[0]
             else:
                 #should return a list of contexts saved for each method (one per method impl)
-                methods = self.abstract_state.get_method_metadata(_self, function_name)
+                (methods, errors) = self.abstract_state.get_method_metadata(_self, function_name)
                 if len(methods) > 0:
                     abstract_state_clean = self.abstract_state.clone()
                     for method in methods:
