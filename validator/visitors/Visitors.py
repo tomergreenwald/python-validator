@@ -556,9 +556,7 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     """
     #abstract_state.set_var_to_const(actual_var_name(stack, target), object())
     print "Initializing object - ", target
-    if target is None:
-        target = "self"
-        args = args[1:]
+
     register_assignment(stack, abstract_state, None, target, new_object=object())
 
     iter_clazz = clazz
