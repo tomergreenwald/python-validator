@@ -352,6 +352,12 @@ class ExprVisitor(CallVisitor):
     def __init__(self, stack, abstract_state, functions, classes):
         super(ExprVisitor, self).__init__(stack, abstract_state, functions, classes)
 
+    def visit_Expr(self, node):
+        name = actual_var_name(self.stack, node.value.value.id) + "#" + node.value.attr
+        print "Evaluatin expression - {name}".format(name=name)
+        errors = self.abstract_state.query(name, False)
+        print errors
+
 
 class FunctionDefVisitor(ast.NodeVisitor):
     def __init__(self, context):
