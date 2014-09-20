@@ -303,6 +303,13 @@ class Graph(object):
         for lbl in self.vertices[vertex_ind].sons.keys():
             self.unlink_single_son(vertex_ind, lbl)
     
+    def is_single_son(self, ind):
+        """
+        returns True if this vertex has only a single parent
+        """
+        return len(self.vertices[ind].all_parents) == 1 and \
+               len(self.vertices[ind].all_perents.values()[0]) == 1
+    
     def unlink_single_son(self, vertex_ind, son_label):
         """
         propagate constant from father to single son

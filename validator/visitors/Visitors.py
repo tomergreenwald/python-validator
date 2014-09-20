@@ -13,7 +13,7 @@ class Frame(object):
         self.variables.append(variable)
 
     def clear(self, abstract_state):
-        for variable in self.variables:
+        for variable in sorted(self.variables)[::-1]:
             abstract_state.remove_var(self.frame_name + "#" + variable)
 
 
@@ -51,7 +51,8 @@ def get_node_name(node):
     are the node's name (depends on whether the node represents an attribute or a variable).
     """
     if hasattr(node, 'value'):
-        return get_node_name(node.value) + '#' + node.attr
+        # return get_node_name(node.value) + '#' + node.attr
+        return get_node_name(node.value) + '.' + node.attr
     if hasattr(node, 'attr'):
         return node.attr
     return node.id
@@ -106,7 +107,10 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     :param to_var_name: variable name to assign data to.
     """
     stack.current_frame().register(to_var_name)
+    
     actual_to_name = actual_var_name(stack, to_var_name)
+    # if to_var_name == 'self#a':
+    #     raise
     if split_stack:
         level = 1
     else:
@@ -250,7 +254,8 @@ class AssignVisitor(CallVisitor):
         Handles attribute node.
         :param node: Attribute Node.
         """
-        name = actual_var_name(self.stack, node.value.id) + "#" + node.attr
+        # name = actual_var_name(self.stack, node.value.id) + "#" + node.attr
+        name = actual_var_name(self.stack, node.value.id) + "." + node.attr
         temp_node = ast.Attribute(id=name, ctx=ast.Store())
         register_assignment(self.stack, self.abstract_state, temp_node, self.name)
 
@@ -353,7 +358,8 @@ class ExprVisitor(CallVisitor):
         super(ExprVisitor, self).__init__(stack, abstract_state, functions, classes)
 
     def visit_Expr(self, node):
-        name = actual_var_name(self.stack, node.value.value.id) + "#" + node.value.attr
+        # name = actual_var_name(self.stack, node.value.value.id) + "#" + node.value.attr
+        name = actual_var_name(self.stack, node.value.value.id) + "." + node.value.attr
         print "Evaluatin expression - {name}".format(name=name)
         errors = self.abstract_state.query(name, False)
         print errors
@@ -543,6 +549,7 @@ def handle_assign(node, stack, abstract_state, functions, classes):
         abstract_state.lub(abstract_state_clone)
     else:
         assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
+        # print 'node targets %s get %s' %(node.targets[0], get_node_name(node.targets[0]))
         assign_visitor.visit(node.value)
 
 
@@ -550,8 +557,12 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     """
     :param clazz: The ClassRepresentation of the class
     """
+    class TTT(object):
+        pass
+        
     #abstract_state.set_var_to_const(actual_var_name(stack, target), object())
-    register_assignment(stack, abstract_state, None, target, new_object=object())
+    # register_assignment(stack, abstract_state, None, target, new_object=object())
+    register_assignment(stack, abstract_state, None, target, new_object=TTT())
 
     iter_clazz = clazz
     while iter_clazz is not 'object' and '__init__' not in iter_clazz.methods:

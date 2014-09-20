@@ -5,6 +5,8 @@ from utils import *
 from state_exceptions import *
 from lattice import LatticeElement as LE
 
+logging.basicConfig(level = logging.DEBUG)
+
 ROOT_VERTEX = 0
 
 class AbstractState(object):
@@ -31,6 +33,7 @@ class AbstractState(object):
         """
         return a copy of the abstract state
         """
+        logging.debug('[clone]')
         return deepcopy(self)
     
     def add_var_and_set_to_top(self, var, given_father = -1):
@@ -39,6 +42,7 @@ class AbstractState(object):
         return the vertex index of var
         if given_father is not -1, then the function assumes that var is son of given_father
         """
+        logging.debug('[add_var_and_set_to_top] var %s' %var)
         basename = var_to_basename(var)
         father = var_to_father(var)
         
@@ -61,14 +65,37 @@ class AbstractState(object):
         
         return var_ind
     
-    def remove_var(self, var, add_tops = True):
+    def remove_var(self, var, add_tops = True, force = True):
         """
         call this when a variable is not relevant anymore
         if add_tops is True, the path to this vertex will be considered as L_MUST_HAVE
         """
+        logging.debug('[remove_var] var %s' %var)
+        add_tops = False
+        if not force:
+            raise
+        
         (i, r) = self._get_var_index(var, add_tops)
+        
         if i >= 0:
-            self.graph.remove_vertex(i)
+            fathers = self._split_to_fathers(var)
+            
+            need_to_unlink = True
+            for f in fathers[:-1]:
+                j = self._expression_to_vertex_index(f)
+                if not self.graph.is_single_son(j):
+                    need_to_unlink = False
+                    break
+            
+            if need_to_unlink:
+                father = var_to_father(var)
+                basename = var_to_basename(var)    
+                father_ind = self._expression_to_vertex_index(father)
+            
+                self.graph.unlink_single_son(father_ind, basename)
+        
+        # if i >= 0:
+        #     self.graph.remove_vertex(i)
         return r
     
     def _expression_to_vertex_index(self, var):
@@ -128,8 +155,18 @@ class AbstractState(object):
         if add_tops is True, then the graph is fixed, so the variable
         will exists legally in the graph
         """
+        logging.debug('[query] var %s' %var_name)
         (i, r) = self._get_var_index(var_name, add_tops)
         return r
+    
+    def _split_to_fathers(self, var_name):
+        fathers = []
+        f = var_name
+        while f != '':
+            fathers.append(f)
+            f = var_to_father(f)
+        
+        return fathers[::-1]
     
     def _get_var_index(self, var_name, add_tops = True):
         """
@@ -139,13 +176,7 @@ class AbstractState(object):
         """
         res = []
         
-        fathers = []
-        f = var_name
-        while f != '':
-            fathers.append(f)
-            f = var_to_father(f)
-        
-        fathers = fathers[::-1]
+        fathers = self._split_to_fathers(var_name)
         
         # now fathers contains the full chain to var_name
         for f in fathers:
@@ -236,6 +267,9 @@ class AbstractState(object):
         returns list of errors and alerts
         """
         logging.debug('[set_var_to_const] set var %s to const' %var_name)
+        if var_name == '__init__#self#a':
+            # raise
+            pass
         
         var_ind, errors = self._cleanup_var_vertex(var_name)
         self.graph.set_vertex_to_const(var_ind, val)
@@ -286,7 +320,7 @@ class AbstractState(object):
         """
         perform inplace lub (self = lub(self, other))
         """
-        
+        logging.debug('[lub]' %var_name)
         self.graph.fill_graphs(other.graph)
         
         # this is a good point to get rid of unused vertices and constants
@@ -319,6 +353,7 @@ class AbstractState(object):
         add another state to the current state, possibly overriding existing 
         variables
         """
+        logging.debug('[add_state]' %var_name)
         main_vars = other.graph.get_main_vars()
         for var_name in main_vars:
             # remove main variable from graph
@@ -335,6 +370,7 @@ class AbstractState(object):
         """
         add metadata to a variable name, to be associated with method method_name
         """
+        logging.debug('[register_method_metadata] var %s method %s' %(var_name, method_name))
         var_ind, errors = self._get_var_index(var_name)
         self.graph.add_metadata(var_ind, method_name, metadata)
         
@@ -344,6 +380,7 @@ class AbstractState(object):
         """
         returns a set of possible metadatas associated with method_name of var_name
         """
+        logging.debug('[get_method_metadata] var %s' %var_name)
         var_ind, errors = self._get_var_index(var_name)
         res = self.graph.get_metadata(var_ind, method_name)
         
