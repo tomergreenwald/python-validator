@@ -208,6 +208,27 @@ examples.append(
             'List example2')
 )
 
+code12 = """
+class A(object):
+    def __init__(self):
+        self.x = 1
+
+class B(object):
+    def __init__(self):
+        self.y = 1
+
+a = A()
+b = B()
+b.y = a
+b.b.x
+a.x = 'a'
+b.b.x
+"""
+examples.append(
+    Example(code12,
+            'Complex attribute example. Note the "pointers"')
+)
+
 import ast
 
 from validator.visitors.Visitors import ProgramVisitor
@@ -220,7 +241,7 @@ Next, the code will run through the validatior.
 
 Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
 
-There are 11 examples. Have fun! :)
+There are 12 examples. Have fun! :)
 """
 print greetings
 raw_input('Press enter to start')
