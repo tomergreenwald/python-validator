@@ -115,8 +115,6 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     stack.current_frame().register(to_var_name)
     
     actual_to_name = actual_var_name(stack, to_var_name)
-    # if to_var_name == 'self#a':
-    #     raise
     if split_stack:
         level = 1
     else:
@@ -559,7 +557,6 @@ def handle_assign(node, stack, abstract_state, functions, classes):
         abstract_state.lub(abstract_state_clone)
     else:
         assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
-        # print 'node targets %s get %s' %(node.targets[0], get_node_name(node.targets[0]))
         assign_visitor.visit(node.value)
 
 
