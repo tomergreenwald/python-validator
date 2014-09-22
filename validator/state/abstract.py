@@ -371,9 +371,12 @@ class AbstractState(object):
         
         def some_func():
             pass
+            
+        ff = copy.deepcopy(some_func)
         
         new_method_name = '%s.%s' %(var_name, method_name)
-        errors.extend(self.set_var_to_const(new_method_name, some_func))
+        errors.extend(self.set_var_to_const(new_method_name, ff))
+        
         var_ind, errors2 = self._get_var_index(new_method_name)
         errors.extend(errors2)
         

@@ -14,7 +14,8 @@ class Frame(object):
 
     def clear(self, abstract_state):
         for variable in sorted(self.variables)[::-1]:
-            abstract_state.remove_var(self.frame_name + "#" + variable)
+            # abstract_state.remove_var(self.frame_name + "#" + variable)
+            abstract_state.remove_var(self.frame_name + "#" + variable, False) # False means ignore non existent variables
 
 
 class Stack(object):

@@ -4,7 +4,13 @@ import types
 PRIMITIVES = set([eval('types.%s' %x) for x in dir(types) if x.endswith('Type')])
 
 def is_primitive(obj):
-    clone = copy.deepcopy(obj)
+    # sometime copy fails (for example when we create an empty class and look at its __init__ method
+    # maybe the assumption of primitive in this case is not correct
+    try:
+        clone = copy.deepcopy(obj)
+    except:
+        return True
+        
     try:
         clone.fdsfsdfdsfdsfdsfdsfdsfds = 5
         return False
