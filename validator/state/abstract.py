@@ -65,15 +65,13 @@ class AbstractState(object):
         
         return var_ind
     
-    def remove_var(self, var, add_tops = True, force = True):
+    def remove_var(self, var, add_tops = True):
         """
         call this when a variable is not relevant anymore
         if add_tops is True, the path to this vertex will be considered as L_MUST_HAVE
         """
         logging.debug('[remove_var] var %s' %var)
         add_tops = False
-        if not force:
-            raise
         
         (i, r) = self._get_var_index(var, add_tops)
         
