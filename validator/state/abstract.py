@@ -264,9 +264,6 @@ class AbstractState(object):
         returns list of errors and alerts
         """
         logging.debug('[set_var_to_const] set var %s to const' %var_name)
-        if var_name == '__init__#self#a':
-            # raise
-            pass
         
         var_ind, errors = self._cleanup_var_vertex(var_name)
         self.graph.set_vertex_to_const(var_ind, val)
@@ -368,8 +365,20 @@ class AbstractState(object):
         add metadata to a variable name, to be associated with method method_name
         """
         logging.debug('[register_method_metadata] var %s method %s' %(var_name, method_name))
-        var_ind, errors = self._get_var_index(var_name)
-        self.graph.add_metadata(var_ind, method_name, metadata)
+        
+        # var_ind, errors = self._get_var_index(var_name)
+        errors = []
+        
+        def some_func():
+            pass
+        
+        new_method_name = '%s.%s' %(var_name, method_name)
+        errors.extend(self.set_var_to_const(new_method_name, some_func))
+        var_ind, errors2 = self._get_var_index(new_method_name)
+        errors.extend(errors2)
+        
+        self.graph.add_metadata_testing(var_ind, metadata)
+        self.graph.set_callable(var_ind)
         
         return errors
     
@@ -378,8 +387,17 @@ class AbstractState(object):
         returns a set of possible metadatas associated with method_name of var_name
         """
         logging.debug('[get_method_metadata] var %s' %var_name)
-        var_ind, errors = self._get_var_index(var_name)
-        res = self.graph.get_metadata(var_ind, method_name)
+        method_name = '%s.%s' %(var_name, method_name)
+        
+        var_ind, errors = self._get_var_index(method_name)
+        callable = self.graph.get_callable(var_ind)
+        res = self.graph.get_metadata_testing(var_ind)
+        
+        # TODO do we want to mark this vertex as callable? probably yes, but with what metadata?
+        if callable.val == LE.L_MUST_NOT_HAVE:
+            errors.append(("Error", "method %s is not callable" %(method_name)))
+        elif callable.val == LE.L_MAY_HAVE:
+            errors.append(("Alert", "method %s might be uncallable" %(method_name)))
         
         return (res, errors)
     

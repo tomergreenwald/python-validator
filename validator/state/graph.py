@@ -46,10 +46,12 @@ class GraphVertex(object):
         self.ind = ind
         self.all_constants = set()
         self.mutable = LE(LE.L_BOTOM) # default is to don't know about mutability
+        self.callable = LE(LE.L_MUST_NOT_HAVE) # default is to not be callable
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
         self.metadata = SetDict()
+        self.metadata_testing = set()
     
     def remove_parent(self, lbl, edge):
         self.all_parents[lbl].remove(edge)
@@ -63,7 +65,8 @@ class GraphVertex(object):
         return 'knowledge\t%s\tmutable\t%s\n' %(self.knowledge, self.mutable) + \
                'all constants:\t%s\n' %self.all_constants + \
                'sons:\n%s\n' %('\n'.join(['\t%s' %x for x in self.sons.values()])) + \
-               'parents:\n%s' %('\n'.join(['\t%s' %x for x in self.all_parents.values()]))
+               'parents:\n%s\n' %('\n'.join(['\t%s' %x for x in self.all_parents.values()])) + \
+               'metadata possibilities:\t%d\tcallable:\t%s\n' %(len(self.metadata_testing), self.callable)
 
 class Graph(object):
     """
@@ -101,6 +104,8 @@ class Graph(object):
         """
         self.vertices[vertex_ind].all_constants.clear()
         self.vertices[vertex_ind].mutable = LE(LE.L_BOTOM)
+        self.vertices[vertex_ind].callable = LE(LE.L_MUST_NOT_HAVE)
+        self.vertices[vertex_ind].metadata_testing.clear()
         
         self._add_const_to_vertex(vertex_ind, const)
     
@@ -163,6 +168,19 @@ class Graph(object):
         """
         return self.vertices[v].knowledge.val == LE.L_TOP
     
+    def set_callable(self, v):
+        """
+        set vertex v to be callable
+        """
+        self.vertices[v].callable = LE(LE.L_MUST_HAVE)
+    
+    def get_callable(self, v):
+        """
+        get callability of a vertex
+        returns an element from the lattice
+        """
+        return self.vertices[v].callable
+    
     def set_mutable(self, v):
         """
         set vertex v to be mutable
@@ -180,10 +198,13 @@ class Graph(object):
         """
         set a var to be TOP
         set its constant to be -1
+        clear metadata (?)
         """
         self.vertices[v].knowledge.val = LE.L_TOP
         self.vertices[v].all_constants.clear()
         self.vertices[v].mutable = LE(LE.L_BOTOM)
+        self.vertices[v].callable = LE(LE.L_MUST_NOT_HAVE)
+        self.vertices[v].metadata_testing.clear()
         # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
         # this function is called only on new vertices, and on vertices that are lubbed,
         # so the edges handling is done by someone else. but we need to reconsider this
@@ -497,9 +518,11 @@ class Graph(object):
             # the following line also clears all_constants and mutability
             self.set_top(v0)
         else:
-            # otherwise, just merge their possible constants
+            # otherwise, just merge their possible constants and metadata
             v0.all_constants.update(v1.all_constants)
             v0.mutable.inplace_lub(v1.mutable)
+            v0.callable.inplace_lub(v1.callable)
+            v0.metadata_testing.update(v1.metadata_testing)
         
         # merge metadata from other vertex
         for k1 in v1.metadata.keys():
@@ -507,6 +530,7 @@ class Graph(object):
                 v0.metadata[k1].update(v1.metadata[k1])
             else:
                 v0.metadata[k1] = v1.metadata[k1]
+        
     
     def _handle_common_edges(self, edge_pairs):
         """
@@ -758,9 +782,21 @@ class Graph(object):
         """
         self.vertices[vertex_ind].metadata.add_element(key, meta)
     
+    def add_metadata_testing(self, vertex_ind, metadata):
+        """
+        TODO
+        """
+        self.vertices[vertex_ind].metadata_testing = set([metadata])
+    
     def get_metadata(self, vertex_ind, key):
         """
         get meta of vertex vertex_ind, with key key
         """
         return self.vertices[vertex_ind].metadata.get(key, set())
+    
+    def get_metadata_testing(self, vertex_ind):
+        """
+        TODO
+        """
+        return self.vertices[vertex_ind].metadata_testing
         
