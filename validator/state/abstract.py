@@ -71,7 +71,6 @@ class AbstractState(object):
         if add_tops is True, the path to this vertex will be considered as L_MUST_HAVE
         """
         logging.debug('[remove_var] var %s' %var)
-        add_tops = False
         
         (i, r) = self._get_var_index(var, add_tops)
         
