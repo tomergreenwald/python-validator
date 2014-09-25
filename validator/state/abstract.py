@@ -380,7 +380,7 @@ class AbstractState(object):
         var_ind, errors2 = self._get_var_index(new_method_name)
         errors.extend(errors2)
         
-        self.graph.add_metadata_testing(var_ind, metadata)
+        self.graph.add_metadata(var_ind, metadata)
         self.graph.set_callable(var_ind)
         
         return errors
@@ -394,7 +394,7 @@ class AbstractState(object):
         
         var_ind, errors = self._get_var_index(method_name)
         callable = self.graph.get_callable(var_ind)
-        res = self.graph.get_metadata_testing(var_ind)
+        res = self.graph.get_metadata(var_ind)
         
         # TODO do we want to mark this vertex as callable? probably yes, but with what metadata?
         if callable.val == LE.L_MUST_NOT_HAVE:

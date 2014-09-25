@@ -50,7 +50,6 @@ class GraphVertex(object):
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
-        self.metadata = SetDict()
         self.metadata_testing = set()
     
     def remove_parent(self, lbl, edge):
@@ -523,14 +522,6 @@ class Graph(object):
             v0.mutable.inplace_lub(v1.mutable)
             v0.callable.inplace_lub(v1.callable)
             v0.metadata_testing.update(v1.metadata_testing)
-        
-        # merge metadata from other vertex
-        for k1 in v1.metadata.keys():
-            if v0.metadata.has_key(k1):
-                v0.metadata[k1].update(v1.metadata[k1])
-            else:
-                v0.metadata[k1] = v1.metadata[k1]
-        
     
     def _handle_common_edges(self, edge_pairs):
         """
@@ -776,25 +767,13 @@ class Graph(object):
         # vertices were added
         self.next_ind = max(self.vertices.keys()) + 1
     
-    def add_metadata(self, vertex_ind, key, meta):
-        """
-        add meta to metadata[key] of vertex vertex_ind
-        """
-        self.vertices[vertex_ind].metadata.add_element(key, meta)
-    
-    def add_metadata_testing(self, vertex_ind, metadata):
+    def add_metadata(self, vertex_ind, metadata):
         """
         TODO
         """
         self.vertices[vertex_ind].metadata_testing = set([metadata])
     
-    def get_metadata(self, vertex_ind, key):
-        """
-        get meta of vertex vertex_ind, with key key
-        """
-        return self.vertices[vertex_ind].metadata.get(key, set())
-    
-    def get_metadata_testing(self, vertex_ind):
+    def get_metadata(self, vertex_ind):
         """
         TODO
         """
