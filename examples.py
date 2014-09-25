@@ -63,12 +63,14 @@ a.b
 a.c = 2
 b.b.c
 """
-examples.append(code15,
-                'Should create object a of type A and object b of type B that holds a.'
-                'All the calls in the First group are valid, since that attributes are correct.'
-                'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
-                'since in the abstract world we added attribute b to b.b, the call to a.b should be legal.'
-                'In the third group, we add attribute c to a.c, so now it should state that b.b.c exists.'
+examples.append(
+    Example(code15,
+            'Should create object a of type A and object b of type B that holds a.'
+            'All the calls in the First group are valid, since that attributes are correct.'
+            'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
+            'since in the abstract world we added attribute b to b.b, the call to a.b should be legal.'
+            'In the third group, we add attribute c to a.c, so now it should state that b.b.c exists.'
+    )
 )
 
 code7 = """
@@ -94,9 +96,11 @@ c.c.a
 b.b.d = 3
 c.c.d
 """
-examples.append(code7,
-                'Two objects - b (of type B) and a (of type A) which shared object (a of type A). '
-                'After we add to a attribute d throw b.b.d, that attribute should exists in c.c.d as well.'
+examples.append(
+    Example(code7,
+            'Two objects - b (of type B) and a (of type A) which shared object (a of type A). '
+            'After we add to a attribute d throw b.b.d, that attribute should exists in c.c.d as well.'
+    )
 )
 
 code14 = """
@@ -332,7 +336,7 @@ Note that we only demonstrate some core features. Full description of the valida
 There are 15 examples. Have fun! :)
 """
 print greetings
-raw_input('Press enter to start')
+raw_input('Hit any key to start')
 print
 
 for example in examples:
@@ -351,7 +355,7 @@ for example in examples:
     visitor = ProgramVisitor()
     visitor.visit(ast_tree)
 
-    raw_input('Press enter to the next example')
+    raw_input('Press any key to the next example')
     print
 
 print 'Thank you'
