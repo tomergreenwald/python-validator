@@ -25,8 +25,6 @@ class AbstractState(object):
     def __init__(self):
         """
         """
-        self.vars_set = set()
-        self.var_to_vertex = dict()
         self.graph = Graph()
     
     def clone(self):
@@ -403,6 +401,9 @@ class AbstractState(object):
             errors.append(("Alert", "method %s might be uncallable" %(method_name)))
         
         return (res, errors)
+    
+    def __repr__(self):
+        return self.graph.__repr__()
     
 """
 import sys; sys.path.append(r'D:\school\verify\project2\python-validator\validator\state'); execfile(r'D:\school\verify\project2\python-validator\validator\state\abstract.py')
