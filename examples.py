@@ -11,13 +11,13 @@ class A(object):
     pass
 
 a = A()
-a.x
-a.x
+a.a
+a.a
 """
 examples.append(
-    Example(code1, 'Basic example, should create object of type A and state that the object does not have attribute x.'
-                   'After the first call, the validator adds the attribute x to the abstract state of a, '
-                   'so it should state that the second call to a.x is legal.')
+    Example(code1, 'Basic example, should create object of type A and state that the object does not have attribute a.'
+                   'After the first call, the validator adds the attribute a to the abstract state of a, '
+                   'so it should state that the second call to a.a is legal.')
 )
 
 #Fails because the abstract state mishandles attributes
@@ -40,12 +40,12 @@ examples.append(
 
 code3 = """
 class A(object):
-    def __init__(self, a):
-        self.a = a
+    def __init__(self, x):
+        self.a = x
 
 class B(object):
-    def __init__(self, b):
-        self.b = b
+    def __init__(self, x):
+        self.b = x
 
 a = A(1)
 b = B(a)
@@ -77,16 +77,16 @@ examples.append(
 
 code4 = """
 class A(object):
-    def __init__(self, a):
-        self.a = a
+    def __init__(self, x):
+        self.a = x
 
 class B(object):
-    def __init__(self, b):
-        self.b = b
+    def __init__(self, x):
+        self.b = x
 
 class C(object):
-    def __init__(self, c):
-        self.c = c
+    def __init__(self, x):
+        self.c = x
 
 a = A(1)
 b = B(a)
@@ -108,15 +108,15 @@ examples.append(
 code5 = """
 class A(object):
     def __init__(self):
-        self.x = 1
-        self.y = 2
+        self.a = 1
+        self.b = 2
 
 a = A()
-a.x + a.y
+a.a + a.b
 """
 examples.append(
     Example(code5,
-            'The validator should understand that a.x and a.y are ints, so the addition operator is valid.'
+            'The validator should understand that a.a and a.b are ints, so the addition operator is valid.'
     )
 )
 
@@ -124,16 +124,16 @@ examples.append(
 code6 = """
 class A(object):
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        self.a = x
+        self.b = y
 
 a = A('Hello', 1)
-a.x.isalpha()
-a.y.isalpha()
+a.a.isalpha()
+a.b.isalpha()
 """
 examples.append(
     Example(code6,
-            'Created object of type A having two attributes, x is string and y is int.'
+            'Create object of type A having two attributes, a is string and b is int.'
             'The method isalpha() is a builtin method for strings only.'
             'Therefore the first call should be legal, and the second should state that the method does not exists.'
     )
@@ -145,43 +145,43 @@ examples.append(
 code7 = """
 class A(object):
     def __init__(self):
-        self.x = 1
-        self.y = 2
+        self.a = 1
+        self.b = 2
 
-    def foo_x(self):
-        self.x = self.x + self.y
+    def foo_a(self):
+        self.a += self.b
 
-    def foo_z(self):
-        self.x = self.x + self.y + self.z
+    def foo_c(self):
+        self.a += self.b + self.c
 
 a = A()
-a.foo_x()
-a.foo_z()
-a.foo_y()
+a.foo_a()
+a.foo_c()
+a.foo_b()
 """
 examples.append(
     Example(code7,
-            'Created object of type A, a.foo_x() should work fine, '
-            'a.foo_z() should state that a does not have attribute z, '
-            'and a.foo_y() should state that a does not have method foo_y'
+            'Created object of type A, a.foo_a() should work fine, '
+            'a.foo_c() should state that a does not have attribute c, '
+            'and a.foo_b() should state that a does not have method foo_b'
     )
 )
 
 code8 = """
 class A(object):
     def __init__(self):
-        self.x = 1
-        self.y = 2
+        self.a = 1
+        self.b = 2
 
-    def foo_x(self):
-        self.x = self.x + self.y
+    def foo_a(self):
+        self.a += self.b
 
-    def foo_xx(self):
-        self.foo_x()
+    def foo_aa(self):
+        self.foo_a()
 
 a = A()
-a.foo_x()
-a.foo_xx()
+a.foo_a()
+a.foo_aa()
 """
 examples.append(
     Example(code8,
@@ -192,17 +192,17 @@ examples.append(
 code9 = """
 class A(object):
     def __init__(self):
-        self.x = 1
-        self.y = 2
+        self.a = 1
+        self.b = 2
 
-    def foo_z(self):
-        self.z = 3
+    def foo_c(self):
+        self.c = 3
 
 a = A()
 a.m = 2
 a.m
-a.foo_z()
-a.z
+a.foo_c()
+a.c
 """
 examples.append(
     Example(code9,
@@ -213,74 +213,77 @@ examples.append(
 code10 = """
 class A(object):
     def __init__(self):
-        self.x = 1
+        self.a = 1
 
 class B(A):
     def __init__(self):
-        self.y = 2
+        self.b = 2
 
 b = B()
-b.y
-b.x
+b.b
+b.a
 """
 examples.append(
     Example(code10,
-            'Demonstrate class inheritance - although B extends A, since B did not call to super ctor, b.x should not exists')
+            'Demonstrate class inheritance - although B extends A, since B did not call to super ctor, '
+            'b.a should not exists')
 )
 
 #fails because we mis-handle the super call
 code11 = """
 class A(object):
     def __init__(self):
-        self.x = 1
+        self.a = 1
 
 class B(A):
     def __init__(self):
         super(B, self).__init__()
-        self.y = 2
+        self.b = 2
 
 b = B()
-b.x
-b.y
+b.a
+b.b
 """
 examples.append(
     Example(code11,
-            'In this example, b.x and b.y exists, since we called the super ctor')
+            'In this example, b.a and b.b exists, since we called the super ctor')
 )
 
 #fails because the abstract state doesn't lub well
 code12 = """
 class A(object):
     def __init__(self):
-        self.x = 1
+        self.a = 1
 
 for x in [A(), A(), A()]:
-    x.x
+    x.a
 
 for x in [A(), A(), A()]:
-    x.y
+    x.b
 """
 examples.append(
     Example(code12,
             'List example, we store the list as a LUB of all the elements,'
-            'Easy to see that x.x should be fine and x.y does not exists.')
+            'Easy to see that x.a should be fine and x.b does not exists.')
 )
 
 #fails for the same reason as 10
 code13 = """
 class A(object):
-    def __init__(self, x):
-        self.x = x
+    def __init__(self):
+        self.a = 1
 
 class B(object):
     def __init__(self, x):
-        self.x = x
-        self.y = 1
+        self.a = x
+        self.b = 1
 
-for x in [A(), B()]:
-    x.x
-    x.y
-    x.z
+a = A()
+b = B(a)
+for x in [a, b]:
+    x.a
+    x.b
+    x.c
 """
 examples.append(
     Example(code13,
@@ -297,13 +300,13 @@ if True:
     a.a = 1
 else:
     a.a = 1
-    a.y = 2
+    a.b = 2
 a.a
-a.y
+a.b
 """
 examples.append(
     Example(code14,
-            'If-Else example, a.a should exists in any case, a.y exists just for the else')
+            'If-Else example, a.a should exists in any case, a.b exists just for the else')
 )
 
 code15 = """
