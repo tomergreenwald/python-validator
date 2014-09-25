@@ -319,14 +319,48 @@ try:
     a.b = 3
 except:
     a.a = 2
+    a.c = 3
 
 a.a
 a.b
+a.c
 """
 examples.append(
     Example(code15,
             'try-except example.')
 )
+
+code16 = """
+class A(object):
+    pass
+
+a = A()
+try:
+    a.a = 2
+    a.b = 3
+except:
+    a.a = 2
+    a.c = 3
+finally:
+    a.d = 2
+
+a.a
+a.b
+a.c
+a.d
+"""
+examples.append(
+    Example(code16,
+            'try-except-finally example.')
+)
+
+code17 = """
+"""
+examples.append(
+    Example(code17,
+            'methods lub example.')
+)
+
 
 import ast
 
