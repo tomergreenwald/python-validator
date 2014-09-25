@@ -383,7 +383,8 @@ class C(object):
     def foo(self):
         self.c = 2
 
-a = A()
+b = B()
+c = C()
 
 if True:
     a = A(b)
