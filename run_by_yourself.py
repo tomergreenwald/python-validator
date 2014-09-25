@@ -6,6 +6,9 @@ from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import simpler
 
 if __name__ == '__main__':
+    if len(sys.argv) == 1:
+        print 'Code path for validate is missing.'
+        exit(1)
     with file(sys.argv[1]) as f:
         code = f.read()
 
