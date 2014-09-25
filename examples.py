@@ -28,8 +28,8 @@ class A(object):
         self.b = b
 
 a = A("hello")
-x = a.a
-y = a.c
+a.a
+a.c
 """
 examples.append(
     Example(code2,

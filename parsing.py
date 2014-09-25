@@ -3,22 +3,16 @@ import ast
 from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import  simpler
 
-classes = {}
-functions = {}
-varz = {}
 
 code = """
 class A(object):
-    def __init__(self):
-        self.x = 1
+    def __init__(self, b):
+        self.a = 1
+        self.b = b
 
-class B(A):
-    def __init__(self):
-        super(B, self).__init__()
-        self.y = 2
-
-b = B()
-b.x + b.y
+a = A("hello")
+a.a
+a.c
 """
 
 simple = simpler.make_simple(code)
