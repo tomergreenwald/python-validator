@@ -355,10 +355,49 @@ examples.append(
 )
 
 code17 = """
+class A(object):
+    pass
+
+def adding_a(x):
+    x.a = 1
+
+a = A()
+adding_a(a)
+a.a
 """
 examples.append(
     Example(code17,
-            'methods lub example.')
+            'Calling functions examples')
+)
+
+code18 = """
+class A(object):
+    def __init__(self, x):
+        self.a = x
+
+class B(object):
+    def foo(self):
+        self.b = 2
+
+class C(object):
+    def foo(self):
+        self.c = 2
+
+a = A()
+
+if True:
+    a = A(b)
+else:
+    a = A(c)
+
+a.a.foo()
+
+a.b
+a.c
+"""
+examples.append(
+    Example(code18,
+            'Polymorphism')
 )
 
 
