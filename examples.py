@@ -338,6 +338,7 @@ print
 for example in examples:
     print example.desc
     print 'Orignal Code:'
+    print '============='
     print example.code
     print
     simple = simpler.make_simple(example.code)
