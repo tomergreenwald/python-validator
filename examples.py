@@ -19,8 +19,9 @@ examples.append(
                    'After the first call, the validator adds the attribute x to the abstract state of a, '
                    'so it should state that the second call to a.x is legal.')
 )
+
 #Fails because the abstract state mishandles attributes
-code14 = """
+code2 = """
 class A(object):
     def __init__(self, b):
         self.a = 1
@@ -31,14 +32,14 @@ x = a.a
 y = a.c
 """
 examples.append(
-    Example(code14,
+    Example(code2,
             'Should create object of type A with two attributes - a and b. '
             'The first assignment should work since attribute a exists, '
             'The second assignment should state that a does not have attribute c'
     )
 )
 
-code15 = """
+code3 = """
 class A(object):
     def __init__(self, a):
         self.a = a
@@ -64,7 +65,7 @@ a.c = 2
 b.b.c
 """
 examples.append(
-    Example(code15,
+    Example(code3,
             'Should create object a of type A and object b of type B that holds a.'
             'All the calls in the First group are valid, since that attributes are correct.'
             'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
@@ -73,7 +74,7 @@ examples.append(
     )
 )
 
-code7 = """
+code4 = """
 class A(object):
     def __init__(self, a):
         self.a = a
@@ -97,13 +98,13 @@ b.b.d = 3
 c.c.d
 """
 examples.append(
-    Example(code7,
+    Example(code4,
             'Two objects - b (of type B) and a (of type A) which shared object (a of type A). '
             'After we add to a attribute d throw b.b.d, that attribute should exists in c.c.d as well.'
     )
 )
 
-code14 = """
+code5 = """
 class A(object):
     def __init__(self):
         self.x = 1
@@ -113,13 +114,13 @@ a = A()
 a.x + a.y
 """
 examples.append(
-    Example(code14,
+    Example(code5,
             'The validator should understand that a.x and a.y are ints, so the addition operator is valid.'
     )
 )
 
 #fails for the same reason as 2
-code15 = """
+code6 = """
 class A(object):
     def __init__(self, x, y):
         self.x = x
@@ -130,7 +131,7 @@ a.x.isalpha()
 a.y.isalpha()
 """
 examples.append(
-    Example(code15,
+    Example(code6,
             'Created object of type A having two attributes, x is string and y is int.'
             'The method isalpha() is a builtin method for strings only.'
             'Therefore the first call should be legal, and the second should state that the method does not exists.'
@@ -165,7 +166,7 @@ examples.append(
     )
 )
 
-code14 = """
+code8 = """
 class A(object):
     def __init__(self):
         self.x = 1
@@ -182,12 +183,12 @@ a.foo_x()
 a.foo_xx()
 """
 examples.append(
-    Example(code14,
+    Example(code8,
             'Demonstrates the call from one method to another in the same object.'
     )
 )
 
-code15 = """
+code9 = """
 class A(object):
     def __init__(self):
         self.x = 1
@@ -203,12 +204,12 @@ a.foo_z()
 a.z
 """
 examples.append(
-    Example(code15,
+    Example(code9,
             'Demonstrates adding attributes on the fly')
 )
 
 #fails for the same reason as 7
-code14 = """
+code10 = """
 class A(object):
     def __init__(self):
         self.x = 1
@@ -222,11 +223,12 @@ b.y
 b.x
 """
 examples.append(
-    Example(code14,
+    Example(code10,
             'Demonstrate class inheritance - although B extends A, since B did not call to super ctor, b.x should not exists')
 )
+
 #fails because we mis-handle the super call
-code15 = """
+code11 = """
 class A(object):
     def __init__(self):
         self.x = 1
@@ -241,12 +243,12 @@ b.x
 b.y
 """
 examples.append(
-    Example(code15,
+    Example(code11,
             'In this example, b.x and b.y exists, since we called the super ctor')
 )
 
 #fails because the abstract state doesn't lub well
-code14 = """
+code12 = """
 class A(object):
     def __init__(self):
         self.x = 1
@@ -258,13 +260,13 @@ for x in [A(), A(), A()]:
     x.y
 """
 examples.append(
-    Example(code14,
+    Example(code12,
             'List example, we store the list as a LUB of all the elements,'
             'Easy to see that x.x should be fine and x.y does not exists.')
 )
 
 #fails for the same reason as 10
-code15 = """
+code13 = """
 class A(object):
     def __init__(self, x):
         self.x = x
@@ -280,7 +282,7 @@ for x in [A(), B()]:
     x.z
 """
 examples.append(
-    Example(code15,
+    Example(code13,
             'List example 2')
 )
 
