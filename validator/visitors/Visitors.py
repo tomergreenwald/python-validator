@@ -121,16 +121,24 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     else:
         level = 0
     if type(from_var) is ast.Name or type(from_var) is ast.Attribute:
+        make_top = False
         if from_var.id is "ret_val":
             actual_from_name = "ret_val"
+        elif from_var.id is "MAKE_THIS_VAR_AS_TOP":
+            make_top = True
         else:
             if type(from_var) is ast.Attribute:
                 actual_from_name = from_var.id
             else:
                 actual_from_name = actual_var_name(stack, from_var.id, level)
-        errors = abstract_state.set_var_to_var(actual_to_name, actual_from_name)
-        print errors
-        print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
+        if make_top is False:
+            errors = abstract_state.set_var_to_var(actual_to_name, actual_from_name)
+            print errors
+            print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
+        else:
+            errors = abstract_state.add_var_and_set_to_top(actual_to_name)
+            print errors
+            print "set var {to_var} to TOP".format(to_var=actual_to_name)
     elif from_var is not None:
         if type(from_var) is ast.Tuple:
             errors = abstract_state.set_var_to_const(actual_to_name, tuple())
