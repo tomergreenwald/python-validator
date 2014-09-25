@@ -320,7 +320,7 @@ class AbstractState(object):
         """
         perform inplace lub (self = lub(self, other))
         """
-        logging.debug('[lub]' %var_name)
+        logging.debug('[lub]')
         self.graph.fill_graphs(other.graph)
         
         # this is a good point to get rid of unused vertices and constants
