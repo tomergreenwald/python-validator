@@ -526,7 +526,7 @@ class Graph(object):
         if v0.knowledge.val == LE.L_TOP or v1.knowledge.val == LE.L_TOP:
             # if one of the vertices is TOP, so will be their lub
             # the following line also clears all_constants and mutability
-            self.set_top(v0)
+            self.set_top(x)
         else:
             # otherwise, just merge their possible constants and metadata
             v0.all_constants.update(v1.all_constants)
