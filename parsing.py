@@ -6,13 +6,28 @@ from validator.simplers import  simpler
 
 code = """
 class A(object):
+    def __init__(self, a):
+        self.a = a
+
+class B(object):
     def __init__(self, b):
-        self.a = 1
         self.b = b
 
-a = A("hello")
+a = A(1)
+b = B(a)
+
+# First group
 a.a
-a.c
+b.b
+b.b.a
+
+# Second group
+b.b.b
+a.b
+
+# Third group
+a.c = 2
+b.b.c
 """
 
 simple = simpler.make_simple(code)

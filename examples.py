@@ -23,18 +23,17 @@ examples.append(
 #Fails because the abstract state mishandles attributes
 code2 = """
 class A(object):
-    def __init__(self, b):
+    def __init__(self):
         self.a = 1
-        self.b = b
 
-a = A("hello")
+a = A()
 a.a
 a.c
 """
 examples.append(
     Example(code2,
-            'Should create object of type A with two attributes - a and b. '
-            'The first assignment should work since attribute a exists, '
+            'Should create object of type A with attribute a. '
+            'The call to a.a should work fine since the attribute exists, '
             'The second assignment should state that a does not have attribute c'
     )
 )
@@ -66,7 +65,9 @@ b.b.c
 """
 examples.append(
     Example(code3,
-            'Should create object a of type A and object b of type B that holds a.'
+            'First thing you are going to see is the simpler work. It never leaves the arguments as is, '
+            'and advance calls as b.b.a changes to two calls.'
+            'In this example we create object a of type A and object b of type B that holds a.'
             'All the calls in the First group are valid, since that attributes are correct.'
             'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
             'since in the abstract world we added attribute b to b.b, the call to a.b should be legal.'
