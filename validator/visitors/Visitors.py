@@ -318,10 +318,11 @@ class AssignVisitor(CallVisitor):
 
         list_lub = self.name + '_vars_lub'
 
+        abstract_before = self.abstract_state.clone()
         if node.elts:
             register_assignment(self.stack, self.abstract_state, node.elts[0], list_lub)
         for item in node.elts[1:]:
-            clone = self.abstract_state.clone()
+            clone = abstract_before.clone()
             register_assignment(self.stack, clone, item, list_lub)
             self.abstract_state.lub(clone)
 
