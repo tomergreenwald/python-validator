@@ -485,14 +485,9 @@ class ProgramVisitor(ast.NodeVisitor):
             self.abstract_state.lub(orelse_state)
 
     def visit_TryFinally(self, node):
-        before_block_abstract_states = self.abstract_state.clone()
-        helper = []
         for expr in node.body:
-            helper.append(expr)
-            current_abstract_states = before_block_abstract_states.clone()
-            assess_list(helper, self.stack, current_abstract_states, self.functions)
-            self.abstract_state.lub(current_abstract_states)
-        assess_list(node.finalbody, self.abstract_state, self.functions, self.functions)
+            self.visit(expr)
+        assess_list(node.finalbody, self.stack, self.abstract_state, self.functions)
 
     def visit_TryExcept(self, node):
         before_block_abstract_states = self.abstract_state.clone()
