@@ -32,7 +32,9 @@ class AbstractState(object):
         return a copy of the abstract state
         """
         logging.debug('[clone]')
-        return deepcopy(self)
+        res = AbstractState()
+        res.graph = self.graph.clone()
+        return res
     
     def add_var_and_set_to_top(self, var, given_father = -1):
         """

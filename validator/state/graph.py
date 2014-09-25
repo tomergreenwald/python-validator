@@ -799,4 +799,18 @@ class Graph(object):
         TODO
         """
         return self.vertices[vertex_ind].metadata_testing
+    
+    def clone(self):
+        """
+        returns a copy of the graph. constants won't be copied
+        """
+        res = Graph()
+        res.next_ind = self.next_ind
+        res.next_cons = self.next_cons
+        for t,i in self.types_dict.items():
+            res.types_dict[t] = i
+        for i,c in self.all_cons.items():
+            res.all_cons[i] = c
+        res.vertices = copy.deepcopy(self.vertices)
         
+        return res
