@@ -290,6 +290,32 @@ examples.append(
             'List example 2')
 )
 
+#fails for the same reason as 10
+code13_5 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+
+class B(object):
+    def __init__(self, x):
+        self.a = x
+        self.b = 1
+
+a1 = A()
+a2 = A()
+l = [a1, a2]
+l.append(B(a1))
+
+for x in l:
+    x.a
+    x.b
+    x.c
+"""
+examples.append(
+    Example(code13_5,
+            'Append example 2')
+)
+
 #fails because we mis-treat attribute assignment
 code14 = """
 class A(object):
