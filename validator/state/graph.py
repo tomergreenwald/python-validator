@@ -2,7 +2,7 @@ import logging
 import copy
 from collections import deque
 from lattice import LatticeElement as LE
-from utils import is_primitive
+from utils import is_primitive, is_callable, TopFunction, IntFunction
 # logging.basicConfig(level = logging.DEBUG)
 
 """
@@ -46,7 +46,7 @@ class GraphVertex(object):
         self.ind = ind
         self.all_constants = set()
         self.mutable = LE(LE.L_BOTOM) # default is to don't know about mutability
-        self.callable = LE(LE.L_MUST_NOT_HAVE) # default is to not be callable
+        self.callable = LE(LE.L_BOTOM) # default is to don't know about callability, but caller must know this (logically, default is to be not-callable)
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
@@ -131,6 +131,13 @@ class Graph(object):
             self.vertices[vertex_ind].mutable.inplace_lub(LE(LE.L_MUST_NOT_HAVE))
         else:
             self.vertices[vertex_ind].mutable.inplace_lub(LE(LE.L_MUST_HAVE))
+            
+        # update callability, bases on the constant    
+        is_function = is_callable(const)
+        if is_function:
+            self.vertices[vertex_ind].callable.inplace_lub(LE(LE.L_MUST_HAVE))
+        else:
+            self.vertices[vertex_ind].callable.inplace_lub(LE(LE.L_MUST_NOT_HAVE))
     
     def create_new_vertex(self, parent = 0, label = ''):
         """
@@ -263,6 +270,10 @@ class Graph(object):
                 # add possible constant to son
                 son_const = c.__getattribute__(son_label)
                 self._add_const_to_vertex(son_ind, son_const)
+                if is_callable(son_const):
+                    # add metadata function to son
+                    self.vertices[son_ind].metadata.add(TopFunction.get(2))
+                    
             except:
                 # there exists a constant for father, for which the label is illegal
                 maybe_edge = True

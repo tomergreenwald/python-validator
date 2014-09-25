@@ -1,6 +1,7 @@
 import ast
 
 from validator.state.abstract import AbstractState
+from validator.state.utils import TOP_MAGIC_NAME
 from validator.representation.ClassRepresentation import ClassRepresentation
 
 
@@ -83,6 +84,9 @@ def actual_var_name(stack, var, level=0):
     :param var: Variable name.
     :return: Fully qualified variable name.
     """
+    if var.startswith(TOP_MAGIC_NAME):
+        return var
+        
     frame_name = None
     if var in stack.frames[-(level + 1)].variables:
         frame_name = stack.frames[-(level + 1)].frame_name
@@ -124,7 +128,7 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
         make_top = False
         if from_var.id is "ret_val":
             actual_from_name = "ret_val"
-        elif from_var.id is "MAKE_THIS_VAR_AS_TOP":
+        elif from_var.id.startswith(TOP_MAGIC_NAME):
             make_top = True
         else:
             if type(from_var) is ast.Attribute:
@@ -164,6 +168,7 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
 def handle_kwargs(abstract_state, args, function, keywords, stack):
     arguments = []
     for i in xrange(len(args)):
+        # TODO what if len(args) != len(function.args.args) ? this means that there is wrong number of arguments! report it!
         arguments.append(i)
         register_assignment(stack, abstract_state, args[i], function.args.args[i].id, True)
     for i in xrange(len(function.args.defaults)):
@@ -278,14 +283,10 @@ class AssignVisitor(CallVisitor):
 
     def visit_Subscript(self, node):
         if type(node.ctx) is ast.Load:
-            try:
-                self.abstract_state.has_var(actual_var_name(self.stack, node.value.id))
-            except:
+            if not self.abstract_state.has_var(actual_var_name(self.stack, node.value.id)):
                 raise Exception('List %s does not exists' % node.value.id)
 
-            try:
-                self.abstract_state.has_var(actual_var_name(self.stack, node.value.id + '_vars_lub'))
-            except:
+            if not self.abstract_state.has_var(actual_var_name(self.stack, node.value.id + '_vars_lub')):
                 raise Exception('Try to load value from empty list %s' % node.value.id)
 
             self.visit_Name(ast.Name(id=node.value.id + '_vars_lub', ctx=ast.Load()))

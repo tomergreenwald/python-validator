@@ -65,6 +65,13 @@ class AbstractState(object):
         
         return var_ind
     
+    def has_var(self, var):
+        """
+        returns True if var exists or may exists
+        TODO different behaviour for existence and maybe existence
+        """
+        return self._get_var_index(var, False)[0] >= 0
+    
     def remove_var(self, var, add_tops = True):
         """
         call this when a variable is not relevant anymore
@@ -314,7 +321,7 @@ class AbstractState(object):
         """
         perform inplace lub (self = lub(self, other))
         """
-        logging.debug('[lub]' %var_name)
+        logging.debug('[lub]')
         self.graph.fill_graphs(other.graph)
         
         # this is a good point to get rid of unused vertices and constants
@@ -389,7 +396,7 @@ class AbstractState(object):
         """
         returns a set of possible metadatas associated with method_name of var_name
         """
-        logging.debug('[get_method_metadata] var %s' %var_name)
+        logging.debug('[get_method_metadata] var %s method_name %s' %(var_name, method_name))
         method_name = '%s.%s' %(var_name, method_name)
         
         var_ind, errors = self._get_var_index(method_name)
@@ -397,12 +404,14 @@ class AbstractState(object):
         res = self.graph.get_metadata(var_ind)
         
         # TODO do we want to mark this vertex as callable? probably yes, but with what metadata?
-        if callable.val == LE.L_MUST_NOT_HAVE:
+        if callable.val == LE.L_MUST_NOT_HAVE or callable.val == LE.L_BOTOM:
             errors.append(("Error", "method %s is not callable" %(method_name)))
         elif callable.val == LE.L_MAY_HAVE:
             errors.append(("Alert", "method %s might be uncallable" %(method_name)))
         
-        return (res, errors)
+        # someone outside is running on the result, which may be varied during its loop, so we copy it
+        # the objects that will be copied are ast nodes, so this is ok
+        return (copy.deepcopy(res), errors)
     
     def __repr__(self):
         return self.graph.__repr__()
