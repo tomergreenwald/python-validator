@@ -109,6 +109,7 @@ class A(object):
         self.x = 1
         self.y = 2
 
+a = A()
 a.x + a.y
 """
 examples.append(
