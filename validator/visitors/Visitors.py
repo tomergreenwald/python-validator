@@ -113,7 +113,7 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
     :param to_var_name: variable name to assign data to.
     """
     stack.current_frame().register(to_var_name)
-    
+
     actual_to_name = actual_var_name(stack, to_var_name)
     # if to_var_name == 'self#a':
     #     raise
@@ -226,12 +226,18 @@ class CallVisitor(ast.NodeVisitor):
                     print _self + '_var_lub has created with %s' % node.args[0]
             else:
                 #should return a list of contexts saved for each method (one per method impl)
-                (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
+                abstract_state_clean = self.abstract_state.clone()
+                (methods, errors) = abstract_state_clean.get_method_metadata(actual_var_name(self.stack, _self),
+                                                                             function_name)
                 if len(methods) > 0:
-                    abstract_state_clean = self.abstract_state.clone()
-                    for method in methods:
+                    evaluate_function(list(methods)[0],
+                                      [ast.Name(id=_self, ctx=ast.Load())] + node.args, node.keywords, self.stack,
+                                      self.abstract_state,
+                                      self.functions)
+                    for method in methods[1:]:
                         abstract_state_cpy = abstract_state_clean.clone()
-                        evaluate_function(method, [ast.Name(id=_self)] + node.args, node.keywords, self.stack,
+                        evaluate_function(method, [ast.Name(id=_self, ctx=ast.Load())] + node.args, node.keywords,
+                                          self.stack,
                                           abstract_state_cpy,
                                           self.functions)
                         self.abstract_state.lub(abstract_state_cpy)
@@ -493,9 +499,7 @@ class ProgramVisitor(ast.NodeVisitor):
 
         # If no exception raises
         try_block = node.body
-        try_block_abstract_states = before_block_abstract_states.clone()
-        assess_list(try_block, self.stack, try_block_abstract_states, self.functions)
-        self.abstract_state.lub(try_block_abstract_states)
+        assess_list(try_block, self.stack, self.abstract_state, self.functions)
 
         # If exception raises during the execution
         helper = []
@@ -505,7 +509,8 @@ class ProgramVisitor(ast.NodeVisitor):
             assess_list(helper, self.stack, current_abstract_states, self.functions)
 
             for handler in node.handlers:
-                self.abstract_state.set_var_to_const(handler.name.id, 'exception')
+                if handler.name:
+                    self.abstract_state.set_var_to_const(handler.name.id, 'exception')
                 handler_abstract_states = current_abstract_states.clone()
                 assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
                 self.abstract_state.lub(handler_abstract_states)
@@ -549,7 +554,8 @@ def handle_assign(node, stack, abstract_state, functions, classes):
 
         abstract_state_clone = abstract_state.clone()
 
-        assign_visitor = AssignVisitor(node.targets[0].value.id + '_vars_lub', stack, abstract_state, functions, classes)
+        assign_visitor = AssignVisitor(node.targets[0].value.id + '_vars_lub', stack, abstract_state, functions,
+                                       classes)
         assign_visitor.visit(node.value)
         abstract_state.lub(abstract_state_clone)
     else:
@@ -565,7 +571,7 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     # we use TTT becuase object() is primitive (can not add attributes to object())
     class TTT(object):
         pass
-    
+
     print "Initializing object - ", target
     register_assignment(stack, abstract_state, None, target, new_object=TTT())
 
@@ -573,7 +579,8 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     while iter_clazz is not 'object' and '__init__' not in iter_clazz.methods:
         iter_clazz = iter_clazz.base
     if iter_clazz is not 'object':
-        evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords, stack, abstract_state, functions)
+        evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords,
+                          stack, abstract_state, functions)
 
     for method in clazz.methods.values():
         print "registering method - {method} to {var}".format(method=method.name, var=target)
