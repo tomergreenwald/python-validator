@@ -309,8 +309,6 @@ class AssignVisitor(CallVisitor):
         Handles list node.
         :param node: List Node.
         """
-        # TODO handle + and 'append' - should change the lub
-        # TODO handle Subscript should do the logic on 'var_that_represents_the_list_items'
         register_assignment(self.stack, self.abstract_state, node, self.name)  # Register the name as list
 
         list_lub = self.name + '_vars_lub'
