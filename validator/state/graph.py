@@ -50,7 +50,7 @@ class GraphVertex(object):
         self.sons = dict()
         self.all_parents = SetDict()
         self.knowledge = LE(LE.L_MUST_HAVE)
-        self.metadata_testing = set()
+        self.metadata = set()
     
     def remove_parent(self, lbl, edge):
         self.all_parents[lbl].remove(edge)
@@ -65,7 +65,7 @@ class GraphVertex(object):
                'all constants:\t%s\n' %self.all_constants + \
                'sons:\n%s\n' %('\n'.join(['\t%s' %x for x in self.sons.values()])) + \
                'parents:\n%s\n' %('\n'.join(['\t%s' %x for x in self.all_parents.values()])) + \
-               'metadata possibilities:\t%d\tcallable:\t%s\n' %(len(self.metadata_testing), self.callable)
+               'metadata possibilities:\t%d\tcallable:\t%s\n' %(len(self.metadata), self.callable)
 
 class Graph(object):
     """
@@ -104,7 +104,7 @@ class Graph(object):
         self.vertices[vertex_ind].all_constants.clear()
         self.vertices[vertex_ind].mutable = LE(LE.L_BOTOM)
         self.vertices[vertex_ind].callable = LE(LE.L_MUST_NOT_HAVE)
-        self.vertices[vertex_ind].metadata_testing.clear()
+        self.vertices[vertex_ind].metadata.clear()
         
         self._add_const_to_vertex(vertex_ind, const)
     
@@ -203,7 +203,7 @@ class Graph(object):
         self.vertices[v].all_constants.clear()
         self.vertices[v].mutable = LE(LE.L_BOTOM)
         self.vertices[v].callable = LE(LE.L_MUST_NOT_HAVE)
-        self.vertices[v].metadata_testing.clear()
+        self.vertices[v].metadata.clear()
         # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
         # this function is called only on new vertices, and on vertices that are lubbed,
         # so the edges handling is done by someone else. but we need to reconsider this
@@ -521,7 +521,7 @@ class Graph(object):
             v0.all_constants.update(v1.all_constants)
             v0.mutable.inplace_lub(v1.mutable)
             v0.callable.inplace_lub(v1.callable)
-            v0.metadata_testing.update(v1.metadata_testing)
+            v0.metadata.update(v1.metadata)
     
     def _handle_common_edges(self, edge_pairs):
         """
@@ -771,13 +771,13 @@ class Graph(object):
         """
         TODO
         """
-        self.vertices[vertex_ind].metadata_testing = set([metadata])
+        self.vertices[vertex_ind].metadata = set([metadata])
     
     def get_metadata(self, vertex_ind):
         """
         TODO
         """
-        return self.vertices[vertex_ind].metadata_testing
+        return self.vertices[vertex_ind].metadata
     
     def clone(self):
         """
