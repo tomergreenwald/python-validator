@@ -291,7 +291,7 @@ examples.append(
 )
 
 #fails for the same reason as 10
-code13_5 = """
+code14 = """
 class A(object):
     def __init__(self):
         self.a = 1
@@ -312,12 +312,12 @@ for x in l:
     x.c
 """
 examples.append(
-    Example(code13_5,
+    Example(code14,
             'Append example 2')
 )
 
 #fails because we mis-treat attribute assignment
-code14 = """
+code15 = """
 class A(object):
     pass
 
@@ -331,11 +331,11 @@ a.a
 a.b
 """
 examples.append(
-    Example(code14,
+    Example(code15,
             'If-Else example, a.a should exists in any case, a.b exists just for the else')
 )
 
-code15 = """
+code16 = """
 class A(object):
     pass
 
@@ -352,11 +352,11 @@ a.b
 a.c
 """
 examples.append(
-    Example(code15,
+    Example(code16,
             'try-except example.')
 )
 
-code16 = """
+code17 = """
 class A(object):
     pass
 
@@ -376,11 +376,11 @@ a.c
 a.d
 """
 examples.append(
-    Example(code16,
+    Example(code17,
             'try-except-finally example.')
 )
 
-code17 = """
+code18 = """
 class A(object):
     pass
 
@@ -392,11 +392,11 @@ adding_a(a)
 a.a
 """
 examples.append(
-    Example(code17,
+    Example(code18,
             'Calling functions examples')
 )
 
-code18 = """
+code19 = """
 class A(object):
     def __init__(self, x):
         self.a = x
@@ -423,7 +423,7 @@ a.b
 a.c
 """
 examples.append(
-    Example(code18,
+    Example(code19,
             'Polymorphism')
 )
 
@@ -440,7 +440,7 @@ Next, the code will run through the validatior.
 
 Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
 
-There are 15 examples. Have fun! :)
+There are 19 examples. Have fun! :)
 """
 print greetings
 raw_input('Hit any key to start')
