@@ -36,7 +36,7 @@ class AbstractState(object):
         res.graph = self.graph.clone()
         return res
     
-    def add_var_and_set_to_top(self, var, given_father = -1):
+    def add_var_and_set_to_top(self, var, given_father = -1, force = False):
         """
         adding a variable to the state, and mark it as top
         return the vertex index of var
@@ -50,7 +50,8 @@ class AbstractState(object):
             var_ind = self._expression_to_vertex_index(var)
             if var_ind >= 0:
                 # think what should we do here... do we want to set the var to top? probably not, but remember it...
-                # self.graph.set_top(var_ind)
+                if force or self.graph.is_botom(var_ind):
+                    self.graph.set_top(var_ind)
                 return var_ind
         
             if father:
@@ -64,6 +65,15 @@ class AbstractState(object):
         self.graph.set_top(var_ind)
         
         return var_ind
+    
+    def add_var_and_set_to_botom(self, var):
+        """
+        adding a variable to the state, and set it to be BOTOM
+        if the variable exists, modify it to be BOTOM
+        """
+        logging.debug('[add_var_and_set_to_botom] var %s' %var)
+        var_ind = self.add_var_and_set_to_top(var, force = True)
+        self.graph.set_botom(var_ind)
     
     def has_var(self, var):
         """

@@ -239,6 +239,10 @@ class CallVisitor(ast.NodeVisitor):
             else:
                 #should return a list of contexts saved for each method (one per method impl)
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
+                print 'possible methods are %s' %' '.join([x.name for x in methods])
+                self.abstract_state.add_var_and_set_to_botom('ret_val')
+                print 'query abstract state ret_val %s' %self.abstract_state.query('ret_val', False)
+                
                 if len(methods) > 0:
                     abstract_state_clean = self.abstract_state.clone()
                     for method in methods:
@@ -246,6 +250,7 @@ class CallVisitor(ast.NodeVisitor):
                         evaluate_function(method, [ast.Name(id=_self)] + node.args, node.keywords, self.stack,
                                           abstract_state_cpy,
                                           self.functions)
+                        print 'query abstract_state_cpy ret_val %s' %abstract_state_cpy.query('ret_val', False)
                         self.abstract_state.lub(abstract_state_cpy)
                 else:
                     raise Exception(
@@ -255,9 +260,19 @@ class CallVisitor(ast.NodeVisitor):
         else:
             raise Exception("not supported")
 
+        # print 'GGGGGGGGG name %s query %s' %(self.name, self.abstract_state.query("ret_val", False))
+        (vind, errs) = self.abstract_state._get_var_index('ret_val', False)
+        if vind >= 0:
+            print 'errs: %s' %errs
+            print 'vertex: %s' %self.abstract_state.graph.vertices[vind]
+        
+        # TODO what happens in case Alerts exists in query? and in case Errors exists in query?
         if self.name and len(self.abstract_state.query("ret_val", False)) == 0:
             register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
             #self.abstract_state.set_var_to_var(actual_var_name(self.stack, self.name), "ret_val")
+            self.abstract_state.remove_var("ret_val", False)
+        else:
+            # TODO i think we need to remove ret_val in any case...
             self.abstract_state.remove_var("ret_val", False)
 
 
@@ -525,12 +540,23 @@ class ProgramVisitor(ast.NodeVisitor):
 
     def visit_Return(self, node):
         to_name = actual_var_name(self.stack, getattr(node.value, node.value._fields[0]))
+        
+        make_top = False
+        if to_name.startswith(TOP_MAGIC_NAME):
+            make_top = True
+
         if self.abstract_state.has_var('ret_val'):
             temp_state = self.abstract_state.clone()
-            temp_state.set_var_to_var('ret_val', to_name)
+            if make_top is False:
+                temp_state.set_var_to_var('ret_val', to_name)
+            else:
+                temp_state.add_var_and_set_to_top('ret_val')
             self.abstract_state.lub(temp_state)
         else:
-            self.abstract_state.set_var_to_var('ret_val', to_name)
+            if make_top is False:
+                self.abstract_state.set_var_to_var('ret_val', to_name)
+            else:
+                self.abstract_state.add_var_and_set_to_top('ret_val')
         print "assigned {from_var} to {to_var}".format(from_var=to_name, to_var="ret_val")
 
 

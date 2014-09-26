@@ -2,7 +2,7 @@ import logging
 import copy
 from collections import deque
 from lattice import LatticeElement as LE
-from utils import is_primitive, is_callable, TopFunction, IntFunction
+from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func
 # logging.basicConfig(level = logging.DEBUG)
 
 """
@@ -209,11 +209,30 @@ class Graph(object):
         self.vertices[v].knowledge.val = LE.L_TOP
         self.vertices[v].all_constants.clear()
         self.vertices[v].mutable = LE(LE.L_BOTOM)
-        self.vertices[v].callable = LE(LE.L_MUST_NOT_HAVE)
+        self.vertices[v].callable = LE(LE.L_TOP)
         self.vertices[v].metadata.clear()
+        self.vertices[v].metadata.add(TopFunction.get(2))
         # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
         # this function is called only on new vertices, and on vertices that are lubbed,
         # so the edges handling is done by someone else. but we need to reconsider this
+    
+    def set_botom(self, v):
+        """
+        set a var to be BOTOM
+        our purpose is that it won't affect any vertex u for which we 
+        will perform lub(u,v) (=u)
+        """
+        self.vertices[v].knowledge.val = LE.L_BOTOM
+        self.vertices[v].all_constants.clear()
+        self.vertices[v].mutable = LE(LE.L_BOTOM)
+        self.vertices[v].callable = LE(LE.L_BOTOM)
+        self.vertices[v].metadata.clear()
+    
+    def is_botom(self, v):
+        """
+        is a var BOTOM?
+        """
+        return self.vertices[v].knowledge.val == LE.L_BOTOM
     
     def _get_vertex_consts(self, vertex_ind):
         """
@@ -272,7 +291,12 @@ class Graph(object):
                 self._add_const_to_vertex(son_ind, son_const)
                 if is_callable(son_const):
                     # add metadata function to son
-                    self.vertices[son_ind].metadata.add(TopFunction.get(2))
+                    if type(c) is int and son_label == '__add__':
+                        self.vertices[son_ind].metadata.add(IntFunction.get(2))
+                        self._consolidate_metadata(self.vertices[son_ind])
+                    else:
+                        self.vertices[son_ind].metadata.add(TopFunction.get(2))
+                        self._consolidate_metadata(self.vertices[son_ind])
                     
             except:
                 # there exists a constant for father, for which the label is illegal
@@ -514,6 +538,28 @@ class Graph(object):
         mapping = dict([(x, x + offset) for x in self.all_cons.keys()])
         self.rename_constants_indices(mapping)
     
+    def _consolidate_metadata(self, vertex):
+        """
+        if the vertex (not index) has many TOP functions, remove all but one
+        """
+        to_remove = set()
+        is_first_top = True
+        was = set()
+        for m in vertex.metadata:
+            if (m.name, m.lineno) in was:
+                to_remove.add(m)
+                continue
+            else:
+                was.add((m.name, m.lineno))
+                
+            if is_top_func(m):
+                if is_first_top:
+                    is_first_top = False
+                else:
+                    to_remove.add(m)
+        
+        vertex.metadata.difference_update(to_remove)
+    
     def vertex_lub(self, x, other, y):
         """
         lub between self.vertices[x] and other.vertices[y]
@@ -533,6 +579,7 @@ class Graph(object):
             v0.mutable.inplace_lub(v1.mutable)
             v0.callable.inplace_lub(v1.callable)
             v0.metadata.update(v1.metadata)
+            self._consolidate_metadata(v0)
     
     def _handle_common_edges(self, edge_pairs):
         """
@@ -617,6 +664,9 @@ class Graph(object):
                         # check if this vertex exists also in self graph
                         if self.vertices[e.parent].sons.has_key(e.label):
                             if self.vertices[e.parent].sons[e.label].son != e.son:
+                                print 'problematic edge\n%s\n' %e
+                                print 'other v %d' %v
+                                print 'self parent vertex\n%s' %self.vertices[e.parent]
                                 assert False
                             # edge already exists in self graph, so this will be handled somewhere
                             pass
@@ -624,6 +674,7 @@ class Graph(object):
                             # this edge is new, but connects two common vertices
                             self.make_parent(e.son, e.parent, e.label, LE(LE.L_MAY_HAVE))
                     else:
+                        print 'EDGE BECOMES MAY'
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
                         
                         if not son_common and not parent_common:
@@ -685,8 +736,20 @@ class Graph(object):
         # perform lub between the common edges
         self._handle_common_edges(common_edges)
         
+        print 'self ret val', self.vertices[0].sons['ret_val']
+        print 'other ret val', other.vertices[0].sons['ret_val']
+        print 'vertices pairs', vertices_pairs
+        print self
+        print 
+        print other
+        
+        print 'other vertices %s' %other.vertices.keys()
         # rename equal vertices of other graph
         other.rename_vertices_indices(dict(vertices_pairs))
+        
+        print 'common vertices %s' %common_vertices
+        print 'self vertices %s' %self.vertices.keys()
+        print 'other vertices %s' %other.vertices.keys()
         
         # add other graph vertices and edges to self graph
         self._add_other_graph(other, common_vertices)
