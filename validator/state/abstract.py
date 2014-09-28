@@ -296,34 +296,20 @@ class AbstractState(object):
         """
         logging.debug('[set_var_to_var] set var %s to %s' %(var0, var1))
         
-        if var0 == 'foo_x#self.w':
-            is_debug = True
-        else:
-            is_debug = False
-        
         errors = []
         
         var1_ind, errors1 = self._get_var_index(var1)
         errors.extend(errors1)
         
-        if is_debug:
-            print 'var1: %d' %var1_ind
-            print self.graph.vertices[var1_ind]
         
         father_var0 = var_to_father(var0)
         father0_ind, errors0 = self._get_var_index(father_var0)
         errors.extend(errors0)
         
-        if is_debug:
-            print 'father0_ind: %d' %father0_ind
-            print self.graph.vertices[father0_ind]
-        
         basename = var_to_basename(var0)
         
         var0_ind = self._expression_to_vertex_index(var0)
         
-        if is_debug:
-            print 'var0_ind: %d' %var0_ind
         
         if var0_ind >= 0:
             # vertex already exists
@@ -331,19 +317,11 @@ class AbstractState(object):
         else:
             # check if father is mutable
             m_errors = self._test_father_mutability(father_var0, father0_ind)
-            if is_debug:
-                print 'mutable errors %s' %m_errors
             errors.extend(m_errors)
         
         # set var0 to point to var1 vertex
         # create new step father
-        if is_debug:
-            print 'make_parent(%d, %d, %s)' %(var1_ind, father0_ind, basename)
         self.graph.make_parent(var1_ind, father0_ind, basename)
-        
-        if var0 == 'foo_x#self.w':
-            # sys
-            pass
         
         return errors
             
