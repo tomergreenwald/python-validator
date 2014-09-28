@@ -30,7 +30,7 @@ a.c = 2
 b.b.c
 """
 
-code = """
+code_simple_functions = """
 class A(object):
     def __init__(self):
         self.x = 1
