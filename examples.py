@@ -11,244 +11,422 @@ class A(object):
     pass
 
 a = A()
-a.x
+a.a
+a.a
 """
 examples.append(
-    Example(code1, 'Basic exmple, should create object of type A and state that the object does not have attribute x')
+    Example(code1, 'Basic example, should create object of type A and state that the object does not have attribute a.'
+                   'After the first call, the validator adds the attribute a to the abstract state of a, '
+                   'so it should state that the second call to a.a is legal.')
 )
-#Fails because the abstract state mishandles attributes
-code1_5 = """
-class A(object):
-    def __init__(self, b):
-        self.a = 1
-        self.b = b
 
-ttt = A("hello")
-x = ttt.a
-y = ttt.c
-"""
-examples.append(
-    Example(code1_5,
-            'Should create object of type A with two attributes - a and b. '
-            'The first assignment should work since attribute a exists, '
-            'The second assignment should state that ttt does not have attribute c'
-    )
-)
-#Fails because __add__ was not defined anywhere
+#Fails because the abstract state mishandles attributes
 code2 = """
 class A(object):
     def __init__(self):
-        self.x = 1
-        self.y = 2
+        self.a = 1
 
 a = A()
-a.x + a.y
-a.x + a.z
+a.a
+a.c
 """
 examples.append(
     Example(code2,
-            'Should create object of type A with two attributes - x and y. '
-            'The first add should work since both attribute x and y exists, '
-            'The second add should state that a does not have attribute z'
+            'Should create object of type A with attribute a. '
+            'The call to a.a should work fine since the attribute exists, '
+            'The second assignment should state that a does not have attribute c'
     )
 )
-#fails for the same reason as 2
+
 code3 = """
 class A(object):
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+    def __init__(self, x):
+        self.a = x
 
-a = A('Hello', 1)
-a.x.isalpha()
-a.y.isalpha()
+class B(object):
+    def __init__(self, x):
+        self.b = x
+
+a = A(1)
+b = B(a)
+
+# First group
+a.a
+b.b
+b.b.a
+
+# Second group
+b.b.b
+a.b
+
+# Third group
+a.c = 2
+b.b.c
 """
 examples.append(
     Example(code3,
-            'Created object of type A having two attributes, x is string and y is int.'
-            'a.x.isalpha() should work since string has method isalpha,'
-            'a.y.isalpha() should state that a.y does not have attribute isalpha()'
+            'First thing you are going to see is the simpler work. It never leaves the arguments as is, '
+            'and advance calls as b.b.a changes to two calls.'
+            'In this example we create object a of type A and object b of type B that holds a.'
+            'All the calls in the First group are valid, since that attributes are correct.'
+            'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
+            'since in the abstract world we added attribute b to b.b, the call to a.b should be legal.'
+            'In the third group, we add attribute c to a.c, so now it should state that b.b.c exists.'
     )
 )
-# For some reason we get an error while registering foo_x because the abstract state doesn't recognize root#a
-# but when we register foo_x it recognizes root#a, maybe because it is during the preciuos registration it created
-# root#a
+
 code4 = """
 class A(object):
-    def __init__(self):
-        self.x = 1
-        self.y = 2
+    def __init__(self, x):
+        self.a = x
 
-    def foo_x(self):
-        self.x = self.x + self.y
+class B(object):
+    def __init__(self, x):
+        self.b = x
 
-    def foo_z(self):
-        self.x = self.x + self.y + self.z
+class C(object):
+    def __init__(self, x):
+        self.c = x
 
-a = A()
-a.foo_x()
-a.foo_z()
-a.foo_y()
+a = A(1)
+b = B(a)
+c = C(a)
+
+b.b.a
+c.c.a
+
+b.b.d = 3
+c.c.d
 """
 examples.append(
     Example(code4,
-            'Created object of type A, a.foo_x() should work fine, '
-            'a.foo_z() should state that a does not have attribute z, '
-            'and a.foo_y() should state that a does not have attribute foo_y'
+            'Two objects - b (of type B) and a (of type A) which shared object (a of type A). '
+            'After we add to a attribute d throw b.b.d, that attribute should exists in c.c.d as well.'
     )
 )
 
 code5 = """
 class A(object):
     def __init__(self):
-        self.x = 1
-        self.y = 2
-
-    def foo_x(self):
-        self.x = self.x + self.y
-
-    def foo_xx(self):
-        self.foo_x()
+        self.a = 1
+        self.b = 2
 
 a = A()
-a.foo_x()
-a.foo_xx()
+a.a + a.b
 """
 examples.append(
     Example(code5,
-            'Demonstrates that the method know each other'
+            'The validator should understand that a.a and a.b are ints, so the addition operator is valid.'
     )
 )
 
+#fails for the same reason as 2
 code6 = """
 class A(object):
-    def __init__(self):
-        self.x = 1
-        self.y = 2
+    def __init__(self, x, y):
+        self.a = x
+        self.b = y
 
-    def foo_z(self):
-        self.z = 3
+a = A('Hello', 1)
+a.a.isalpha()
+a.b.isalpha()
+"""
+examples.append(
+    Example(code6,
+            'Create object of type A having two attributes, a is string and b is int.'
+            'The method isalpha() is a builtin method for strings only.'
+            'Therefore the first call should be legal, and the second should state that the method does not exists.'
+    )
+)
+
+# For some reason we get an error while registering foo_x because the abstract state doesn't recognize root#a
+# but when we register foo_x it recognizes root#a, maybe because it is during the preciuos registration it created
+# root#a
+code7 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+        self.b = 2
+
+    def foo_a(self):
+        self.a += self.b
+
+    def foo_c(self):
+        self.a += self.b + self.c
+
+a = A()
+a.foo_a()
+a.foo_c()
+a.foo_b()
+"""
+examples.append(
+    Example(code7,
+            'Created object of type A, a.foo_a() should work fine, '
+            'a.foo_c() should state that a does not have attribute c, '
+            'and a.foo_b() should state that a does not have method foo_b'
+    )
+)
+
+code8 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+        self.b = 2
+
+    def foo_a(self):
+        self.a += self.b
+
+    def foo_aa(self):
+        self.foo_a()
+
+a = A()
+a.foo_a()
+a.foo_aa()
+"""
+examples.append(
+    Example(code8,
+            'Demonstrates the call from one method to another in the same object.'
+    )
+)
+
+code9 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+        self.b = 2
+
+    def foo_c(self):
+        self.c = 3
 
 a = A()
 a.m = 2
 a.m
-a.foo_z()
-a.z
+a.foo_c()
+a.c
 """
 examples.append(
-    Example(code6,
+    Example(code9,
             'Demonstrates adding attributes on the fly')
 )
-#fails for the same reason as 2
-#we don't identify that members do not exist
-code7 = """
-class A(object):
-    def __init__(self):
-        self.x = 1
 
-class B(object):
-    def __init__(self):
-        self.y = 1
-
-a = A()
-b = B()
-a.x + b.y
-a.x + b.x
-"""
-examples.append(
-    Example(code7,
-            'Demonstrates using two different classes. a.x + b.y should be fine, the last call should state that b.x does not exists')
-)
 #fails for the same reason as 7
-code8 = """
+code10 = """
 class A(object):
     def __init__(self):
-        self.x = 1
+        self.a = 1
 
 class B(A):
     def __init__(self):
-        self.y = 2
+        self.b = 2
 
 b = B()
-b.y
-b.x
+b.b
+b.a
 """
 examples.append(
-    Example(code8,
-            'Demonstrate class inheritance - although B extends A, since B did not call to super ctor, b.x should not exists')
+    Example(code10,
+            'Demonstrate class inheritance - although B extends A, since B did not call to super ctor, '
+            'b.a should not exists')
 )
+
 #fails because we mis-handle the super call
-code9 = """
+code11 = """
 class A(object):
     def __init__(self):
-        self.x = 1
+        self.a = 1
 
 class B(A):
     def __init__(self):
         super(B, self).__init__()
-        self.y = 2
+        self.b = 2
 
 b = B()
-b.x + b.y
-"""
-examples.append(
-    Example(code9,
-            'In this example, b.x+b.y should work, since we called the super ctor')
-)
-#fails because the abstract state doesn't lub well
-code10 = """
-class A(object):
-    def __init__(self):
-        self.x = 1
-
-for x in [A(), A(), A()]:
-    x.x
-
-for x in [A(), A(), A()]:
-    x.y
-"""
-examples.append(
-    Example(code10,
-            'List example')
-)
-#fails for the same reason as 10
-code11 = """
-class A(object):
-    def __init__(self):
-        self.x = 1
-
-class B(object):
-    def __init__(self):
-        self.y = 1
-
-for x in [A(), B()]:
-    x.z
+b.a
+b.b
 """
 examples.append(
     Example(code11,
-            'List example2')
+            'In this example, b.a and b.b exists, since we called the super ctor')
 )
-#fails because we mis-treat attribute assignment
+
+#fails because the abstract state doesn't lub well
 code12 = """
 class A(object):
     def __init__(self):
-        self.x = 1
+        self.a = 1
 
-class B(object):
-    def __init__(self):
-        self.y = 1
+for x in [A(), A(), A()]:
+    x.a
 
-a = A()
-b = B()
-b.y = a
-b.b.x
-a.x = 'a'
-b.b.x
+for x in [A(), A(), A()]:
+    x.b
 """
 examples.append(
     Example(code12,
-            'Complex attribute example. Note the "pointers"')
+            'List example, we store the list as a LUB of all the elements,'
+            'Easy to see that x.a should be fine and x.b does not exists.')
 )
+
+#fails for the same reason as 10
+code13 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+
+class B(object):
+    def __init__(self, x):
+        self.a = x
+        self.b = 1
+
+a = A()
+b = B(a)
+for x in [a, b]:
+    x.a
+    x.b
+    x.c
+"""
+examples.append(
+    Example(code13,
+            'List example 2')
+)
+
+#fails for the same reason as 10
+code14 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+
+class B(object):
+    def __init__(self, x):
+        self.a = x
+        self.b = 1
+
+a1 = A()
+a2 = A()
+l = [a1, a2]
+l.append(B(a1))
+
+for x in l:
+    x.a
+    x.b
+    x.c
+"""
+examples.append(
+    Example(code14,
+            'Append example 2')
+)
+
+#fails because we mis-treat attribute assignment
+code15 = """
+class A(object):
+    pass
+
+a = A()
+if True:
+    a.a = 1
+else:
+    a.a = 1
+    a.b = 2
+a.a
+a.b
+"""
+examples.append(
+    Example(code15,
+            'If-Else example, a.a should exists in any case, a.b exists just for the else')
+)
+
+code16 = """
+class A(object):
+    pass
+
+a = A()
+try:
+    a.a = 2
+    a.b = 3
+except:
+    a.a = 2
+    a.c = 3
+
+a.a
+a.b
+a.c
+"""
+examples.append(
+    Example(code16,
+            'try-except example.')
+)
+
+code17 = """
+class A(object):
+    pass
+
+a = A()
+try:
+    a.a = 2
+    a.b = 3
+except:
+    a.a = 2
+    a.c = 3
+finally:
+    a.d = 2
+
+a.a
+a.b
+a.c
+a.d
+"""
+examples.append(
+    Example(code17,
+            'try-except-finally example.')
+)
+
+code18 = """
+class A(object):
+    pass
+
+def adding_a(x):
+    x.a = 1
+
+a = A()
+adding_a(a)
+a.a
+"""
+examples.append(
+    Example(code18,
+            'Calling functions examples')
+)
+
+code19 = """
+class A(object):
+    def __init__(self, x):
+        self.a = x
+
+class B(object):
+    def foo(self):
+        self.b = 2
+
+class C(object):
+    def foo(self):
+        self.c = 2
+
+b = B()
+c = C()
+
+if True:
+    a = A(b)
+else:
+    a = A(c)
+
+a.a.foo()
+
+a.b
+a.c
+"""
+examples.append(
+    Example(code19,
+            'Polymorphism')
+)
+
 
 import ast
 
@@ -262,15 +440,16 @@ Next, the code will run through the validatior.
 
 Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
 
-There are 12 examples. Have fun! :)
+There are 19 examples. Have fun! :)
 """
 print greetings
-raw_input('Press enter to start')
+raw_input('Hit any key to start')
 print
 
 for example in examples:
     print example.desc
     print 'Orignal Code:'
+    print '============='
     print example.code
     print
     simple = simpler.make_simple(example.code)
@@ -283,7 +462,7 @@ for example in examples:
     visitor = ProgramVisitor()
     visitor.visit(ast_tree)
 
-    raw_input('Press enter to the next example')
+    raw_input('Press any key to the next example')
     print
 
 print 'Thank you'

@@ -3,22 +3,31 @@ import ast
 from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import  simpler
 
-classes = {}
-functions = {}
-varz = {}
 
 code = """
 class A(object):
-    def __init__(self):
-        self.x = 1
+    def __init__(self, a):
+        self.a = a
 
-class B(A):
-    def __init__(self):
-        super(B, self).__init__()
-        self.y = 2
+class B(object):
+    def __init__(self, b):
+        self.b = b
 
-b = B()
-b.x + b.y
+a = A(1)
+b = B(a)
+
+# First group
+a.a
+b.b
+b.b.a
+
+# Second group
+b.b.b
+a.b
+
+# Third group
+a.c = 2
+b.b.c
 """
 
 code = """
