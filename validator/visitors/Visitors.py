@@ -229,6 +229,7 @@ class CallVisitor(ast.NodeVisitor):
                 if _self + '_var_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
                         actual_var_name(self.stack, _self + '_var_lub')):
                     clone = self.abstract_state.clone()
+                    # TODO what is forget_var?
                     clone.forget_var(actual_var_name(self.stack, _self + '_var_lub'))
                     register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
                     self.abstract_state.lub(clone)
@@ -539,24 +540,28 @@ class ProgramVisitor(ast.NodeVisitor):
                 self.abstract_state.lub(handler_abstract_states)
 
     def visit_Return(self, node):
+        # if the statement is "return x" then to_name is "x"
         to_name = actual_var_name(self.stack, getattr(node.value, node.value._fields[0]))
-        
+
         make_top = False
         if to_name.startswith(TOP_MAGIC_NAME):
             make_top = True
 
+        print 'visiting return. make top: %s' %make_top
+            
         if self.abstract_state.has_var('ret_val'):
             temp_state = self.abstract_state.clone()
             if make_top is False:
                 temp_state.set_var_to_var('ret_val', to_name)
             else:
-                temp_state.add_var_and_set_to_top('ret_val')
+                temp_state.add_var_and_set_to_top('ret_val', force = True)
             self.abstract_state.lub(temp_state)
         else:
             if make_top is False:
                 self.abstract_state.set_var_to_var('ret_val', to_name)
             else:
-                self.abstract_state.add_var_and_set_to_top('ret_val')
+                self.abstract_state.add_var_and_set_to_top('ret_val', force = True)
+        print 'visited return'
         print "assigned {from_var} to {to_var}".format(from_var=to_name, to_var="ret_val")
 
 

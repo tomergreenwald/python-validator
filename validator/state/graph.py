@@ -589,6 +589,55 @@ class Graph(object):
         for (e0, e1) in edge_pairs:
             e0.knowledge.inplace_lub(e1.knowledge)
     
+    def _merge_vertices(self, h):
+        """
+        merge all vertices in h, where h is a set of tuples, each tuple is a 
+        set of equal vertices which needs to be merged
+        """
+        for m in h:
+            u0 = m[0]
+            for v in m[1:]:
+                self.vertex_lub(u0, self, v)
+                
+                # merge parents
+                for lbl in self.vertices[v].all_parents.keys():
+                    v_parents = self.vertices[v].all_parents[lbl]
+                    
+                    if not self.vertices[u0].all_parents.has_key(lbl):
+                        u0_parents = set()
+                    else:
+                        u0_parents = set([x.parent for x in self.vertices[u0].all_parents[lbl]])
+                        
+                    for e in v_parents:
+                        if e.parent in u0_parents:
+                            # e.parent has two sons with the same label
+                            assert False
+                        else:
+                            e.son = u0
+                            self.vertices[u0].all_parents.add_element(lbl, e)
+                    
+                # merge sons
+                for lbl in self.vertices[v].sons.keys():
+                    e_v = self.vertices[v].sons[lbl]
+                    
+                    if self.vertices[u0].sons.has_key(lbl):
+                        # remove unnecessary edge from son
+                        self.vertices[e_u0.son].all_parents.remove_parent(lbl, e_v)
+                        
+                        e_u0 = self.vertices[u0].sons[lbl]
+                        # found common son, lub the knowledge of the edge
+                        e_u0.knowledge.inplace_lub(e_v.knowledge)
+                        # and lub the vertex
+                        self.vertex_lub(e_u0.son, self, e_v.son)
+                    else:
+                        # add son to u0
+                        e_v.parent = u0
+                        self.vertices[v].sons[lbl] = e_v
+                
+                # clear pointers to edges
+                self.vertices[v].sons.clear()
+                self.vertices[v].all_parents.clear()
+        
     def _find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs):
         """
         result:
@@ -596,14 +645,16 @@ class Graph(object):
             common_edges: common edges between self graph and other graph
             vertices_pairs: pairs (y,x) of vertices in cartesian(other.vertices.keys(), self.vertices.keys())
                             which are the same vertices
+        this function also merges vertices if needed
         """
         common_vertices.add(0)
+        vertices_pairs_help = set()
         
         q = deque([(0, 0)])
         # go over the whole graph to find common vertices and edges
         while len(q):
             (x, y) = q.popleft()
-            vertices_pairs.add((y, x))
+            vertices_pairs_help.add((y, x))
             common = set(self.vertices[x].sons.keys()).intersection(other.vertices[y].sons.keys())
             for c in common:
                 e0 = self.vertices[x].sons[c]
@@ -615,6 +666,38 @@ class Graph(object):
                     q.append((s0, s1))
                     common_vertices.add(s0)
                     common_vertices.add(s1)
+        
+        # find vertices that needs to be merged
+        d0 = dict()
+        d1 = dict()
+        was_y = set()
+        for (y, x) in vertices_pairs_help:
+            if y not in was_y:
+                vertices_pairs.add((y, x))
+            was_y.add(y)
+            
+            d0[y] = d0.get(y, []) + [x]
+            d1[x] = d1.get(x, []) + [y]
+        
+        h0 = set()
+        for y0 in d0.keys():
+            if len(d0[y0]) > 1:
+                h0.add(tuple(d0[y0]))
+        
+        h1 = set()
+        for x0 in d1.keys():
+            if len(d1[x0]) > 1:
+                h1.add(tuple(d1[x0]))
+        
+        # merge all self vertices that appears in h0, and all other's vertices
+        # that appears in h1. merge should contain:
+        # * vertex_lub
+        # * renaming name of some vertex
+        # * merge of all_parents. mutual parents (with respect to edge label) cannot exist
+        # * merge of all sons. if mutual sons exists- lub the knowledge of the edges, and
+        #   lub the vertices
+        self._merge_vertices(h0)
+        other._merge_vertices(h1)
     
     def _merge_cons(self, other):
         """
@@ -664,9 +747,6 @@ class Graph(object):
                         # check if this vertex exists also in self graph
                         if self.vertices[e.parent].sons.has_key(e.label):
                             if self.vertices[e.parent].sons[e.label].son != e.son:
-                                print 'problematic edge\n%s\n' %e
-                                print 'other v %d' %v
-                                print 'self parent vertex\n%s' %self.vertices[e.parent]
                                 assert False
                             # edge already exists in self graph, so this will be handled somewhere
                             pass
@@ -674,7 +754,6 @@ class Graph(object):
                             # this edge is new, but connects two common vertices
                             self.make_parent(e.son, e.parent, e.label, LE(LE.L_MAY_HAVE))
                     else:
-                        print 'EDGE BECOMES MAY'
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
                         
                         if not son_common and not parent_common:
@@ -736,20 +815,8 @@ class Graph(object):
         # perform lub between the common edges
         self._handle_common_edges(common_edges)
         
-        print 'self ret val', self.vertices[0].sons['ret_val']
-        print 'other ret val', other.vertices[0].sons['ret_val']
-        print 'vertices pairs', vertices_pairs
-        print self
-        print 
-        print other
-        
-        print 'other vertices %s' %other.vertices.keys()
         # rename equal vertices of other graph
         other.rename_vertices_indices(dict(vertices_pairs))
-        
-        print 'common vertices %s' %common_vertices
-        print 'self vertices %s' %self.vertices.keys()
-        print 'other vertices %s' %other.vertices.keys()
         
         # add other graph vertices and edges to self graph
         self._add_other_graph(other, common_vertices)
