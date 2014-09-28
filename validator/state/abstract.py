@@ -82,7 +82,7 @@ class AbstractState(object):
         """
         return self._get_var_index(var, False)[0] >= 0
     
-    def remove_var(self, var, add_tops = True):
+    def remove_var(self, var, add_tops = False):
         """
         call this when a variable is not relevant anymore
         if add_tops is True, the path to this vertex will be considered as L_MUST_HAVE
