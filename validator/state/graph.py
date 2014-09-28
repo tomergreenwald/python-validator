@@ -622,7 +622,7 @@ class Graph(object):
                     
                     if self.vertices[u0].sons.has_key(lbl):
                         # remove unnecessary edge from son
-                        self.vertices[e_u0.son].all_parents.remove_parent(lbl, e_v)
+                        self.vertices[e_v.son].remove_parent(lbl, e_v)
                         
                         e_u0 = self.vertices[u0].sons[lbl]
                         # found common son, lub the knowledge of the edge

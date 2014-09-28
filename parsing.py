@@ -52,6 +52,18 @@ a.foo_z()
 # a.foo_y()
 """
 
+code = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+
+for x in [A(), A(), A()]:
+    x.a
+
+for x in [A(), A(), A()]:
+    x.b
+"""
+
 simple = simpler.make_simple(code)
 print simple
 ast_tree = ast.parse(simple)
