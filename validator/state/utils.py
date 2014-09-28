@@ -3,13 +3,14 @@ import types
 import ast
 
 TOP_MAGIC_NAME = "MAKE_THIS_VAR_AS_TOP"
-
-def tmp_f():
-    pass
-tmp_int = 5
-class tmp_T(object):
-    def f(self):
-        pass
+INT_FUNCS = set([(int, x) for x in ['__add__', '__and__', '__cmp__', '__div__', \
+                                    '__divmod__', '__lshift__', '__mod__', '__mul__', \
+                                    '__or__', '__pow__', '__radd__', '__rand__', \
+                                    '__rdiv__', '__rdivmod__', '__rfloordiv__', \
+                                    '__rlshift__', '__rmod__', '__rmul__', '__ror__', \
+                                    '__rpow__', '__rrshift__', '__rshift__', \
+                                    '__rsub__', '__rtruediv__', '__rxor__', \
+                                    '__sub__', '__truediv__', '__xor__']])
 
 class TopFunction(object):
     index = -1
@@ -26,6 +27,13 @@ class IntFunction(object):
         return ast.parse('\ndef func_%s_%d(%s):\n    tmptmptmpvarvarvar = 0\n    return tmptmptmpvarvarvar\n' %('MAKE_THIS_AS_INT', IntFunction.index, ', '.join(['arg%d' %j for j in xrange(num_args)]))).body[0]
         
 PRIMITIVES = set([eval('types.%s' %x) for x in dir(types) if x.endswith('Type')])
+
+def tmp_f():
+    pass
+tmp_int = 5
+class tmp_T(object):
+    def f(self):
+        pass        
 CALLABLES = set(map(type, [tmp_f, tmp_int.__add__, tmp_T().f]))
 
 def is_top_func(f):

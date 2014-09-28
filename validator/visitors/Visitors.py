@@ -242,7 +242,6 @@ class CallVisitor(ast.NodeVisitor):
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
                 print 'possible methods are %s' %' '.join([x.name for x in methods])
                 self.abstract_state.add_var_and_set_to_botom('ret_val')
-                print 'query abstract state ret_val %s' %self.abstract_state.query('ret_val', False)
                 
                 if len(methods) > 0:
                     abstract_state_clean = self.abstract_state.clone()
@@ -251,7 +250,8 @@ class CallVisitor(ast.NodeVisitor):
                         evaluate_function(method, [ast.Name(id=_self)] + node.args, node.keywords, self.stack,
                                           abstract_state_cpy,
                                           self.functions)
-                        print 'query abstract_state_cpy ret_val %s' %abstract_state_cpy.query('ret_val', False)
+                        if len(abstract_state_cpy.query('ret_val', False)) > 0:
+                            self.abstract_state.remove_var('ret_val', False)
                         self.abstract_state.lub(abstract_state_cpy)
                 else:
                     raise Exception(
@@ -260,12 +260,6 @@ class CallVisitor(ast.NodeVisitor):
                             obj=_self))
         else:
             raise Exception("not supported")
-
-        # print 'GGGGGGGGG name %s query %s' %(self.name, self.abstract_state.query("ret_val", False))
-        (vind, errs) = self.abstract_state._get_var_index('ret_val', False)
-        if vind >= 0:
-            print 'errs: %s' %errs
-            print 'vertex: %s' %self.abstract_state.graph.vertices[vind]
         
         # TODO what happens in case Alerts exists in query? and in case Errors exists in query?
         if self.name and len(self.abstract_state.query("ret_val", False)) == 0:

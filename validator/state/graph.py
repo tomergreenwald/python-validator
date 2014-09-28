@@ -2,7 +2,7 @@ import logging
 import copy
 from collections import deque
 from lattice import LatticeElement as LE
-from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func
+from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func, INT_FUNCS
 # logging.basicConfig(level = logging.DEBUG)
 
 """
@@ -291,11 +291,11 @@ class Graph(object):
                 self._add_const_to_vertex(son_ind, son_const)
                 if is_callable(son_const):
                     # add metadata function to son
-                    if type(c) is int and son_label == '__add__':
+                    if (type(c), son_label) in INT_FUNCS:
                         self.vertices[son_ind].metadata.add(IntFunction.get(2))
                         self._consolidate_metadata(self.vertices[son_ind])
                     else:
-                        self.vertices[son_ind].metadata.add(TopFunction.get(2))
+                        self.vertices[son_ind].metadata.add(TopFunction.get(30)) # TODO try instead of 30 arguments use *args
                         self._consolidate_metadata(self.vertices[son_ind])
                     
             except:
