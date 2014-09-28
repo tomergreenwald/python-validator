@@ -29,14 +29,18 @@ class A(object):
 
     def foo_x(self):
         self.x = self.x + self.y
+        self.z = self.x + self.y
+        self.w = self.z + self.y + self.x
 
     def foo_z(self):
-        self.x = self.x + self.y + self.z
+        # self.x = self.x + self.y + self.z
+        self.need_int = self.w
+        self.need_top = self.y * self.x
 
 a = A()
 a.foo_x()
 a.foo_z()
-a.foo_y()
+# a.foo_y()
 """
 
 simple = simpler.make_simple(code)

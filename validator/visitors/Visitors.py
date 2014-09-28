@@ -201,6 +201,7 @@ class CallVisitor(ast.NodeVisitor):
         self.classes = classes
 
     def visit_Call(self, node):
+        print 'visit_Call id of self %d' %id(self.abstract_state)
         if type(node.func) is ast.Name:
             function_name = node.func.id
             if function_name in self.classes:
@@ -241,18 +242,29 @@ class CallVisitor(ast.NodeVisitor):
                 #should return a list of contexts saved for each method (one per method impl)
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
                 print 'possible methods are %s' %' '.join([x.name for x in methods])
-                self.abstract_state.add_var_and_set_to_botom('ret_val')
+                # self.abstract_state.add_var_and_set_to_botom('ret_val')
                 
                 if len(methods) > 0:
                     abstract_state_clean = self.abstract_state.clone()
+                    commulative_lub = None
                     for method in methods:
                         abstract_state_cpy = abstract_state_clean.clone()
                         evaluate_function(method, [ast.Name(id=_self)] + node.args, node.keywords, self.stack,
                                           abstract_state_cpy,
                                           self.functions)
                         if len(abstract_state_cpy.query('ret_val', False)) > 0:
+                            # copy doesnt contain ret_val
                             self.abstract_state.remove_var('ret_val', False)
-                        self.abstract_state.lub(abstract_state_cpy)
+                            
+                        if commulative_lub is None:
+                            commulative_lub = abstract_state_cpy
+                        else:
+                            commulative_lub.lub(abstract_state_cpy)
+                        
+                        # self.abstract_state.lub(abstract_state_cpy)
+                        
+                    self.abstract_state.set_to_state(commulative_lub)
+
                 else:
                     raise Exception(
                         'Method {method} was called for {obj}, but no implementation exists'.format(
@@ -268,8 +280,9 @@ class CallVisitor(ast.NodeVisitor):
             self.abstract_state.remove_var("ret_val", False)
         else:
             # TODO i think we need to remove ret_val in any case...
-            self.abstract_state.remove_var("ret_val", False)
-
+            # self.abstract_state.remove_var("ret_val", False)
+            pass
+        
 
 class AssignVisitor(CallVisitor):
     def __init__(self, name, stack, abstract_state, functions, classes):

@@ -3,8 +3,9 @@ import types
 import ast
 
 TOP_MAGIC_NAME = "MAKE_THIS_VAR_AS_TOP"
+# TODO add more known functions, for floats, strings, and non-boolean functions
 INT_FUNCS = set([(int, x) for x in ['__add__', '__and__', '__cmp__', '__div__', \
-                                    '__divmod__', '__lshift__', '__mod__', '__mul__', \
+                                    '__divmod__', '__lshift__', '__mod__', '__mul__TMPTMPTMPCHANGEMETODO', \
                                     '__or__', '__pow__', '__radd__', '__rand__', \
                                     '__rdiv__', '__rdivmod__', '__rfloordiv__', \
                                     '__rlshift__', '__rmod__', '__rmul__', '__ror__', \
