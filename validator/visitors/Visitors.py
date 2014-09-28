@@ -201,7 +201,6 @@ class CallVisitor(ast.NodeVisitor):
         self.classes = classes
 
     def visit_Call(self, node):
-        print 'visit_Call id of self %d' %id(self.abstract_state)
         if type(node.func) is ast.Name:
             function_name = node.func.id
             if function_name in self.classes:
