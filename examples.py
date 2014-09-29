@@ -427,6 +427,27 @@ examples.append(
             'Polymorphism')
 )
 
+code20 = """
+class A(object):
+    def __init__(self, x):
+        self.a = x
+
+    def get_a(self):
+        self.a.b = 2
+        return self.a
+
+a = A(2)
+b = A(a)
+
+aa = b.get_a()
+aa.a
+aa.b
+"""
+examples.append(
+    Example(code20,
+            'Return value - get_a should return object of type A with two attributes - a and b')
+)
+
 
 import ast
 
@@ -440,7 +461,7 @@ Next, the code will run through the validatior.
 
 Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
 
-There are 19 examples. Have fun! :)
+There are 20 examples. Have fun! :)
 """
 print greetings
 raw_input('Hit any key to start')
