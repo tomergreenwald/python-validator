@@ -229,8 +229,7 @@ class CallVisitor(ast.NodeVisitor):
                 if _self + '_var_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
                         actual_var_name(self.stack, _self + '_var_lub')):
                     clone = self.abstract_state.clone()
-                    # TODO what is forget_var?
-                    clone.forget_var(actual_var_name(self.stack, _self + '_var_lub'))
+                    clone.remove_var(actual_var_name(self.stack, _self + '_var_lub'))
                     register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
                     self.abstract_state.lub(clone)
                     print 'LUB for %s_var_lub' % _self
