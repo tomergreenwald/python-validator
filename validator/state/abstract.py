@@ -417,11 +417,18 @@ class AbstractState(object):
         callable = self.graph.get_callable(var_ind)
         res = self.graph.get_metadata(var_ind)
         
-        # TODO do we want to mark this vertex as callable? probably yes, but with what metadata?
+        set_to_callable = False
+        
         if callable.val == LE.L_MUST_NOT_HAVE or callable.val == LE.L_BOTOM:
             errors.append(("Error", "method %s is not callable" %(method_name)))
+            set_to_callable = True
         elif callable.val == LE.L_MAY_HAVE:
             errors.append(("Alert", "method %s might be uncallable" %(method_name)))
+            set_to_callable = True
+        
+        if set_to_callable:
+            # we want to mark this vertex as callable. its metadata should be TopFunction (this is the case when it is TOP)
+            self.graph.set_callable(var_ind)
         
         # someone outside is running on the result, which may be varied during its loop, so we copy it
         # the objects that will be copied are ast nodes, so this is ok
