@@ -639,7 +639,8 @@ class Graph(object):
                 self.vertices[v].sons.clear()
                 self.vertices[v].all_parents.clear()
         
-    def _find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs, self_merged):
+    def _find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs, \
+    self_merged, other_merged):
         """
         result:
             common_vertices: common vertices between self graph and other graph
@@ -647,6 +648,7 @@ class Graph(object):
             vertices_pairs: pairs (y,x) of vertices in cartesian(other.vertices.keys(), self.vertices.keys())
                             which are the same vertices
             self_merged: a dictionary from vertex index to all other indices it was merged with (only concerning self graph)
+            other_merged: like self_merged but for other
         this function also merges vertices if needed
         """
         common_vertices.add(0)
@@ -705,6 +707,10 @@ class Graph(object):
             for (u,v) in itertools.combinations(tup, 2):
                 self_merged[u] = self_merged.get(u, []) + [v]
                 self_merged[v] = self_merged.get(v, []) + [u]
+        for tup in h1:
+            for (u,v) in itertools.combinations(tup, 2):
+                other_merged[u] = other_merged.get(u, []) + [v]
+                other_merged[v] = other_merged.get(v, []) + [u]
     
     def _merge_cons(self, other):
         """
@@ -754,7 +760,7 @@ class Graph(object):
                         # check if this vertex exists also in self graph
                         if self.vertices[e.parent].sons.has_key(e.label):
                             if self.vertices[e.parent].sons[e.label].son != e.son and \
-                            e.son not in self_merged[self.vertices[e.parent].sons[e.label].son]:
+                            e.son not in self_merged.get(self.vertices[e.parent].sons[e.label].son, []):
                             # if self.vertices[e.parent].sons[e.label].son != e.son:
                                 print 'assert false because %d != %d' %(self.vertices[e.parent].sons[e.label].son, e.son)
                                 print 'but self_merged[%d] = %s' %(e.son, self_merged[e.son])
@@ -787,7 +793,7 @@ class Graph(object):
         # vertices were added
         self.next_ind = max(self.vertices.keys()) + 1
     
-    def _modify_existent_vertices(self, common_vertices, other):
+    def _modify_existent_vertices(self, common_vertices, other, other_merged):
         """
         vertices and edges that are in self graph and not in other's, should be modified
         """
@@ -800,7 +806,12 @@ class Graph(object):
                     # the two endpoints should exists, and there should be a label connecting them
                     if e.son in common_vertices and e.parent in common_vertices:
                         if other.vertices[e.parent].sons.has_key(e.label):
-                            if other.vertices[e.parent].sons[e.label].son != e.son:
+                            if other.vertices[e.parent].sons[e.label].son != e.son and \
+                            e.son not in other_merged.get(other.vertices[e.parent].sons[e.label].son, []):
+                                print 'problematic edge'
+                                print e
+                                print '%d != %d' %(other.vertices[e.parent].sons[e.label].son, e.son)
+                                print 'other_merged %s' %other_merged
                                 assert False
                             edge_is_new = False
                             
@@ -819,12 +830,14 @@ class Graph(object):
         common_edges = set()
         common_vertices = set()
         self_merged = dict()
+        other_merged = dict()
         
         # rename constants of other
         self._merge_cons(other)
         
         # find the intersection of both graphs
-        self._find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs, self_merged)
+        self._find_common_vertices_and_edges(other, common_vertices, common_edges, \
+                                             vertices_pairs, self_merged, other_merged)
         
         # lub pairs of equal vertices
         for (y, x) in vertices_pairs:
@@ -833,14 +846,29 @@ class Graph(object):
         # perform lub between the common edges
         self._handle_common_edges(common_edges)
         
+        mapping_dict = dict(vertices_pairs)
+        
         # rename equal vertices of other graph
-        other.rename_vertices_indices(dict(vertices_pairs))
+        other.rename_vertices_indices(mapping_dict)
+        
+        # rename merged vertices of other
+        other_merged = self.rename_dict(mapping_dict, other_merged)
         
         # add other graph vertices and edges to self graph
         self._add_other_graph(other, common_vertices, self_merged)
         
         # modify self graph
-        self._modify_existent_vertices(common_vertices, other)
+        self._modify_existent_vertices(common_vertices, other, other_merged)
+    
+    @staticmethod
+    def rename_dict(mapping, dict_to_rename):
+        """
+        """
+        res = dict()
+        for k,v in dict_to_rename.items():
+            res[mapping.get(k, k)] = [mapping.get(x, x) for x in v]
+        
+        return res
     
     def fill_graphs(self, other):
         """
