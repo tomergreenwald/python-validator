@@ -1,7 +1,7 @@
 import ast
 
 from validator.state.abstract import AbstractState
-from validator.state.utils import TOP_MAGIC_NAME
+from validator.state.utils import TOP_MAGIC_NAME, BasicMutableClass
 from validator.representation.ClassRepresentation import ClassRepresentation
 
 
@@ -491,6 +491,7 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles for loop.
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
+        print 'visit_For'
         register_assignment(self.stack, self.abstract_state, node.iter + '_vars_lub', node.target.id)
         assess_list(node.body, self.stack, self.abstract_state, self.functions)
 
@@ -602,12 +603,10 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     """
     :param clazz: The ClassRepresentation of the class
     """
-    # we use TTT becuase object() is primitive (can not add attributes to object())
-    class TTT(object):
-        pass
-
+    
     print "Initializing object - ", target
-    register_assignment(stack, abstract_state, None, target, new_object=TTT())
+    # we use BasicMutableClass becuase object() is primitive (can not add attributes to object())
+    register_assignment(stack, abstract_state, None, target, new_object=BasicMutableClass())
 
     iter_clazz = clazz
     while iter_clazz is not 'object' and '__init__' not in iter_clazz.methods:

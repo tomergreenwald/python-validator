@@ -1,6 +1,7 @@
 import logging
 import copy
 from collections import deque
+import itertools
 from lattice import LatticeElement as LE
 from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func, INT_FUNCS
 # logging.basicConfig(level = logging.DEBUG)
@@ -638,13 +639,14 @@ class Graph(object):
                 self.vertices[v].sons.clear()
                 self.vertices[v].all_parents.clear()
         
-    def _find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs):
+    def _find_common_vertices_and_edges(self, other, common_vertices, common_edges, vertices_pairs, self_merged):
         """
         result:
             common_vertices: common vertices between self graph and other graph
             common_edges: common edges between self graph and other graph
             vertices_pairs: pairs (y,x) of vertices in cartesian(other.vertices.keys(), self.vertices.keys())
                             which are the same vertices
+            self_merged: a dictionary from vertex index to all other indices it was merged with (only concerning self graph)
         this function also merges vertices if needed
         """
         common_vertices.add(0)
@@ -698,6 +700,11 @@ class Graph(object):
         #   lub the vertices
         self._merge_vertices(h0)
         other._merge_vertices(h1)
+        
+        for tup in h0:
+            for (u,v) in itertools.combinations(tup, 2):
+                self_merged[u] = self_merged.get(u, []) + [v]
+                self_merged[v] = self_merged.get(v, []) + [u]
     
     def _merge_cons(self, other):
         """
@@ -727,7 +734,7 @@ class Graph(object):
         # constants were added
         self.next_cons = max(self.all_cons.keys() + [-1]) + 1
     
-    def _add_other_graph(self, other, common_vertices):
+    def _add_other_graph(self, other, common_vertices, self_merged):
         """
         add to self graph vertices and edges that are in other graph
         """
@@ -746,7 +753,16 @@ class Graph(object):
                         # by this point, vertices had already been renamed
                         # check if this vertex exists also in self graph
                         if self.vertices[e.parent].sons.has_key(e.label):
-                            if self.vertices[e.parent].sons[e.label].son != e.son:
+                            if self.vertices[e.parent].sons[e.label].son != e.son and \
+                            e.son not in self_merged[self.vertices[e.parent].sons[e.label].son]:
+                            # if self.vertices[e.parent].sons[e.label].son != e.son:
+                                print 'assert false because %d != %d' %(self.vertices[e.parent].sons[e.label].son, e.son)
+                                print 'but self_merged[%d] = %s' %(e.son, self_merged[e.son])
+                                print 'but self_merged[%d] = %s' %(self.vertices[e.parent].sons[e.label].son, self_merged[self.vertices[e.parent].sons[e.label].son])
+                                print 'problematic edge'
+                                print e
+                                print 'self parent'
+                                print self.vertices[e.parent]
                                 assert False
                             # edge already exists in self graph, so this will be handled somewhere
                             pass
@@ -798,15 +814,17 @@ class Graph(object):
         self_inds are vertices that exists only in self
         other_inds are vertices that exists only in other
         """
+
         vertices_pairs = set()
         common_edges = set()
         common_vertices = set()
+        self_merged = dict()
         
         # rename constants of other
         self._merge_cons(other)
         
         # find the intersection of both graphs
-        self._find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs)
+        self._find_common_vertices_and_edges(other, common_vertices, common_edges, vertices_pairs, self_merged)
         
         # lub pairs of equal vertices
         for (y, x) in vertices_pairs:
@@ -819,7 +837,7 @@ class Graph(object):
         other.rename_vertices_indices(dict(vertices_pairs))
         
         # add other graph vertices and edges to self graph
-        self._add_other_graph(other, common_vertices)
+        self._add_other_graph(other, common_vertices, self_merged)
         
         # modify self graph
         self._modify_existent_vertices(common_vertices, other)

@@ -60,8 +60,8 @@ class A(object):
 for x in [A(), A(), A()]:
     x.a
 
-for x in [A(), A(), A()]:
-    x.b
+# for x in [A(), A(), A()]:
+#     x.b
 """
 
 simple = simpler.make_simple(code)
