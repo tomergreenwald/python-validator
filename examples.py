@@ -338,6 +338,50 @@ examples.append(
             'If-Else example, a.a should exists in any case, a.b exists just for the else')
 )
 
+code151 = """
+class A(object):
+    pass
+
+a = A()
+
+if True:
+    a.a = 1
+
+    if True:
+        a.b = 2
+        a.c = 3
+    else:
+        a.b = 2
+        a.d = 3
+
+    if True:
+        a.e = 3
+else:
+    if True:
+        a.a = 1
+        a.b = 2
+        a.c = 3
+    else:
+        a.a = 1
+        a.b = 2
+        a.d = 3
+
+    a.f
+
+a.a
+a.b
+a.c
+a.d
+a.e
+a.f
+"""
+examples.append(
+    Example(code15,
+            'Advenced If-Else example.'
+            'a.a and a.b exists in all the paths, '
+            'others may exists and may not, depends on the boolean expressions results.')
+)
+
 code16 = """
 class A(object):
     pass
