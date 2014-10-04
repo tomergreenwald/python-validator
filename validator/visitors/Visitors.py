@@ -501,8 +501,18 @@ class ProgramVisitor(ast.NodeVisitor):
             self.abstract_state.lub(orelse_state)
 
     def visit_TryFinally(self, node):
-        for expr in node.body:
-            self.visit(expr)
+        if len(node.body) == 1 and type(node.body[0]) is ast.TryExcept:
+            self.visit_TryExcept(node.body[0])
+        else:
+            before_block_abstract_state = self.abstract_state.clone()
+
+            helper = []
+            for expr in node.body:
+                current_abstract_states = before_block_abstract_state.clone()
+                helper.append(expr)
+                assess_list(helper, self.stack, current_abstract_states, self.functions)
+                self.abstract_state.lub(current_abstract_states)
+
         assess_list(node.finalbody, self.stack, self.abstract_state, self.functions)
 
     def visit_TryExcept(self, node):
@@ -513,6 +523,16 @@ class ProgramVisitor(ast.NodeVisitor):
         assess_list(try_block, self.stack, self.abstract_state, self.functions)
 
         # If exception raises during the execution
+
+        # Exception raises in the first expression.
+        for handler in node.handlers:
+            if handler.name:
+                self.abstract_state.set_var_to_const(handler.name.id, 'exception')
+            handler_abstract_states = before_block_abstract_states.clone()
+            assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
+            self.abstract_state.lub(handler_abstract_states)
+
+        # Evaluate 1 expr or more
         helper = []
         for expr in try_block:
             helper.append(expr)
