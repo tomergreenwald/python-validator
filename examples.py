@@ -38,6 +38,26 @@ examples.append(
     )
 )
 
+code9 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+        self.b = 2
+
+    def foo_c(self):
+        self.c = 3
+
+a = A()
+a.m = 2
+a.m
+a.foo_c()
+a.c
+"""
+examples.append(
+    Example(code9,
+            'Demonstrates adding attributes on the fly')
+)
+
 code3 = """
 class A(object):
     def __init__(self, x):
@@ -169,44 +189,27 @@ examples.append(
 
 code8 = """
 class A(object):
-    def __init__(self):
-        self.a = 1
-        self.b = 2
+    def __init__(self, x):
+        self.a = x
 
     def foo_a(self):
-        self.a += self.b
+        self._foo_a()
 
-    def foo_aa(self):
-        self.foo_a()
+    def _foo_a(self):
+        self.a.a = 1
 
-a = A()
+class B(object):
+    pass
+
+b = B()
+a = A(b)
 a.foo_a()
-a.foo_aa()
+a.a.a
 """
 examples.append(
     Example(code8,
             'Demonstrates the call from one method to another in the same object.'
     )
-)
-
-code9 = """
-class A(object):
-    def __init__(self):
-        self.a = 1
-        self.b = 2
-
-    def foo_c(self):
-        self.c = 3
-
-a = A()
-a.m = 2
-a.m
-a.foo_c()
-a.c
-"""
-examples.append(
-    Example(code9,
-            'Demonstrates adding attributes on the fly')
 )
 
 #fails for the same reason as 7
@@ -313,7 +316,7 @@ for x in l:
 """
 examples.append(
     Example(code14,
-            'Append example 2')
+            'Same example but now creating the list with append')
 )
 
 #fails because we mis-treat attribute assignment
@@ -377,7 +380,11 @@ a.d
 """
 examples.append(
     Example(code17,
-            'try-except-finally example.')
+            'try-except-finally example.'
+            'a.a should exists in any case because it will be added in the try part or in the except part.'
+            'a.d should exists because is will be added in the finally part.'
+            'a.b will be added just if the try part did not raised an exception.'
+            'a.c will be added just if the try part raised an exception.')
 )
 
 code18 = """
@@ -396,6 +403,7 @@ examples.append(
             'Calling functions examples')
 )
 
+# NOT WORKING
 code19 = """
 class A(object):
     def __init__(self, x):
