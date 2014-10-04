@@ -283,7 +283,7 @@ class B(object):
 
 a = A()
 b = B(a)
-for x in [a, b]:
+for x in [a, a, b]:
     x.a
     x.b
     x.c
