@@ -241,46 +241,36 @@ class CallVisitor(ast.NodeVisitor):
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
                 print 'possible methods are %s' %' '.join([x.name for x in methods])
                 # self.abstract_state.add_var_and_set_to_botom('ret_val')
-                
-                if len(methods) > 0:
-                    abstract_state_clean = self.abstract_state.clone()
-                    commulative_lub = None
-                    for method in methods:
-                        abstract_state_cpy = abstract_state_clean.clone()
-                        evaluate_function(method, [ast.Name(id=_self, ctx=ast.Load())] + node.args, node.keywords,
-                                          self.stack,
-                                          abstract_state_cpy,
-                                          self.functions)
-                        if len(abstract_state_cpy.query('ret_val', False)) > 0:
-                            # copy doesnt contain ret_val
-                            self.abstract_state.remove_var('ret_val', False)
-                            
-                        if commulative_lub is None:
-                            commulative_lub = abstract_state_cpy
-                        else:
-                            commulative_lub.lub(abstract_state_cpy)
-                        
-                        # self.abstract_state.lub(abstract_state_cpy)
-                        
-                    self.abstract_state.set_to_state(commulative_lub)
+                if errors:
+                    print 'Validation {level} in method {method}'.format(level=errors[0][0], method=errors[0][1])
 
-                else:
-                    raise Exception(
-                        'Method {method} was called for {obj}, but no implementation exists'.format(
-                            method=function_name,
-                            obj=_self))
+                abstract_state_clean = self.abstract_state.clone()
+                commulative_lub = None
+                for method in methods:
+                    abstract_state_cpy = abstract_state_clean.clone()
+                    evaluate_function(method, [ast.Name(id=_self, ctx=ast.Load())] + node.args, node.keywords,
+                                      self.stack,
+                                      abstract_state_cpy,
+                                      self.functions)
+                    if len(abstract_state_cpy.query('ret_val', False)) > 0:
+                        # copy doesnt contain ret_val
+                        self.abstract_state.remove_var('ret_val', False)
+
+                    if commulative_lub is None:
+                        commulative_lub = abstract_state_cpy
+                    else:
+                        commulative_lub.lub(abstract_state_cpy)
+
+                    # self.abstract_state.lub(abstract_state_cpy)
+
+                self.abstract_state.set_to_state(commulative_lub)
         else:
             raise Exception("not supported")
         
-        # TODO what happens in case Alerts exists in query? and in case Errors exists in query?
         if self.name and len(self.abstract_state.query("ret_val", False)) == 0:
             register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
             #self.abstract_state.set_var_to_var(actual_var_name(self.stack, self.name), "ret_val")
             self.abstract_state.remove_var("ret_val", False)
-        else:
-            # TODO i think we need to remove ret_val in any case...
-            # self.abstract_state.remove_var("ret_val", False)
-            pass
         
 
 class AssignVisitor(CallVisitor):
