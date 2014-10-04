@@ -431,6 +431,52 @@ examples.append(
             'a.c will be added just if the try part raised an exception.')
 )
 
+code17 = """
+class A(object):
+    pass
+
+a = A()
+try:
+    a.a = 2
+    a.b = 3
+
+    try:
+        a.c = 1
+    finally:
+        a.d = 2
+except Exception:
+    a.a = 2
+    a.e = 3
+except Exception:
+    a.a = 2
+    a.f = 2
+finally:
+    a.g = 2
+
+    try:
+        a.h = 1
+    finally:
+        a.i = 2
+
+a.a
+a.b
+a.c
+a.d
+a.e
+a.f
+a.g
+a.h
+a.i
+"""
+examples.append(
+    Example(code17,
+            'Advanced try-except-finally example.'
+            'a.a should exists in any case because it will be added in the try part or in the except part.'
+            'a.g should exists because is will be added in the finally part.'
+            'a.i is added in the finally of the finally part in the try-finally'
+            'any other attribute may not exists. It depends where the exception raised (if any).')
+)
+
 code18 = """
 class A(object):
     pass
@@ -513,7 +559,7 @@ Next, the code will run through the validatior.
 
 Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
 
-There are 20 examples. Have fun! :)
+There are 22 examples. Have fun! :)
 """
 print greetings
 raw_input('Hit any key to start')
