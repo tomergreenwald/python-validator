@@ -263,7 +263,8 @@ class CallVisitor(ast.NodeVisitor):
 
                     # self.abstract_state.lub(abstract_state_cpy)
 
-                self.abstract_state.set_to_state(commulative_lub)
+                if commulative_lub is not None:
+                    self.abstract_state.set_to_state(commulative_lub)
         else:
             raise Exception("not supported")
         
@@ -498,6 +499,9 @@ class ProgramVisitor(ast.NodeVisitor):
             orelse_state = self.abstract_state.clone()
             assess_list(node.body, self.stack, self.abstract_state, self.functions)
             assess_list(node.orelse, self.stack, orelse_state, self.functions)
+            # print 'queries'
+            # print self.abstract_state.query('root#a.a.foo', False)
+            # print orelse_state.query('root#a.a.foo', False)
             self.abstract_state.lub(orelse_state)
 
     def visit_TryFinally(self, node):

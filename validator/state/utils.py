@@ -5,14 +5,18 @@ import ast
 TOP_MAGIC_NAME = "MAKE_THIS_VAR_AS_TOP"
 # TODO add more known functions, for floats, strings, and non-boolean functions
 INT_FUNCS = set([(int, x) for x in ['__add__', '__and__', '__cmp__', '__div__', \
-                                    '__divmod__', '__lshift__', '__mod__', '__mul__TMPTMPTMPCHANGEMETODO', \
+                                    '__divmod__', '__lshift__', '__mod__', '__mul__', \
                                     '__or__', '__pow__', '__radd__', '__rand__', \
                                     '__rdiv__', '__rdivmod__', '__rfloordiv__', \
                                     '__rlshift__', '__rmod__', '__rmul__', '__ror__', \
                                     '__rpow__', '__rrshift__', '__rshift__', \
                                     '__rsub__', '__rtruediv__', '__rxor__', \
-                                    '__sub__', '__truediv__', '__xor__']])
-
+                                    '__sub__', '__truediv__', '__xor__']]) | \
+            set([(str, x) for x in ['__len__', '__sizeof__', '__hash__']])
+            
+BOOL_FUNCS = set([(str, x) for x in ['isalnum', 'isalpha', 'isdigit', 'islower', \
+                                     'isspace', 'istitle', 'isupper']]) | \
+             set([(int, x) for x in ['__nonzero']])
 class TopFunction(object):
     index = -1
     @staticmethod
@@ -25,7 +29,18 @@ class IntFunction(object):
     @staticmethod
     def get(num_args):
         IntFunction.index += 1
-        return ast.parse('\ndef func_%s_%d(%s):\n    tmptmptmpvarvarvar = 0\n    return tmptmptmpvarvarvar\n' %('MAKE_THIS_AS_INT', IntFunction.index, ', '.join(['arg%d' %j for j in xrange(num_args)]))).body[0]
+        return ast.parse('\ndef func_%s_%d(%s):\n    tmptmptmpvarvarvar = 0\n    return tmptmptmpvarvarvar\n' \
+                         %('MAKE_THIS_AS_INT', IntFunction.index, \
+                         ', '.join(['arg%d' %j for j in xrange(num_args)]))).body[0]
+
+class BoolFunction(object):
+    index = -1
+    @staticmethod
+    def get(num_args):
+        BoolFunction.index += 1
+        return ast.parse('\ndef func_%s_%d(%s):\n    tmptmptmpvarvarvar = False\n    return tmptmptmpvarvarvar\n' \
+                         %('MAKE_THIS_AS_BOOL', BoolFunction.index, \
+                         ', '.join(['arg%d' %j for j in xrange(num_args)]))).body[0]
         
 PRIMITIVES = set([eval('types.%s' %x) for x in dir(types) if x.endswith('Type')])
 
@@ -34,8 +49,9 @@ def tmp_f():
 tmp_int = 5
 class tmp_T(object):
     def f(self):
-        pass        
-CALLABLES = set(map(type, [tmp_f, tmp_int.__add__, tmp_T().f]))
+        pass
+tmp_str = '5'
+CALLABLES = set(map(type, [tmp_f, tmp_int.__add__, tmp_T().f, tmp_str.isalpha]))
 
 def is_top_func(f):
     return TOP_MAGIC_NAME in f.name

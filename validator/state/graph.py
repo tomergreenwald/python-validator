@@ -3,7 +3,8 @@ import copy
 from collections import deque
 import itertools
 from lattice import LatticeElement as LE
-from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func, INT_FUNCS
+from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func, \
+                  INT_FUNCS, BOOL_FUNCS, BoolFunction
 # logging.basicConfig(level = logging.DEBUG)
 
 """
@@ -293,6 +294,10 @@ class Graph(object):
                 if is_callable(son_const):
                     # add metadata function to son
                     if (type(c), son_label) in INT_FUNCS:
+                        self.vertices[son_ind].metadata.add(IntFunction.get(2))
+                        self._consolidate_metadata(self.vertices[son_ind])
+                    elif (type(c), son_label) in BOOL_FUNCS:
+                        # self.vertices[son_ind].metadata.add(BoolFunction.get(1))
                         self.vertices[son_ind].metadata.add(IntFunction.get(2))
                         self._consolidate_metadata(self.vertices[son_ind])
                     else:
