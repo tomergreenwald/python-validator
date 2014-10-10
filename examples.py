@@ -376,7 +376,7 @@ a.e
 a.f
 """
 examples.append(
-    Example(code15,
+    Example(code151,
             'Advenced If-Else example.'
             'a.a and a.b exists in all the paths, '
             'others may exists and may not, depends on the boolean expressions results.')
