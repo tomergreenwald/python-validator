@@ -4,6 +4,7 @@ import logging
 from validator.state.abstract import AbstractState
 from validator.state.utils import TOP_MAGIC_NAME, BasicMutableClass
 from validator.representation.ClassRepresentation import ClassRepresentation
+from validator.util import pretty_var_path
 
 
 class Frame(object):
@@ -138,32 +139,32 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
                 actual_from_name = actual_var_name(stack, from_var.id, level)
         if make_top is False:
             errors = abstract_state.set_var_to_var(actual_to_name, actual_from_name)
+            logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(actual_from_name), to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            logging.debug("assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name))
         else:
             errors = abstract_state.add_var_and_set_to_top(actual_to_name)
+            logging.info("set var {to_var} to TOP".format(to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            logging.debug("set var {to_var} to TOP".format(to_var=actual_to_name))
     elif from_var is not None:
         if type(from_var) is ast.Tuple:
             errors = abstract_state.set_var_to_const(actual_to_name, tuple())
+            logging.info("assigned {var_type} to {to_var}".format(var_type=tuple(),
+                                                           to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            logging.debug("assigned {var_type} to {to_var}".format(var_type=tuple(),
-                                                           to_var=actual_to_name))
         elif type(from_var) is ast.Dict:
             errors = abstract_state.set_var_to_const(actual_to_name, dict())
+            logging.info("assigned {var_type} to {to_var}".format(var_type=dict(),
+                                                           to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            logging.debug("assigned {var_type} to {to_var}".format(var_type=dict(),
-                                                           to_var=actual_to_name))
         else:
             errors = abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
+            logging.info("assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
+                                                           to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            logging.debug("assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
-                                                           to_var=actual_to_name))
     else:
         errors = abstract_state.set_var_to_const(actual_to_name, new_object)
+        logging.info("assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=pretty_var_path(actual_to_name)))
         logging.info('errors - ' + str(errors))
-        logging.debug("assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=actual_to_name))
 
 
 def handle_kwargs(abstract_state, args, function, keywords, stack):
@@ -388,7 +389,7 @@ class ExprVisitor(CallVisitor):
 
     def visit_Attribute(self, node):
         name = actual_var_name(self.stack, node.value.id) + "." + node.attr
-        logging.info("Evaluating expression - {name}".format(name=name))
+        logging.info("Evaluating expression - {name}".format(name=pretty_var_path(name)))
         errors = self.abstract_state.query(name)
         logging.info('errors - ' + str(errors))
 
@@ -631,6 +632,6 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
                           stack, abstract_state, functions)
 
     for method in clazz.methods.values():
-        logging.debug("registering method - {method} to {var}".format(method=method.name, var=target))
+        logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
         errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
         logging.info('errors - ' + str(errors))

@@ -49,3 +49,9 @@ def inharite_methods_and_attributes(clazz, base):
         clazz.methods.append(m)
     for a, t in base.attributes.iteritems():
         clazz.attributes[a] = t
+
+
+def pretty_var_path(variable_path):
+    if variable_path.startswith("root#"):
+        return "#".join(variable_path.split("#")[1:])
+    return variable_path

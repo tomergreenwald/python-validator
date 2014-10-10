@@ -4,6 +4,7 @@ from graph import Graph, SonKnowledge
 from utils import *
 from state_exceptions import *
 from lattice import LatticeElement as LE
+from validator.util import pretty_var_path
 
 
 
@@ -198,7 +199,7 @@ class AbstractState(object):
         for f in fathers:
             ind = self._expression_to_vertex_index(f)
             if ind < 0:
-                res.append(("Error", "var %s attribute %s" %(var_to_father(f), var_to_basename(f))))
+                res.append(("Error", "var %s does not have attribute %s" %(pretty_var_path(var_to_father(f)), var_to_basename(f))))
                 if add_tops:
                     self.add_var_and_set_to_top(f)
                 else:
