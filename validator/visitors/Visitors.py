@@ -1,4 +1,5 @@
 import ast
+import logging
 
 from validator.state.abstract import AbstractState
 from validator.state.utils import TOP_MAGIC_NAME, BasicMutableClass
@@ -137,32 +138,32 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
                 actual_from_name = actual_var_name(stack, from_var.id, level)
         if make_top is False:
             errors = abstract_state.set_var_to_var(actual_to_name, actual_from_name)
-            print errors
-            print "assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name)
+            logging.info('errors - ' + str(errors))
+            logging.debug("assigned {from_var} to {to_var}".format(from_var=actual_from_name, to_var=actual_to_name))
         else:
             errors = abstract_state.add_var_and_set_to_top(actual_to_name)
-            print errors
-            print "set var {to_var} to TOP".format(to_var=actual_to_name)
+            logging.info('errors - ' + str(errors))
+            logging.debug("set var {to_var} to TOP".format(to_var=actual_to_name))
     elif from_var is not None:
         if type(from_var) is ast.Tuple:
             errors = abstract_state.set_var_to_const(actual_to_name, tuple())
-            print errors
-            print "assigned {var_type} to {to_var}".format(var_type=tuple(),
-                                                           to_var=actual_to_name)
+            logging.info('errors - ' + str(errors))
+            logging.debug("assigned {var_type} to {to_var}".format(var_type=tuple(),
+                                                           to_var=actual_to_name))
         elif type(from_var) is ast.Dict:
             errors = abstract_state.set_var_to_const(actual_to_name, dict())
-            print errors
-            print "assigned {var_type} to {to_var}".format(var_type=dict(),
-                                                           to_var=actual_to_name)
+            logging.info('errors - ' + str(errors))
+            logging.debug("assigned {var_type} to {to_var}".format(var_type=dict(),
+                                                           to_var=actual_to_name))
         else:
             errors = abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
-            print errors
-            print "assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
-                                                           to_var=actual_to_name)
+            logging.info('errors - ' + str(errors))
+            logging.debug("assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
+                                                           to_var=actual_to_name))
     else:
         errors = abstract_state.set_var_to_const(actual_to_name, new_object)
-        print errors
-        print "assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=actual_to_name)
+        logging.info('errors - ' + str(errors))
+        logging.debug("assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=actual_to_name))
 
 
 def handle_kwargs(abstract_state, args, function, keywords, stack):
@@ -232,17 +233,17 @@ class CallVisitor(ast.NodeVisitor):
                     clone.remove_var(actual_var_name(self.stack, _self + '_var_lub'))
                     register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
                     self.abstract_state.lub(clone)
-                    print 'LUB for %s_var_lub' % _self
+                    logging.debug('LUB for %s_var_lub' % _self)
                 else:
                     register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_var_lub')
-                    print _self + '_var_lub has created with %s' % node.args[0]
+                    logging.debug(_self + '_var_lub has created with %s' % node.args[0])
             else:
                 #should return a list of contexts saved for each method (one per method impl)
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
-                print 'possible methods are %s' %' '.join([x.name for x in methods])
+                logging.debug('possible methods are %s' %' '.join([x.name for x in methods]))
                 # self.abstract_state.add_var_and_set_to_botom('ret_val')
                 if errors:
-                    print 'Validation {level} in method {method}'.format(level=errors[0][0], method=errors[0][1])
+                    logging.debug('Validation {level} in method {method}'.format(level=errors[0][0], method=errors[0][1]))
 
                 abstract_state_clean = self.abstract_state.clone()
                 commulative_lub = None
@@ -387,9 +388,9 @@ class ExprVisitor(CallVisitor):
 
     def visit_Attribute(self, node):
         name = actual_var_name(self.stack, node.value.id) + "." + node.attr
-        print "Evaluating expression - {name}".format(name=name)
+        logging.info("Evaluating expression - {name}".format(name=name))
         errors = self.abstract_state.query(name)
-        print errors
+        logging.info('errors - ' + str(errors))
 
 
 class FunctionDefVisitor(ast.NodeVisitor):
@@ -482,7 +483,7 @@ class ProgramVisitor(ast.NodeVisitor):
         Handles for loop.
         The iterate var is already should be in LUB form. We just need to assess the body of the loop (and set the iter key).
         """
-        print 'visit_For'
+        logging.info('visit_For')
         register_assignment(self.stack, self.abstract_state, ast.Name(id=node.iter.id + '_vars_lub', ctx=ast.Load()), node.target.id)
         assess_list(node.body, self.stack, self.abstract_state, self.functions)
 
@@ -558,7 +559,7 @@ class ProgramVisitor(ast.NodeVisitor):
         if to_name.startswith(TOP_MAGIC_NAME):
             make_top = True
 
-        print 'visiting return. make top: %s' %make_top
+        logging.info('visiting return. make top: %s' %make_top)
             
         if self.abstract_state.has_var('ret_val'):
             temp_state = self.abstract_state.clone()
@@ -572,8 +573,8 @@ class ProgramVisitor(ast.NodeVisitor):
                 self.abstract_state.set_var_to_var('ret_val', to_name)
             else:
                 self.abstract_state.add_var_and_set_to_top('ret_val', force = True)
-        print 'visited return'
-        print "assigned {from_var} to {to_var}".format(from_var=to_name, to_var="ret_val")
+        logging.debug('visited return')
+        logging.debug("assigned {from_var} to {to_var}".format(from_var=to_name, to_var="ret_val"))
 
 
 def assess_list(entries, stack, abstract_state, functions):
@@ -618,7 +619,7 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     :param clazz: The ClassRepresentation of the class
     """
     
-    print "Initializing object - ", target
+    logging.debug("Initializing object - ", target)
     # we use BasicMutableClass becuase object() is primitive (can not add attributes to object())
     register_assignment(stack, abstract_state, None, target, new_object=BasicMutableClass())
 
@@ -630,6 +631,6 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
                           stack, abstract_state, functions)
 
     for method in clazz.methods.values():
-        print "registering method - {method} to {var}".format(method=method.name, var=target)
+        logging.debug("registering method - {method} to {var}".format(method=method.name, var=target))
         errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
-        print errors
+        logging.info('errors - ' + str(errors))
