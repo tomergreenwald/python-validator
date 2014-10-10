@@ -5,7 +5,7 @@ from utils import *
 from state_exceptions import *
 from lattice import LatticeElement as LE
 
-logging.basicConfig(level = logging.DEBUG)
+
 
 ROOT_VERTEX = 0
 

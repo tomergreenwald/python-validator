@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level = logging.INFO)
+
 class Example(object):
     def __init__(self, code, description):
         self.code = code
