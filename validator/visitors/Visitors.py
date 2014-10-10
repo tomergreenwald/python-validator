@@ -387,7 +387,7 @@ class ExprVisitor(CallVisitor):
 
     def visit_Attribute(self, node):
         name = actual_var_name(self.stack, node.value.id) + "." + node.attr
-        print "Evaluatin expression - {name}".format(name=name)
+        print "Evaluating expression - {name}".format(name=name)
         errors = self.abstract_state.query(name)
         print errors
 
