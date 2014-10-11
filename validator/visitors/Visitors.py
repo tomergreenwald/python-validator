@@ -560,22 +560,26 @@ class ProgramVisitor(ast.NodeVisitor):
         if to_name.startswith(TOP_MAGIC_NAME):
             make_top = True
 
-        logging.info('visiting return. make top: %s' %make_top)
+        logging.debug('visiting return. make top: %s' %make_top)
             
         if self.abstract_state.has_var('ret_val'):
             temp_state = self.abstract_state.clone()
             if make_top is False:
-                temp_state.set_var_to_var('ret_val', to_name)
+                errors = temp_state.set_var_to_var('ret_val', to_name)
+                logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(to_name), to_var="ret_val"))
+                logging.info('errors - ' + str(errors))
             else:
                 temp_state.add_var_and_set_to_top('ret_val', force = True)
+                logging.info("assigned {from_var} to {to_var}".format(from_var="TOP", to_var="ret_val"))
             self.abstract_state.lub(temp_state)
         else:
             if make_top is False:
-                self.abstract_state.set_var_to_var('ret_val', to_name)
+                errors = self.abstract_state.set_var_to_var('ret_val', to_name)
+                logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(to_name), to_var="ret_val"))
+                logging.info('errors - ' + str(errors))
             else:
                 self.abstract_state.add_var_and_set_to_top('ret_val', force = True)
-        logging.debug('visited return')
-        logging.debug("assigned {from_var} to {to_var}".format(from_var=to_name, to_var="ret_val"))
+                logging.info("assigned {from_var} to {to_var}".format(from_var="TOP", to_var="ret_val"))
 
 
 def assess_list(entries, stack, abstract_state, functions):
