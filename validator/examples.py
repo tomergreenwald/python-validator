@@ -555,36 +555,40 @@ import ast
 from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import simpler
 
-greetings = """
-Welcome to the python attribute validator examples!
-Any example starts with short description, continues with the code that will be checked, and the code after the simpler methods.
-Next, the code will run through the validatior.
+def main():
+    greetings = """
+    Welcome to the python attribute validator examples!
+    Any example starts with short description, continues with the code that will be checked, and the code after the simpler methods.
+    Next, the code will run through the validatior.
 
-Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
+    Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
 
-There are 22 examples. Have fun! :)
-"""
-print greetings
-raw_input('Hit any key to start')
-print
-
-for example in examples:
-    print example.desc
-    print 'Orignal Code:'
-    print '============='
-    print example.code
-    print
-    simple = simpler.make_simple(example.code)
-    print 'After simpler:'
-    print '=============='
-    print simple
+    There are 22 examples. Have fun! :)
+    """
+    print greetings
+    raw_input('Hit any key to start')
     print
 
-    ast_tree = ast.parse(simple)
-    visitor = ProgramVisitor()
-    visitor.visit(ast_tree)
+    for example in examples:
+        print example.desc
+        print 'Orignal Code:'
+        print '============='
+        print example.code
+        print
+        simple = simpler.make_simple(example.code)
+        print 'After simpler:'
+        print '=============='
+        print simple
+        print
 
-    raw_input('Press any key to the next example')
-    print
+        ast_tree = ast.parse(simple)
+        visitor = ProgramVisitor()
+        visitor.visit(ast_tree)
 
-print 'Thank you'
+        raw_input('Press any key to the next example')
+        print
+
+    print 'Thank you'
+
+if __name__ == '__main__':
+    main()

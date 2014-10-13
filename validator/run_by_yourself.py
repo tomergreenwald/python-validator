@@ -5,9 +5,10 @@ import ast
 from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import simpler
 
-if __name__ == '__main__':
+
+def main():
     if len(sys.argv) == 1:
-        print 'Code path for validate is missing.'
+        print 'Usage: validate <CODE_PATH>'
         exit(1)
     with file(sys.argv[1]) as f:
         code = f.read()
@@ -24,3 +25,6 @@ if __name__ == '__main__':
     ast_tree = ast.parse(simple)
     visitor = ProgramVisitor()
     visitor.visit(ast_tree)
+
+if __name__ == '__main__':
+    main()
