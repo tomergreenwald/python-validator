@@ -6,6 +6,8 @@ from validator.state.utils import TOP_MAGIC_NAME, BasicMutableClass
 from validator.representation.ClassRepresentation import ClassRepresentation
 from validator.util import pretty_var_path
 
+logging.basicConfig(level=logging.INFO)
+
 
 class Frame(object):
     def __init__(self, frame_name):

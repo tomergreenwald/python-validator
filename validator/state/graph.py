@@ -5,7 +5,6 @@ import itertools
 from lattice import LatticeElement as LE
 from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func, \
                   INT_FUNCS, BOOL_FUNCS, BoolFunction
-# logging.basicConfig(level = logging.DEBUG)
 
 """
 TODO
