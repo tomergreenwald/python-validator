@@ -225,19 +225,19 @@ class CallVisitor(ast.NodeVisitor):
             if function_name is 'append':
                 """
                 This is append support. It assumes that _self is list.
-                if there is not _self_var_lub it means that this is the first element added to the list,
+                if there is not _self_vars_lub it means that this is the first element added to the list,
                 so it register it. Else, it lub the new element.
                 """
-                if _self + '_var_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
-                        actual_var_name(self.stack, _self + '_var_lub')):
+                if _self + '_vars_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
+                        actual_var_name(self.stack, _self + '_vars_lub')):
                     clone = self.abstract_state.clone()
-                    clone.remove_var(actual_var_name(self.stack, _self + '_var_lub'))
-                    register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
+                    clone.remove_var(actual_var_name(self.stack, _self + '_vars_lub'))
+                    register_assignment(self.stack, clone, node.args[0], _self + '_vars_lub')
                     self.abstract_state.lub(clone)
-                    logging.debug('LUB for %s_var_lub' % _self)
+                    logging.debug('LUB for %s_vars_lub' % _self)
                 else:
-                    register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_var_lub')
-                    logging.debug(_self + '_var_lub has created with %s' % node.args[0])
+                    register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_vars_lub')
+                    logging.debug(_self + '_vars_lub has created with %s' % node.args[0])
             else:
                 #should return a list of contexts saved for each method (one per method impl)
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
