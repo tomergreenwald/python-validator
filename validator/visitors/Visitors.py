@@ -637,7 +637,10 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
         evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords,
                           stack, abstract_state, functions)
 
-    for method in clazz.methods.values():
-        logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
-        errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
-        logging.info('errors - ' + str(errors))
+    iter_clazz = clazz
+    while iter_clazz is not 'object':
+        for method in iter_clazz.methods.values():
+            logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
+            errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
+            logging.info('errors - ' + str(errors))
+        iter_clazz = iter_clazz.base
