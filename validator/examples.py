@@ -386,27 +386,6 @@ examples.append(
             'others may exists depends on the boolean expressions results.')
 )
 
-code16 = """
-class A(object):
-    pass
-
-a = A()
-try:
-    a.a = 2
-    a.b = 3
-except:
-    a.a = 2
-    a.c = 3
-
-a.a
-a.b
-a.c
-"""
-examples.append(
-    Example(code16,
-            'Try-Except example. ')
-)
-
 code17 = """
 class A(object):
     pass
@@ -430,9 +409,17 @@ examples.append(
     Example(code17,
             'Try-Except-Finally example.'
             'a.a should exists in any case because it will be added in the try part or in the except part.'
-            'a.d should exists because is will be added in the finally part.'
+            'a.d should exists because it will be added in the finally part.'
             'a.b will be added just if the try part did not raised an exception.'
-            'a.c will be added just if the try part raised an exception.')
+            'a.c will be added just if the try part raised an exception.'
+            'The logic "behind the scene"- '
+            'First, evaluate the try block, it is consistent with a state where no exception raised.'
+            'Second, evaluate only the except block, it is consistent with a state where the exception thrown raised in the first expression of the try block.'
+            'Third, evaluate just the first expression of the try block and the except block, '
+            'the first two expressions of the try block and the except block, and so on. '
+            'It is consistent with exception raised in any line.'
+            'In any case, evaluate the finally part. '
+            'Finally - LUB all the abstract states into an abstract state that represent the entire block.')
 )
 
 code17 = """
