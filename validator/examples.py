@@ -1,5 +1,7 @@
 import logging
-logging.basicConfig(level = logging.INFO)
+
+logging.basicConfig(level=logging.INFO)
+
 
 class Example(object):
     def __init__(self, code, description):
@@ -18,12 +20,13 @@ a.a
 a.a
 """
 examples.append(
-    Example(code1, 'Basic example, should create object of type A and state that the object does not have attribute a.'
-                   'After the first call, the validator adds the attribute a to the abstract state of a, '
-                   'so it should state that the second call to a.a is legal.')
+    Example(code1, 'Basic example, creates object of type A and state that the object does not have attribute a.'
+                   'After the first call to a.a, the validator adds the attribute "a" to the abstract state of the object, '
+                   '(We restricting the error to it"s first occurrence). Therefore, the second call should raise no error'
+    )
 )
 
-#Fails because the abstract state mishandles attributes
+# Fails because the abstract state mishandles attributes
 code2 = """
 class A(object):
     def __init__(self):
@@ -35,18 +38,14 @@ a.c
 """
 examples.append(
     Example(code2,
-            'Should create object of type A with attribute a. '
-            'The call to a.a should work fine since the attribute exists, '
-            'The second assignment should state that a does not have attribute c'
+            'Creates object of type A with attribute a. '
+            'The call to a.a should raise no error since the attribute exists. '
+            'The second assignment should state that "a" does not have attribute "c"'
     )
 )
 
 code9 = """
 class A(object):
-    def __init__(self):
-        self.a = 1
-        self.b = 2
-
     def foo_c(self):
         self.c = 3
 
@@ -58,7 +57,11 @@ a.c
 """
 examples.append(
     Example(code9,
-            'Demonstrates adding attributes on the fly')
+            'This example demonstrates the power of the validator in adding attributes during the fly.'
+            'Objects of type A initialized with no attributes. '
+            'We add the attribute "m" from the "main" scope, using dot operator, and call to a method that adds attribute '
+            '"c" using "self" reference'
+    )
 )
 
 code3 = """
@@ -88,13 +91,15 @@ b.b.c
 """
 examples.append(
     Example(code3,
-            'First thing you are going to see is the simpler work. It never leaves the arguments as is, '
-            'and advance calls as b.b.a changes to two calls.'
-            'In this example we create object a of type A and object b of type B that holds a.'
-            'All the calls in the First group are valid, since that attributes are correct.'
+            'This is the first example we are using the simpler. '
+            'As you can see it simples combined expressions into small and compact ones.'
+            'This allows us to focus our efforts in the semantics and not in the syntactics.'
+            'In this example we create object "a" of type A and object "b" of type B that holds "a" in the attribute "b".'
+            'All the calls in the first group are valid, since all the attributes exists.'
             'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
-            'since in the abstract world we added attribute b to b.b, the call to a.b should be legal.'
-            'In the third group, we add attribute c to a.c, so now it should state that b.b.c exists.'
+            'since in the abstract world we have added attribute b to b.b (as stated in the previous examples), '
+            'and "a" and "b.b" are the same object, the call to a.b is legal.'
+            'In the third group, we add attribute c to a.c, so the validator states that b.b.c exists.'
     )
 )
 
@@ -123,8 +128,8 @@ c.c.d
 """
 examples.append(
     Example(code4,
-            'Two objects - b (of type B) and a (of type A) which shared object (a of type A). '
-            'After we add to a attribute d throw b.b.d, that attribute should exists in c.c.d as well.'
+            'We create two objects - "b" and "c" that shares the same object "a".'
+            'After we add to "a" attribute "d" using b.b.d, that attribute exists in c.c.d as well.'
     )
 )
 
@@ -143,7 +148,7 @@ examples.append(
     )
 )
 
-#fails for the same reason as 2
+# fails for the same reason as 2
 code6 = """
 class A(object):
     def __init__(self, x, y):
@@ -215,7 +220,7 @@ examples.append(
     )
 )
 
-#fails for the same reason as 7
+# fails for the same reason as 7
 code10 = """
 class A(object):
     def __init__(self):
@@ -549,11 +554,11 @@ examples.append(
             'Return value - get_a should return object of type A with two attributes - a and b')
 )
 
-
 import ast
 
 from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import simpler
+
 
 def main():
     greetings = """
@@ -589,6 +594,7 @@ def main():
         print
 
     print 'Thank you'
+
 
 if __name__ == '__main__':
     main()
