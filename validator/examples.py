@@ -525,13 +525,13 @@ else:
 
 a.a.foo()
 
-a.b
-a.c
+a.a.b
+a.a.c
 """
 examples.append(
     Example(code19,
             'Polymorphism example. a.a.foo exists (no matter if we initialized the object with "b" or "c"),'
-            'a.b or a.c may exists, depends on the boolean expression.')
+            'a.a.b and a.a.c may exists, depends on the boolean expression.')
 )
 
 code20 = """
