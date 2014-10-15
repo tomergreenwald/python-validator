@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(level = logging.INFO)
+logging.basicConfig(level = logging.CRITICAL)
 from tabulate import tabulate
 class Example(object):
     def __init__(self, code, description):
