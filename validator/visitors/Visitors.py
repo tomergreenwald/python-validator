@@ -695,6 +695,8 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     iter_clazz = clazz
     while iter_clazz is not 'object':
         for method in iter_clazz.methods.values():
-        logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
-        errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
-        logging.info('errors - ' + str(errors))        table.append(["Registered method", method.name, pretty_var_path(target), str(errors)])
+            logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
+            errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
+            logging.info('errors - ' + str(errors))
+            table.append(["Registered method", method.name, pretty_var_path(target), str(errors)])
+        iter_clazz = iter_clazz.base
