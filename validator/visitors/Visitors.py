@@ -238,19 +238,21 @@ class CallVisitor(ast.NodeVisitor):
                 if there is not _self_vars_lub it means that this is the first element added to the list,
                 so it register it. Else, it lub the new element.
                 """
-                if _self + '_vars_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
-                        actual_var_name(self.stack, _self + '_vars_lub')):
-                    clone = self.abstract_state.clone()
-                    table.append(["Clone state", None, None, []])
-                    clone.remove_var(actual_var_name(self.stack, _self + '_vars_lub'))
-                    register_assignment(self.stack, clone, node.args[0], _self + '_vars_lub')
-                    self.abstract_state.lub(clone)
-                    table.append(["Lub states", None, None, []])
-                    logging.debug('LUB for %s_vars_lub' % _self)
+
+                if _self + '_vars_lub' in self.stack.current_frame().variables:
+                    errors = self.abstract_state.query(actual_var_name(self.stack, _self + '_vars_lub'), False)
+                    table.append(["Query", None, pretty_var_path(actual_var_name(self.stack, _self + '_vars_lub')), errors])
+                    if len(errors) == 0:
+                        clone = self.abstract_state.clone()
+                        table.append(["Clone state", None, None, []])
+                        clone.remove_var(actual_var_name(self.stack, _self + '_vars_lub'))
+                        register_assignment(self.stack, clone, node.args[0], _self + '_vars_lub')
+                        self.abstract_state.lub(clone)
+                        table.append(["Lub states", None, None, []])
+                        logging.debug('LUB for %s_vars_lub' % _self)
                 else:
                     register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_vars_lub')
                     logging.debug(_self + '_vars_lub has created with %s' % node.args[0])
-                # FIXME: add to table once has_var is changed to query
             else:
                 #should return a list of contexts saved for each method (one per method impl)
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
@@ -317,11 +319,13 @@ class AssignVisitor(CallVisitor):
 
     def visit_Subscript(self, node):
         if type(node.ctx) is ast.Load:
-            # FIXME: add to table once has_var is changed to query
-            if not self.abstract_state.has_var(actual_var_name(self.stack, node.value.id)):
+            errors = self.abstract_state.query(actual_var_name(self.stack, node.value.id), False)
+            table.append(["Query", None, pretty_var_path(actual_var_name(self.stack, node.value.id)), errors])
+            if len(errors) > 0:
                 raise Exception('List %s does not exists' % node.value.id)
-            # FIXME: add to table once has_var is changed to query
-            if not self.abstract_state.has_var(actual_var_name(self.stack, node.value.id + '_vars_lub')):
+            errors = self.abstract_state.query(actual_var_name(self.stack, node.value.id + '_vars_lub'), False)
+            table.append(["Query", None, pretty_var_path(actual_var_name(self.stack, node.value.id + '_vars_lub')), errors])
+            if len(errors) > 0:
                 raise Exception('Try to load value from empty list %s' % node.value.id)
 
             self.visit_Name(ast.Name(id=node.value.id + '_vars_lub', ctx=ast.Load()))
@@ -610,8 +614,9 @@ class ProgramVisitor(ast.NodeVisitor):
 
         logging.debug('visiting return. make top: %s' %make_top)
             
-        # FIXME: add to table once has_var is changed to query
-        if self.abstract_state.has_var('ret_val'):
+        errors = self.abstract_state.query('ret_val', False)
+        table.append(["Query", None, 'ret_val', errors])
+        if len(errors) == 0:
             temp_state = self.abstract_state.clone()
             table.append(["Clone state", None, None, []])
             if make_top is False:
