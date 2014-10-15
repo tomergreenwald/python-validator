@@ -242,14 +242,14 @@ class CallVisitor(ast.NodeVisitor):
                         actual_var_name(self.stack, _self + '_vars_lub')):
                     clone = self.abstract_state.clone()
                     table.append(["Clone state", None, None, []])
-                    clone.remove_var(actual_var_name(self.stack, _self + '_var_lub'))
-                    register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
+                    clone.remove_var(actual_var_name(self.stack, _self + '_vars_lub'))
+                    register_assignment(self.stack, clone, node.args[0], _self + '_vars_lub')
                     self.abstract_state.lub(clone)
                     table.append(["Lub states", None, None, []])
-                    logging.debug('LUB for %s_var_lub' % _self)
+                    logging.debug('LUB for %s_vars_lub' % _self)
                 else:
-                    register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_var_lub')
-                    logging.debug(_self + '_var_lub has created with %s' % node.args[0])
+                    register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_vars_lub')
+                    logging.debug(_self + '_vars_lub has created with %s' % node.args[0])
                 # FIXME: add to table once has_var is changed to query
             else:
                 #should return a list of contexts saved for each method (one per method impl)
