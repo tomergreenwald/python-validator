@@ -626,7 +626,7 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     :param clazz: The ClassRepresentation of the class
     """
     
-    logging.debug("Initializing object - ", target)
+    logging.debug("Initializing object - %s", target)
     # we use BasicMutableClass becuase object() is primitive (can not add attributes to object())
     register_assignment(stack, abstract_state, None, target, new_object=BasicMutableClass())
 
