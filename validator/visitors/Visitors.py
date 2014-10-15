@@ -265,7 +265,7 @@ class CallVisitor(ast.NodeVisitor):
                 # FIXME: why do we clone and never lub back abstract_state_clean?
                 abstract_state_clean = self.abstract_state.clone()
                 table.append([id(self.abstract_state),"Clone state", None, id(abstract_state_clean), []])
-                commulative_lub = None
+                cumulative_lub = None
                 for method in methods:
                     abstract_state_cpy = abstract_state_clean.clone()
                     table.append([id(abstract_state_clean),"Clone state", None, id(abstract_state_cpy), []])
@@ -280,16 +280,16 @@ class CallVisitor(ast.NodeVisitor):
                         self.abstract_state.remove_var('ret_val', False)
                         table.append([id(self.abstract_state),"Removed", None, "ret_val", []])
 
-                    if commulative_lub is None:
-                        commulative_lub = abstract_state_cpy
+                    if cumulative_lub is None:
+                        cumulative_lub = abstract_state_cpy
                     else:
-                        commulative_lub.lub(abstract_state_cpy)
+                        cumulative_lub.lub(abstract_state_cpy)
 
                     # self.abstract_state.lub(abstract_state_cpy)
 
-                if commulative_lub is not None:
-                    self.abstract_state.set_to_state(commulative_lub)
-                    table.append([id(self.abstract_state),"Set to state", None, id(commulative_lub), []])
+                if cumulative_lub is not None:
+                    self.abstract_state.set_to_state(cumulative_lub)
+                    table.append([id(self.abstract_state),"Set to state", None, id(cumulative_lub), []])
         else:
             raise Exception("not supported")
         
