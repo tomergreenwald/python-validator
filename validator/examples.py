@@ -18,12 +18,12 @@ a.a
 a.a
 """
 examples.append(
-    Example(code1, 'Basic example, should create object of type A and state that the object does not have attribute a.'
-                   'After the first call, the validator adds the attribute a to the abstract state of a, '
-                   'so it should state that the second call to a.a is legal.')
+    Example(code1, 'Basic example, creates object of type A and state that the object does not have attribute a.'
+                   'After the first call to a.a, the validator adds the attribute "a" to the abstract state of the object, '
+                   '(We restricting the error to it"s first occurrence). Therefore, the second call should raise no error'
+    )
 )
 
-#Fails because the abstract state mishandles attributes
 code2 = """
 class A(object):
     def __init__(self):
@@ -35,18 +35,14 @@ a.c
 """
 examples.append(
     Example(code2,
-            'Should create object of type A with attribute a. '
-            'The call to a.a should work fine since the attribute exists, '
-            'The second assignment should state that a does not have attribute c'
+            'Creates object of type A with attribute a. '
+            'The call to a.a should raise no error since the attribute exists. '
+            'The second assignment should state that "a" does not have attribute "c"'
     )
 )
 
 code9 = """
 class A(object):
-    def __init__(self):
-        self.a = 1
-        self.b = 2
-
     def foo_c(self):
         self.c = 3
 
@@ -58,7 +54,11 @@ a.c
 """
 examples.append(
     Example(code9,
-            'Demonstrates adding attributes on the fly')
+            'This example demonstrates the power of the validator in adding attributes during the fly.'
+            'Objects of type A initialized with no attributes. '
+            'We add the attribute "m" from the "main" scope, using dot operator, and call to a method that adds attribute '
+            '"c" using "self" reference'
+    )
 )
 
 code3 = """
@@ -88,13 +88,15 @@ b.b.c
 """
 examples.append(
     Example(code3,
-            'First thing you are going to see is the simpler work. It never leaves the arguments as is, '
-            'and advance calls as b.b.a changes to two calls.'
-            'In this example we create object a of type A and object b of type B that holds a.'
-            'All the calls in the First group are valid, since that attributes are correct.'
+            'This is the first example we are using the simpler. '
+            'As you can see it simples combined expressions into small and compact ones.'
+            'This allows us to focus our efforts in the semantics and not in the syntactics.'
+            'In this example we create object "a" of type A and object "b" of type B that holds "a" in the attribute "b".'
+            'All the calls in the first group are valid, since all the attributes exists.'
             'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
-            'since in the abstract world we added attribute b to b.b, the call to a.b should be legal.'
-            'In the third group, we add attribute c to a.c, so now it should state that b.b.c exists.'
+            'since in the abstract world we have added attribute b to b.b (as stated in the previous examples), '
+            'and "a" and "b.b" are the same object, the call to a.b is legal.'
+            'In the third group, we add attribute c to a.c, so the validator states that b.b.c exists.'
     )
 )
 
@@ -123,8 +125,8 @@ c.c.d
 """
 examples.append(
     Example(code4,
-            'Two objects - b (of type B) and a (of type A) which shared object (a of type A). '
-            'After we add to a attribute d throw b.b.d, that attribute should exists in c.c.d as well.'
+            'We create two objects - "b" and "c" that shares the same object "a".'
+            'After we add to "a" attribute "d" using b.b.d, that attribute exists in c.c.d as well.'
     )
 )
 
@@ -139,11 +141,10 @@ a.a + a.b
 """
 examples.append(
     Example(code5,
-            'The validator should understand that a.a and a.b are ints, so the addition operator is valid.'
+            'The validator should conclude that a.a and a.b are ints, so the addition operator is valid.'
     )
 )
 
-#fails for the same reason as 2
 code6 = """
 class A(object):
     def __init__(self, x, y):
@@ -156,15 +157,12 @@ a.b.isalpha()
 """
 examples.append(
     Example(code6,
-            'Create object of type A having two attributes, a is string and b is int.'
+            'Creates object of type A having two attributes, "a" is a string and "b" is a int.'
             'The method isalpha() is a builtin method for strings only.'
-            'Therefore the first call should be legal, and the second should state that the method does not exists.'
+            'Therefore the first call should be legal and the second should state that the method does not exists.'
     )
 )
 
-# For some reason we get an error while registering foo_x because the abstract state doesn't recognize root#a
-# but when we register foo_x it recognizes root#a, maybe because it is during the preciuos registration it created
-# root#a
 code7 = """
 class A(object):
     def __init__(self):
@@ -184,9 +182,10 @@ a.foo_b()
 """
 examples.append(
     Example(code7,
-            'Created object of type A, a.foo_a() should work fine, '
-            'a.foo_c() should state that a does not have attribute c, '
-            'and a.foo_b() should state that a does not have method foo_b'
+            'Creates object of type A, a.foo_a() is a legal call and all the used attributes are legal. '
+            'Note that the validator knows that "self" reference "a". '
+            'a.foo_c() should state that "a" does not have attribute c. '
+            'a.foo_b() should state that "a" does not have method foo_b'
     )
 )
 
@@ -211,11 +210,10 @@ a.a.a
 """
 examples.append(
     Example(code8,
-            'Demonstrates the call from one method to another in the same object.'
+            'Demonstrates call from one method to another in the same object.'
     )
 )
 
-#fails for the same reason as 7
 code10 = """
 class A(object):
     def __init__(self):
@@ -231,11 +229,10 @@ b.a
 """
 examples.append(
     Example(code10,
-            'Demonstrate class inheritance - although B extends A, since B did not call to super ctor, '
-            'b.a should not exists')
+            'Inheritance example - although B extends A, since B did not call to the super ctor, '
+            'b.a does not exists')
 )
 
-#fails because we mis-handle the super call
 code11 = """
 class A(object):
     def __init__(self):
@@ -246,16 +243,37 @@ class B(A):
         super(B, self).__init__()
         self.b = 2
 
+class C(A):
+    pass
+
 b = B()
 b.a
 b.b
+
+c = C()
+c.a
 """
 examples.append(
     Example(code11,
-            'In this example, b.a and b.b exists, since we called the super ctor')
+            'Inheritance example 2. When we initialized "b" the ctor calls to the super ctor, '
+            'therefore both b.a and b.b exists.'
+            'C does not have a ctor. In this case the super ctor automatically called, therefore c.a exists ')
 )
 
-#fails because the abstract state doesn't lub well
+code111 = """
+class A(object):
+    def foo_a(self):
+        self.a = 2
+
+class B(A):
+    pass
+
+b = B()
+b.foo_a()
+
+b.a
+"""
+
 code12 = """
 class A(object):
     def __init__(self):
@@ -269,11 +287,10 @@ for x in [A(), A(), A()]:
 """
 examples.append(
     Example(code12,
-            'List example, we store the list as a LUB of all the elements,'
+            'List example. The list represented in the abstract world as LUB of the elements,'
             'Easy to see that x.a should be fine and x.b does not exists.')
 )
 
-#fails for the same reason as 10
 code13 = """
 class A(object):
     def __init__(self):
@@ -293,10 +310,9 @@ for x in [a, a, b]:
 """
 examples.append(
     Example(code13,
-            'List example 2')
+            'List example 2. x.b raised Alert since it does not exists for all the elements, x.c is an error.')
 )
 
-#fails for the same reason as 10
 code14 = """
 class A(object):
     def __init__(self):
@@ -319,10 +335,11 @@ for x in l:
 """
 examples.append(
     Example(code14,
-            'Same example but now creating the list with append')
+            'Same example but using append to create the list. '
+            'In this case we create the first refer to the list as LUB of "a1" and "a2", '
+            'when we call to "append" we LUB the list with B(a1)')
 )
 
-#fails because we mis-treat attribute assignment
 code15 = """
 class A(object):
     pass
@@ -338,7 +355,8 @@ a.b
 """
 examples.append(
     Example(code15,
-            'If-Else example, a.a should exists in any case, a.b exists just for the else')
+            'If-Else example, we LUBing the IF evaluation with the ELSE evaluation. The result is that a.a always exists. '
+            'a.b exists just for the else therefore it alert us')
 )
 
 code151 = """
@@ -369,7 +387,7 @@ else:
         a.b = 2
         a.d = 3
 
-    a.f
+    a.f = 4
 
 a.a
 a.b
@@ -380,30 +398,9 @@ a.f
 """
 examples.append(
     Example(code151,
-            'Advenced If-Else example.'
+            'Advanced If-Else example.'
             'a.a and a.b exists in all the paths, '
-            'others may exists and may not, depends on the boolean expressions results.')
-)
-
-code16 = """
-class A(object):
-    pass
-
-a = A()
-try:
-    a.a = 2
-    a.b = 3
-except:
-    a.a = 2
-    a.c = 3
-
-a.a
-a.b
-a.c
-"""
-examples.append(
-    Example(code16,
-            'try-except example.')
+            'others may exists depends on the boolean expressions results.')
 )
 
 code17 = """
@@ -427,11 +424,19 @@ a.d
 """
 examples.append(
     Example(code17,
-            'try-except-finally example.'
+            'Try-Except-Finally example.'
             'a.a should exists in any case because it will be added in the try part or in the except part.'
-            'a.d should exists because is will be added in the finally part.'
+            'a.d should exists because it will be added in the finally part.'
             'a.b will be added just if the try part did not raised an exception.'
-            'a.c will be added just if the try part raised an exception.')
+            'a.c will be added just if the try part raised an exception.'
+            'The logic "behind the scene"- '
+            'First, evaluate the try block, it is consistent with a state where no exception raised.'
+            'Second, evaluate only the except block, it is consistent with a state where the exception thrown raised in the first expression of the try block.'
+            'Third, evaluate just the first expression of the try block and the except block, '
+            'the first two expressions of the try block and the except block, and so on. '
+            'It is consistent with exception raised in any line.'
+            'In any case, evaluate the finally part. '
+            'Finally - LUB all the abstract states into an abstract state that represent the entire block.')
 )
 
 code17 = """
@@ -493,10 +498,9 @@ a.a
 """
 examples.append(
     Example(code18,
-            'Calling functions examples')
+            'Calling static functions examples, moving the variables between scopes')
 )
 
-# NOT WORKING
 code19 = """
 class A(object):
     def __init__(self, x):
@@ -520,12 +524,13 @@ else:
 
 a.a.foo()
 
-a.b
-a.c
+a.a.b
+a.a.c
 """
 examples.append(
     Example(code19,
-            'Polymorphism')
+            'Polymorphism example. a.a.foo exists (no matter if we initialized the object with "b" or "c"),'
+            'a.a.b and a.a.c may exists, depends on the boolean expression.')
 )
 
 code20 = """
@@ -546,14 +551,14 @@ aa.b
 """
 examples.append(
     Example(code20,
-            'Return value - get_a should return object of type A with two attributes - a and b')
+            'Return value example - get_a should return object of type A with two attributes - a and b')
 )
-
 
 import ast
 
 from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import simpler
+
 
 def main():
     greetings = """
@@ -593,6 +598,7 @@ def main():
         print
 
     print 'Thank you'
+
 
 if __name__ == '__main__':
     main()

@@ -5,7 +5,6 @@ import itertools
 from lattice import LatticeElement as LE
 from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func, \
                   INT_FUNCS, BOOL_FUNCS, BoolFunction
-# logging.basicConfig(level = logging.DEBUG)
 
 """
 TODO
@@ -811,11 +810,12 @@ class Graph(object):
                     # the two endpoints should exists, and there should be a label connecting them
                     if e.son in common_vertices and e.parent in common_vertices:
                         if other.vertices[e.parent].sons.has_key(e.label):
-                            if other.vertices[e.parent].sons[e.label].son != e.son and \
-                            e.son not in other_merged.get(other.vertices[e.parent].sons[e.label].son, []):
+                            s1 = other.vertices[e.parent].sons[e.label].son
+                            s2 = e.son
+                            if  s1 != s2 and s2 not in other_merged.get(s1, []):
                                 print 'problematic edge'
                                 print e
-                                print '%d != %d' %(other.vertices[e.parent].sons[e.label].son, e.son)
+                                print '%d != %d' %(s1, s2)
                                 print 'other_merged %s' %other_merged
                                 assert False
                             edge_is_new = False
@@ -871,7 +871,9 @@ class Graph(object):
         """
         res = dict()
         for k,v in dict_to_rename.items():
-            res[mapping.get(k, k)] = [mapping.get(x, x) for x in v]
+            src = mapping.get(k, k)
+            dst = res.get(src, []) + [mapping.get(x, x) for x in v]
+            res[src] = list(set(dst))
         
         return res
     

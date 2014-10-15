@@ -235,11 +235,11 @@ class CallVisitor(ast.NodeVisitor):
             if function_name is 'append':
                 """
                 This is append support. It assumes that _self is list.
-                if there is not _self_var_lub it means that this is the first element added to the list,
+                if there is not _self_vars_lub it means that this is the first element added to the list,
                 so it register it. Else, it lub the new element.
                 """
-                if _self + '_var_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
-                        actual_var_name(self.stack, _self + '_var_lub')):
+                if _self + '_vars_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
+                        actual_var_name(self.stack, _self + '_vars_lub')):
                     clone = self.abstract_state.clone()
                     table.append(["Clone state", None, None, []])
                     clone.remove_var(actual_var_name(self.stack, _self + '_var_lub'))
@@ -286,7 +286,7 @@ class CallVisitor(ast.NodeVisitor):
                     table.append(["Set to state", None, "ret_val", []])
         else:
             raise Exception("not supported")
-
+        
         errors = self.abstract_state.query("ret_val", False)
         table.append(["Query", None, "ret_val", errors])
         if self.name and len(errors) == 0:
@@ -609,7 +609,7 @@ class ProgramVisitor(ast.NodeVisitor):
             make_top = True
 
         logging.debug('visiting return. make top: %s' %make_top)
-
+            
         # FIXME: add to table once has_var is changed to query
         if self.abstract_state.has_var('ret_val'):
             temp_state = self.abstract_state.clone()
@@ -681,7 +681,7 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
     :param clazz: The ClassRepresentation of the class
     """
     
-    logging.debug("Initializing object - ", target)
+    logging.debug("Initializing object - %s", target)
     # we use BasicMutableClass becuase object() is primitive (can not add attributes to object())
     register_assignment(stack, abstract_state, None, target, new_object=BasicMutableClass())
 
@@ -692,8 +692,9 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
         evaluate_function(iter_clazz.methods['__init__'], [ast.Name(id=target, ctx=ast.Store())] + args, keywords,
                           stack, abstract_state, functions)
 
-    for method in clazz.methods.values():
+    iter_clazz = clazz
+    while iter_clazz is not 'object':
+        for method in iter_clazz.methods.values():
         logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
         errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
-        logging.info('errors - ' + str(errors))
-        table.append(["Registered method", method.name, pretty_var_path(target), str(errors)])
+        logging.info('errors - ' + str(errors))        table.append(["Registered method", method.name, pretty_var_path(target), str(errors)])
