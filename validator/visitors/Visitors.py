@@ -6,6 +6,9 @@ from validator.state.utils import TOP_MAGIC_NAME, BasicMutableClass
 from validator.representation.ClassRepresentation import ClassRepresentation
 from validator.util import pretty_var_path
 
+from tabulate import tabulate
+
+table = []
 
 class Frame(object):
     def __init__(self, frame_name):
@@ -19,6 +22,7 @@ class Frame(object):
         for variable in sorted(self.variables)[::-1]:
             # abstract_state.remove_var(self.frame_name + "#" + variable)
             abstract_state.remove_var(self.frame_name + "#" + variable, False) # False means ignore non existent variables
+            table.append(["Removed", None, pretty_var_path(self.frame_name + "#" + variable), []])
 
 
 class Stack(object):
@@ -141,9 +145,11 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
             errors = abstract_state.set_var_to_var(actual_to_name, actual_from_name)
             logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(actual_from_name), to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
+            table.append(["Assigned", pretty_var_path(actual_from_name), pretty_var_path(actual_to_name), str(errors)])
         else:
             errors = abstract_state.add_var_and_set_to_top(actual_to_name)
             logging.info("set var {to_var} to TOP".format(to_var=pretty_var_path(actual_to_name)))
+            table.append(["Assigned", "TOP", pretty_var_path(actual_to_name), str(errors)])
             logging.info('errors - ' + str(errors))
     elif from_var is not None:
         if type(from_var) is ast.Tuple:
@@ -151,20 +157,24 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
             logging.info("assigned {var_type} to {to_var}".format(var_type=tuple(),
                                                            to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
+            table.append(["Assigned", "Tuple", pretty_var_path(actual_to_name), str(errors)])
         elif type(from_var) is ast.Dict:
             errors = abstract_state.set_var_to_const(actual_to_name, dict())
             logging.info("assigned {var_type} to {to_var}".format(var_type=dict(),
                                                            to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
+            table.append(["Assigned", "DICT", pretty_var_path(actual_to_name), str(errors)])
         else:
             errors = abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
             logging.info("assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
                                                            to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
+            table.append(["Assigned", type(getattr(from_var, from_var._fields[0])), pretty_var_path(actual_to_name), str(errors)])
     else:
         errors = abstract_state.set_var_to_const(actual_to_name, new_object)
         logging.info("assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=pretty_var_path(actual_to_name)))
         logging.info('errors - ' + str(errors))
+        table.append(["Assigned", type(new_object), pretty_var_path(actual_to_name), str(errors)])
 
 
 def handle_kwargs(abstract_state, args, function, keywords, stack):
@@ -231,22 +241,27 @@ class CallVisitor(ast.NodeVisitor):
                 if _self + '_var_lub' in self.stack.current_frame().variables and self.abstract_state.has_var(
                         actual_var_name(self.stack, _self + '_var_lub')):
                     clone = self.abstract_state.clone()
+                    table.append(["Clone state", None, None, []])
                     clone.remove_var(actual_var_name(self.stack, _self + '_var_lub'))
                     register_assignment(self.stack, clone, node.args[0], _self + '_var_lub')
                     self.abstract_state.lub(clone)
+                    table.append(["Lub states", None, None, []])
                     logging.debug('LUB for %s_var_lub' % _self)
                 else:
                     register_assignment(self.stack, self.abstract_state, node.args[0], _self + '_var_lub')
                     logging.debug(_self + '_var_lub has created with %s' % node.args[0])
+                # FIXME: add to table once has_var is changed to query
             else:
                 #should return a list of contexts saved for each method (one per method impl)
                 (methods, errors) = self.abstract_state.get_method_metadata(actual_var_name(self.stack, _self), function_name)
+                table.append(["Retrieved method", function_name, pretty_var_path(actual_var_name(self.stack, _self)), str(errors)])
                 logging.debug('possible methods are %s' %' '.join([x.name for x in methods]))
                 # self.abstract_state.add_var_and_set_to_botom('ret_val')
                 if errors:
                     logging.debug('Validation {level} in method {method}'.format(level=errors[0][0], method=errors[0][1]))
 
                 abstract_state_clean = self.abstract_state.clone()
+                table.append(["Clone state", None, None, []])
                 commulative_lub = None
                 for method in methods:
                     abstract_state_cpy = abstract_state_clean.clone()
@@ -257,6 +272,7 @@ class CallVisitor(ast.NodeVisitor):
                     if len(abstract_state_cpy.query('ret_val', False)) > 0:
                         # copy doesnt contain ret_val
                         self.abstract_state.remove_var('ret_val', False)
+                        table.append(["Removed", None, "ret_val", []])
 
                     if commulative_lub is None:
                         commulative_lub = abstract_state_cpy
@@ -267,13 +283,17 @@ class CallVisitor(ast.NodeVisitor):
 
                 if commulative_lub is not None:
                     self.abstract_state.set_to_state(commulative_lub)
+                    table.append(["Set to state", None, "ret_val", []])
         else:
             raise Exception("not supported")
-        
-        if self.name and len(self.abstract_state.query("ret_val", False)) == 0:
+
+        errors = self.abstract_state.query("ret_val", False)
+        table.append(["Query", None, "ret_val", errors])
+        if self.name and len(errors) == 0:
             register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
             #self.abstract_state.set_var_to_var(actual_var_name(self.stack, self.name), "ret_val")
             self.abstract_state.remove_var("ret_val", False)
+            table.append(["Removed", None, "ret_val", []])
         
 
 class AssignVisitor(CallVisitor):
@@ -297,9 +317,10 @@ class AssignVisitor(CallVisitor):
 
     def visit_Subscript(self, node):
         if type(node.ctx) is ast.Load:
+            # FIXME: add to table once has_var is changed to query
             if not self.abstract_state.has_var(actual_var_name(self.stack, node.value.id)):
                 raise Exception('List %s does not exists' % node.value.id)
-
+            # FIXME: add to table once has_var is changed to query
             if not self.abstract_state.has_var(actual_var_name(self.stack, node.value.id + '_vars_lub')):
                 raise Exception('Try to load value from empty list %s' % node.value.id)
 
@@ -336,12 +357,14 @@ class AssignVisitor(CallVisitor):
         list_lub = self.name + '_vars_lub'
 
         abstract_before = self.abstract_state.clone()
+        table.append(["Clone state", None, None, []])
         if node.elts:
             register_assignment(self.stack, self.abstract_state, node.elts[0], list_lub)
         for item in node.elts[1:]:
             clone = abstract_before.clone()
             register_assignment(self.stack, clone, item, list_lub)
             self.abstract_state.lub(clone)
+            table.append(["Lub state", None, None, []])
 
     def visit_Tuple(self, node):
         """
@@ -356,8 +379,10 @@ class AssignVisitor(CallVisitor):
             register_assignment(self.stack, self.abstract_state, node.elts[0], tuple_lub)
         for item in node.elts[1:]:
             clone = self.abstract_state.clone()
+            table.append(["Clone state", None, None, []])
             register_assignment(self.stack, clone, item, tuple_lub)
             self.abstract_state.lub(clone)
+            table.append(["Lub state", None, None, []])
 
     def visit_Dict(self, node):
         """
@@ -371,16 +396,20 @@ class AssignVisitor(CallVisitor):
             register_assignment(self.stack, self.abstract_state, node.keys[0], keys_lub)
         for item in node.keys[1:]:
             clone = self.abstract_state.clone()
+            table.append(["Clone state", None, None, []])
             register_assignment(self.stack, clone, item, keys_lub)
             self.abstract_state.lub(clone)
+            table.append(["Lub state", None, None, []])
 
         values_lub = self.name + '_values_lub'
         if node.values:
             register_assignment(self.stack, self.abstract_state, node.values[0], values_lub)
         for item in node.values[1:]:
             clone = self.abstract_state.clone()
+            table.append(["Clone state", None, None, []])
             register_assignment(self.stack, clone, item, values_lub)
             self.abstract_state.lub(clone)
+            table.append(["Lub state", None, None, []])
 
 
 class ExprVisitor(CallVisitor):
@@ -392,6 +421,7 @@ class ExprVisitor(CallVisitor):
         logging.info("Evaluating expression - {name}".format(name=pretty_var_path(name)))
         errors = self.abstract_state.query(name)
         logging.info('errors - ' + str(errors))
+        table.append(["Query", None, pretty_var_path(name), str(errors)])
 
 
 class FunctionDefVisitor(ast.NodeVisitor):
@@ -403,9 +433,12 @@ class FunctionDefVisitor(ast.NodeVisitor):
 
 
 def initialize_abstract_state(abstract_state):
-    abstract_state.set_var_to_const('root#True', True)
-    abstract_state.set_var_to_const('root#False', False)
-    abstract_state.set_var_to_const('root#None', None)
+    errors = abstract_state.set_var_to_const('root#True', True)
+    table.append(["Assigned", "True", "True", str(errors)])
+    errors = abstract_state.set_var_to_const('root#False', False)
+    table.append(["Assigned", "False", "False", str(errors)])
+    errors = abstract_state.set_var_to_const('root#None', None)
+    table.append(["Assigned", "None", "None", str(errors)])
 
 
 class ClassDefVisitor(ast.NodeVisitor):
@@ -441,6 +474,7 @@ class ClassDefVisitor(ast.NodeVisitor):
 
 class ProgramVisitor(ast.NodeVisitor):
     def __init__(self, stack=None, abstract_state=None, functions={}, classes={}):
+        global table
         """
         Should visit all the program
         """
@@ -457,6 +491,7 @@ class ProgramVisitor(ast.NodeVisitor):
         self.functions = functions
         self.classes = classes
         self.return_value = None
+        self.table = table
 
     def visit_ClassDef(self, node):
         # """
@@ -495,34 +530,42 @@ class ProgramVisitor(ast.NodeVisitor):
         """
         if not node.orelse:
             before_if_states = self.abstract_state.clone()
+            table.append(["Clone state", None, None, []])
             assess_list(node.body, self.stack, self.abstract_state, self.functions)
             self.abstract_state.lub(before_if_states)
+            table.append(["Lub state", None, None, []])
         else:
             orelse_state = self.abstract_state.clone()
+            table.append(["Clone state", None, None, []])
             assess_list(node.body, self.stack, self.abstract_state, self.functions)
             assess_list(node.orelse, self.stack, orelse_state, self.functions)
             # print 'queries'
             # print self.abstract_state.query('root#a.a.foo', False)
             # print orelse_state.query('root#a.a.foo', False)
             self.abstract_state.lub(orelse_state)
+            table.append(["Lub state", None, None, []])
 
     def visit_TryFinally(self, node):
         if len(node.body) == 1 and type(node.body[0]) is ast.TryExcept:
             self.visit_TryExcept(node.body[0])
         else:
             before_block_abstract_state = self.abstract_state.clone()
+            table.append(["Clone state", None, None, []])
 
             helper = []
             for expr in node.body:
                 current_abstract_states = before_block_abstract_state.clone()
+                table.append(["Clone state", None, None, []])
                 helper.append(expr)
                 assess_list(helper, self.stack, current_abstract_states, self.functions)
                 self.abstract_state.lub(current_abstract_states)
+                table.append(["Lub state", None, None, []])
 
         assess_list(node.finalbody, self.stack, self.abstract_state, self.functions)
 
     def visit_TryExcept(self, node):
         before_block_abstract_states = self.abstract_state.clone()
+        table.append(["Clone state", None, None, []])
 
         # If no exception raises
         try_block = node.body
@@ -533,10 +576,12 @@ class ProgramVisitor(ast.NodeVisitor):
         # Exception raises in the first expression.
         for handler in node.handlers:
             if handler.name:
-                self.abstract_state.set_var_to_const(handler.name.id, 'exception')
+                errors = self.abstract_state.set_var_to_const(handler.name.id, 'exception')
+                table.append(["Assigned", handler.name.id, "exception", str(errors)])
             handler_abstract_states = before_block_abstract_states.clone()
             assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
             self.abstract_state.lub(handler_abstract_states)
+            table.append(["Lub state", None, None, []])
 
         # Evaluate 1 expr or more
         helper = []
@@ -547,10 +592,13 @@ class ProgramVisitor(ast.NodeVisitor):
 
             for handler in node.handlers:
                 if handler.name:
-                    self.abstract_state.set_var_to_const(handler.name.id, 'exception')
+                    errors = self.abstract_state.set_var_to_const(handler.name.id, 'exception')
+                    table.append(["Assigned", handler.name.id, "exception", str(errors)])
                 handler_abstract_states = current_abstract_states.clone()
+                table.append(["Clone state", None, None, []])
                 assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
                 self.abstract_state.lub(handler_abstract_states)
+                table.append(["Lub state", None, None, []])
 
     def visit_Return(self, node):
         # if the statement is "return x" then to_name is "x"
@@ -561,25 +609,32 @@ class ProgramVisitor(ast.NodeVisitor):
             make_top = True
 
         logging.debug('visiting return. make top: %s' %make_top)
-            
+
+        # FIXME: add to table once has_var is changed to query
         if self.abstract_state.has_var('ret_val'):
             temp_state = self.abstract_state.clone()
+            table.append(["Clone state", None, None, []])
             if make_top is False:
                 errors = temp_state.set_var_to_var('ret_val', to_name)
                 logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(to_name), to_var="ret_val"))
                 logging.info('errors - ' + str(errors))
+                table.append(["Assigned", pretty_var_path(to_name), "ret_val", str(errors)])
             else:
                 temp_state.add_var_and_set_to_top('ret_val', force = True)
                 logging.info("assigned {from_var} to {to_var}".format(from_var="TOP", to_var="ret_val"))
+                table.append(["Assigned", "TOP", "ret_val", []])
             self.abstract_state.lub(temp_state)
+            table.append(["Lub state", None, None, []])
         else:
             if make_top is False:
                 errors = self.abstract_state.set_var_to_var('ret_val', to_name)
                 logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(to_name), to_var="ret_val"))
                 logging.info('errors - ' + str(errors))
+                table.append(["Assigned", pretty_var_path(to_name), "ret_val", str(errors)])
             else:
                 self.abstract_state.add_var_and_set_to_top('ret_val', force = True)
                 logging.info("assigned {from_var} to {to_var}".format(from_var="TOP", to_var="ret_val"))
+                table.append(["Assigned", "TOP", "ret_val", []])
 
 
 def assess_list(entries, stack, abstract_state, functions):
@@ -609,11 +664,13 @@ def handle_assign(node, stack, abstract_state, functions, classes):
             raise Exception('Try to store value in uninitialized list')
 
         abstract_state_clone = abstract_state.clone()
+        table.append(["Clone state", None, None, []])
 
         assign_visitor = AssignVisitor(node.targets[0].value.id + '_vars_lub', stack, abstract_state, functions,
                                        classes)
         assign_visitor.visit(node.value)
         abstract_state.lub(abstract_state_clone)
+        table.append(["Lub state", None, None, []])
     else:
         assign_visitor = AssignVisitor(get_node_name(node.targets[0]), stack, abstract_state, functions, classes)
         assign_visitor.visit(node.value)
@@ -639,3 +696,4 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
         logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
         errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
         logging.info('errors - ' + str(errors))
+        table.append(["Registered method", method.name, pretty_var_path(target), str(errors)])

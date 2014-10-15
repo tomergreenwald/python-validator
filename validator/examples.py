@@ -1,6 +1,6 @@
 import logging
 logging.basicConfig(level = logging.INFO)
-
+from tabulate import tabulate
 class Example(object):
     def __init__(self, code, description):
         self.code = code
@@ -584,6 +584,10 @@ def main():
         ast_tree = ast.parse(simple)
         visitor = ProgramVisitor()
         visitor.visit(ast_tree)
+        headers = ["Action", "From", "To", "Errors"]
+        print tabulate(visitor.table, headers,tablefmt="grid")
+        for i in xrange(len(visitor.table)):
+            visitor.table.pop()
 
         raw_input('Press any key to the next example')
         print
