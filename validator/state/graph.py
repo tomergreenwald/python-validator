@@ -43,8 +43,7 @@ class GraphEdge(object):
                %(self.son, self.parent, self.label, self.knowledge)
 
 class GraphVertex(object):
-    def __init__(self, ind, label):
-        self.ind = ind
+    def __init__(self):
         self.all_constants = set()
         self.mutable = LE(LE.L_BOTOM) # default is to don't know about mutability
         self.callable = LE(LE.L_BOTOM) # default is to don't know about callability, but caller must know this (logically, default is to be not-callable)
@@ -147,7 +146,7 @@ class Graph(object):
         """
         v_ind = self.next_ind
         self.next_ind += 1
-        new_v = GraphVertex(v_ind, label)
+        new_v = GraphVertex()
         self.vertices[v_ind] = new_v
         
         self.make_parent(v_ind, parent, label)
