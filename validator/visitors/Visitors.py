@@ -493,11 +493,7 @@ class ClassDefVisitor(ast.NodeVisitor):
 
 
 class ProgramVisitor(ast.NodeVisitor):
-    def __init__(self, stack=None, abstract_state=None, functions=None, classes=None):
-        if not functions:
-            functions = {}
-        if not classes:
-            classes = {}
+    def __init__(self, stack=None, abstract_state=None, functions={}, classes={}):
         global table
         """
         Should visit all the program
