@@ -22,7 +22,7 @@ class Frame(object):
         for variable in sorted(self.variables)[::-1]:
             # abstract_state.remove_var(self.frame_name + "#" + variable)
             abstract_state.remove_var(self.frame_name + "#" + variable, False) # False means ignore non existent variables
-            table.append([id(abstract_state),"Removed", None, pretty_var_path(self.frame_name + "#" + variable), []])
+            table.append([id(abstract_state),"Remove", None, pretty_var_path(self.frame_name + "#" + variable), []])
 
 
 class Stack(object):
@@ -145,11 +145,11 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
             errors = abstract_state.set_var_to_var(actual_to_name, actual_from_name)
             logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(actual_from_name), to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            table.append([id(abstract_state),"Assigned", pretty_var_path(actual_from_name), pretty_var_path(actual_to_name), str(errors)])
+            table.append([id(abstract_state),"Assign", pretty_var_path(actual_from_name), pretty_var_path(actual_to_name), str(errors)])
         else:
             errors = abstract_state.add_var_and_set_to_top(actual_to_name)
             logging.info("set var {to_var} to TOP".format(to_var=pretty_var_path(actual_to_name)))
-            table.append([id(abstract_state),"Assigned", "TOP", pretty_var_path(actual_to_name), str(errors)])
+            table.append([id(abstract_state),"Assign", "TOP", pretty_var_path(actual_to_name), str(errors)])
             logging.info('errors - ' + str(errors))
     elif from_var is not None:
         if type(from_var) is ast.Tuple:
@@ -157,24 +157,24 @@ def register_assignment(stack, abstract_state, from_var, to_var_name, split_stac
             logging.info("assigned {var_type} to {to_var}".format(var_type=tuple(),
                                                            to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            table.append([id(abstract_state),"Assigned", "Tuple", pretty_var_path(actual_to_name), str(errors)])
+            table.append([id(abstract_state),"Assign", "Tuple", pretty_var_path(actual_to_name), str(errors)])
         elif type(from_var) is ast.Dict:
             errors = abstract_state.set_var_to_const(actual_to_name, dict())
             logging.info("assigned {var_type} to {to_var}".format(var_type=dict(),
                                                            to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            table.append([id(abstract_state),"Assigned", "DICT", pretty_var_path(actual_to_name), str(errors)])
+            table.append([id(abstract_state),"Assign", "DICT", pretty_var_path(actual_to_name), str(errors)])
         else:
             errors = abstract_state.set_var_to_const(actual_to_name, getattr(from_var, from_var._fields[0]))
             logging.info("assigned {var_type} to {to_var}".format(var_type=type(getattr(from_var, from_var._fields[0])),
                                                            to_var=pretty_var_path(actual_to_name)))
             logging.info('errors - ' + str(errors))
-            table.append([id(abstract_state),"Assigned", type(getattr(from_var, from_var._fields[0])), pretty_var_path(actual_to_name), str(errors)])
+            table.append([id(abstract_state),"Assign", type(getattr(from_var, from_var._fields[0])), pretty_var_path(actual_to_name), str(errors)])
     else:
         errors = abstract_state.set_var_to_const(actual_to_name, new_object)
         logging.info("assigned {var_type} to {to_var}".format(var_type=type(new_object), to_var=pretty_var_path(actual_to_name)))
         logging.info('errors - ' + str(errors))
-        table.append([id(abstract_state),"Assigned", type(new_object), pretty_var_path(actual_to_name), str(errors)])
+        table.append([id(abstract_state),"Assign", type(new_object), pretty_var_path(actual_to_name), str(errors)])
 
 
 def handle_kwargs(abstract_state, args, function, keywords, stack):
@@ -278,7 +278,7 @@ class CallVisitor(ast.NodeVisitor):
                     if len(errors) > 0:
                         # copy doesnt contain ret_val
                         self.abstract_state.remove_var('ret_val', False)
-                        table.append([id(self.abstract_state),"Removed", None, "ret_val", []])
+                        table.append([id(self.abstract_state),"Remove", None, "ret_val", []])
 
                     if cumulative_lub is None:
                         cumulative_lub = abstract_state_cpy
@@ -299,7 +299,7 @@ class CallVisitor(ast.NodeVisitor):
             register_assignment(self.stack, self.abstract_state, ast.Name(id="ret_val"), self.name)
             #self.abstract_state.set_var_to_var(actual_var_name(self.stack, self.name), "ret_val")
             self.abstract_state.remove_var("ret_val", False)
-            table.append([id(self.abstract_state),"Removed", None, "ret_val", []])
+            table.append([id(self.abstract_state),"Remove", None, "ret_val", []])
         
 
 class AssignVisitor(CallVisitor):
@@ -442,11 +442,11 @@ class FunctionDefVisitor(ast.NodeVisitor):
 
 def initialize_abstract_state(abstract_state):
     errors = abstract_state.set_var_to_const('root#True', True)
-    table.append([id(abstract_state),"Assigned", "True", "True", str(errors)])
+    table.append([id(abstract_state),"Assign", "True", "True", str(errors)])
     errors = abstract_state.set_var_to_const('root#False', False)
-    table.append([id(abstract_state),"Assigned", "False", "False", str(errors)])
+    table.append([id(abstract_state),"Assign", "False", "False", str(errors)])
     errors = abstract_state.set_var_to_const('root#None', None)
-    table.append([id(abstract_state),"Assigned", "None", "None", str(errors)])
+    table.append([id(abstract_state),"Assign", "None", "None", str(errors)])
 
 
 class ClassDefVisitor(ast.NodeVisitor):
@@ -585,7 +585,7 @@ class ProgramVisitor(ast.NodeVisitor):
         for handler in node.handlers:
             if handler.name:
                 errors = self.abstract_state.set_var_to_const(handler.name.id, 'exception')
-                table.append([id(self.abstract_state),"Assigned", handler.name.id, "exception", str(errors)])
+                table.append([id(self.abstract_state),"Assign", handler.name.id, "exception", str(errors)])
             handler_abstract_states = before_block_abstract_states.clone()
             table.append([id(before_block_abstract_states),"Clone state", None, id(handler_abstract_states), []])
             assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
@@ -602,7 +602,7 @@ class ProgramVisitor(ast.NodeVisitor):
             for handler in node.handlers:
                 if handler.name:
                     errors = self.abstract_state.set_var_to_const(handler.name.id, 'exception')
-                    table.append([id(self.abstract_state),"Assigned", handler.name.id, "exception", str(errors)])
+                    table.append([id(self.abstract_state),"Assign", handler.name.id, "exception", str(errors)])
                 handler_abstract_states = current_abstract_states.clone()
                 table.append([id(self.abstract_state),"Clone state", None, id(handler_abstract_states), []])
                 assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
@@ -628,11 +628,11 @@ class ProgramVisitor(ast.NodeVisitor):
                 errors = temp_state.set_var_to_var('ret_val', to_name)
                 logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(to_name), to_var="ret_val"))
                 logging.info('errors - ' + str(errors))
-                table.append([id(self.temp_state),"Assigned", pretty_var_path(to_name), "ret_val", str(errors)])
+                table.append([id(self.temp_state),"Assign", pretty_var_path(to_name), "ret_val", str(errors)])
             else:
                 temp_state.add_var_and_set_to_top('ret_val', force = True)
                 logging.info("assigned {from_var} to {to_var}".format(from_var="TOP", to_var="ret_val"))
-                table.append([id(temp_state),"Assigned", "TOP", "ret_val", []])
+                table.append([id(temp_state),"Assign", "TOP", "ret_val", []])
             self.abstract_state.lub(temp_state)
             table.append([id(self.abstract_state),"Lub state", None, id(temp_state), []])
         else:
@@ -640,11 +640,11 @@ class ProgramVisitor(ast.NodeVisitor):
                 errors = self.abstract_state.set_var_to_var('ret_val', to_name)
                 logging.info("assigned {from_var} to {to_var}".format(from_var=pretty_var_path(to_name), to_var="ret_val"))
                 logging.info('errors - ' + str(errors))
-                table.append([id(self.abstract_state),"Assigned", pretty_var_path(to_name), "ret_val", str(errors)])
+                table.append([id(self.abstract_state),"Assign", pretty_var_path(to_name), "ret_val", str(errors)])
             else:
                 self.abstract_state.add_var_and_set_to_top('ret_val', force = True)
                 logging.info("assigned {from_var} to {to_var}".format(from_var="TOP", to_var="ret_val"))
-                table.append([id(self.abstract_state),"Assigned", "TOP", "ret_val", []])
+                table.append([id(self.abstract_state),"Assign", "TOP", "ret_val", []])
 
 
 def assess_list(entries, stack, abstract_state, functions):
@@ -708,5 +708,5 @@ def init_object(target, abstract_state, clazz, args, keywords, stack, functions)
             logging.info("registering method - {method} to {var}".format(method=method.name, var=pretty_var_path(target)))
             errors = abstract_state.register_method_metadata(actual_var_name(stack, target), method.name, method)
             logging.info('errors - ' + str(errors))
-            table.append([id(abstract_state),"Registered method", method.name, pretty_var_path(target), str(errors)])
+            table.append([id(abstract_state),"Register method", method.name, pretty_var_path(target), str(errors)])
         iter_clazz = iter_clazz.base
