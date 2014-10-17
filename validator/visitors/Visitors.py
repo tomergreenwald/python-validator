@@ -587,7 +587,7 @@ class ProgramVisitor(ast.NodeVisitor):
                 errors = self.abstract_state.set_var_to_const(handler.name.id, 'exception')
                 table.append([id(self.abstract_state),"Assigned", handler.name.id, "exception", str(errors)])
             handler_abstract_states = before_block_abstract_states.clone()
-            table.append([id(self.before_block_abstract_states),"Clone state", None, id(handler_abstract_states), []])
+            table.append([id(before_block_abstract_states),"Clone state", None, id(handler_abstract_states), []])
             assess_list(handler.body, self.stack, handler_abstract_states, self.functions)
             self.abstract_state.lub(handler_abstract_states)
             table.append([id(self.abstract_state),"Lub state", None, id(self.abstract_state), []])
