@@ -327,7 +327,7 @@ class AbstractState(object):
         
         return errors
             
-    def collect_garbage(self):
+    def _collect_garbage(self):
         """
         remove unused vertices from the graph
         """
@@ -342,8 +342,8 @@ class AbstractState(object):
         self.graph.fill_graphs(other.graph)
         
         # this is a good point to get rid of unused vertices and constants
-        self.collect_garbage()
-        other.collect_garbage()
+        self._collect_garbage()
+        other._collect_garbage()
         
         # rename the vertices and constant names, so that vertex at index 1 
         # and constant at index 0 will be next vertex/constant of other/self
