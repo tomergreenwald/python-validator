@@ -7,7 +7,7 @@ from lattice import LatticeElement as LE
 from validator.util import pretty_var_path
 
 # AVIEL TESTING
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 ROOT_VERTEX = 0
 
