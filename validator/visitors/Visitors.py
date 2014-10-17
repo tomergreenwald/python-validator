@@ -1,8 +1,6 @@
 import ast
 import logging
 
-from tabulate import tabulate
-
 from validator.state.abstract import AbstractState
 from validator.state.utils import TOP_MAGIC_NAME, BasicMutableClass
 from validator.representation.ClassRepresentation import ClassRepresentation
@@ -89,7 +87,6 @@ def actual_var_name(stack, var, level=0):
     Generates a fully qualified name for a local or a global variable.
     Throws exception if the variable was no previously set to the abstract state.
     :param stack: Current stack.
-    :param abstract_state: Current AbstractState.
     :param var: Variable name.
     :return: Fully qualified variable name.
     """
