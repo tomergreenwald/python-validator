@@ -589,7 +589,7 @@ def main():
         ast_tree = ast.parse(simple)
         visitor = ProgramVisitor()
         visitor.visit(ast_tree)
-        headers = ["Action", "From", "To", "Errors"]
+        headers = ["State #", "Action", "From", "To", "Errors"]
         print tabulate(visitor.table, headers,tablefmt="grid")
         for i in xrange(len(visitor.table)):
             visitor.table.pop()
