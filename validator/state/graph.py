@@ -43,8 +43,7 @@ class GraphEdge(object):
                %(self.son, self.parent, self.label, self.knowledge)
 
 class GraphVertex(object):
-    def __init__(self, ind, label):
-        self.ind = ind
+    def __init__(self):
         self.all_constants = set()
         self.mutable = LE(LE.L_BOTOM) # default is to don't know about mutability
         self.callable = LE(LE.L_BOTOM) # default is to don't know about callability, but caller must know this (logically, default is to be not-callable)
@@ -147,7 +146,7 @@ class Graph(object):
         """
         v_ind = self.next_ind
         self.next_ind += 1
-        new_v = GraphVertex(v_ind, label)
+        new_v = GraphVertex()
         self.vertices[v_ind] = new_v
         
         self.make_parent(v_ind, parent, label)
@@ -207,12 +206,16 @@ class Graph(object):
         set its constant to be -1
         clear metadata (?)
         """
-        self.vertices[v].knowledge.val = LE.L_TOP
-        self.vertices[v].all_constants.clear()
-        self.vertices[v].mutable = LE(LE.L_BOTOM)
-        self.vertices[v].callable = LE(LE.L_TOP)
-        self.vertices[v].metadata.clear()
-        self.vertices[v].metadata.add(TopFunction.get(2))
+        self._vertex_set_top(self.vertices[v])
+    
+    @staticmethod
+    def _vertex_set_top(vertex):
+        vertex.knowledge.val = LE.L_TOP
+        vertex.all_constants.clear()
+        vertex.mutable = LE(LE.L_BOTOM)
+        vertex.callable = LE(LE.L_TOP)
+        vertex.metadata.clear()
+        vertex.metadata.add(TopFunction.get(2))
         # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
         # this function is called only on new vertices, and on vertices that are lubbed,
         # so the edges handling is done by someone else. but we need to reconsider this
@@ -495,10 +498,14 @@ class Graph(object):
         for v in self.vertices.keys():
             for ee in self.vertices[v].all_parents.values():
                 for e in ee:
+                    # print 'before', e
                     if e.parent > 0:
                         e.parent = mapping.get(e.parent, e.parent)
                     if e.son > 0:
                         e.son = mapping.get(e.son, e.son)
+                    # print 'after', e
+            
+        # print 'vertex 7', self.vertices.get(7, None)
             
         new_vertices = dict()
         for v in self.vertices.keys():
@@ -507,7 +514,47 @@ class Graph(object):
             if v == 0:
                 new_vertices[0] = gv
             else:
-                new_vertices[mapping.get(v, v)] = gv
+                new_v = mapping.get(v, v)
+                if not new_vertices.has_key(new_v):
+                    new_vertices[new_v] = gv
+                else:
+                    existing_v = new_vertices[new_v]
+                    self._vertex_obj_lub(existing_v, gv)
+                    
+                    # merge sons
+                    e_sons = set(existing_v.sons.keys())
+                    g_sons = set(gv.sons.keys())
+                    
+                    common = e_sons.intersection(g_sons)
+                    for g_lbl, g_edge in gv.sons.items():
+                        if g_lbl not in common:
+                            existing_v.sons[g_lbl] = g_edge
+                        else:
+                            self._handle_common_edges([(existing_v.sons[g_lbl], g_edge)])
+                    
+                    # merge parents
+                    e_pars = set(existing_v.all_parents.keys())
+                    g_pars = set(gv.all_parents.keys())
+                    
+                    common = e_pars.intersection(g_pars)
+                    for g_lbl, g_set in gv.all_parents.items():
+                        if g_lbl not in common:
+                            existing_v.all_parents[g_lbl] = g_set
+                        else:
+                            e_set = existing_v.all_parents[g_lbl]
+                            e_ind_to_edge = dict()
+                            for e in e_set:
+                                e_ind_to_edge[e.parent] = e
+                            
+                            for gp in g_set:
+                                if not e_ind_to_edge.has_key(gp.parent):
+                                    e_set.add(gp)
+                                else:
+                                    self._handle_common_edges([(e_ind_to_edge[gp.parent], gp)])
+                    
+                    
+                # TODO what if the vertex already exists ?
+                # new_vertices[mapping.get(v, v)] = gv
         
         self.vertices = new_vertices
         self.next_ind = max(self.vertices.keys()) + 1
@@ -543,7 +590,8 @@ class Graph(object):
         mapping = dict([(x, x + offset) for x in self.all_cons.keys()])
         self.rename_constants_indices(mapping)
     
-    def _consolidate_metadata(self, vertex):
+    @staticmethod
+    def _consolidate_metadata(vertex):
         """
         if the vertex (not index) has many TOP functions, remove all but one
         """
@@ -572,21 +620,26 @@ class Graph(object):
         v0 = self.vertices[x]
         v1 = other.vertices[y]
         
+        self._vertex_obj_lub(v0, v1)
+    
+    @staticmethod
+    def _vertex_obj_lub(v0, v1):
         v0.knowledge.inplace_lub(v1.knowledge)
         
         if v0.knowledge.val == LE.L_TOP or v1.knowledge.val == LE.L_TOP:
             # if one of the vertices is TOP, so will be their lub
             # the following line also clears all_constants and mutability
-            self.set_top(x)
+            Graph._vertex_set_top(v0)
         else:
             # otherwise, just merge their possible constants and metadata
             v0.all_constants.update(v1.all_constants)
             v0.mutable.inplace_lub(v1.mutable)
             v0.callable.inplace_lub(v1.callable)
             v0.metadata.update(v1.metadata)
-            self._consolidate_metadata(v0)
+            Graph._consolidate_metadata(v0)
     
-    def _handle_common_edges(self, edge_pairs):
+    @staticmethod
+    def _handle_common_edges(edge_pairs):
         """
         lub between any two edges
         first element is edge of self, second element is edge of other
@@ -605,8 +658,7 @@ class Graph(object):
                 self.vertex_lub(u0, self, v)
                 
                 # merge parents
-                for lbl in self.vertices[v].all_parents.keys():
-                    v_parents = self.vertices[v].all_parents[lbl]
+                for lbl, v_parents in self.vertices[v].all_parents.items():
                     
                     if not self.vertices[u0].all_parents.has_key(lbl):
                         u0_parents = set()
@@ -621,9 +673,10 @@ class Graph(object):
                             e.son = u0
                             self.vertices[u0].all_parents.add_element(lbl, e)
                     
+                
+                only_u0_sons = set(self.vertices[u0].sons.keys()).difference(set(self.vertices[v].sons.keys()))
                 # merge sons
-                for lbl in self.vertices[v].sons.keys():
-                    e_v = self.vertices[v].sons[lbl]
+                for lbl, e_v in self.vertices[v].sons.items():
                     
                     if self.vertices[u0].sons.has_key(lbl):
                         # remove unnecessary edge from son
@@ -637,7 +690,13 @@ class Graph(object):
                     else:
                         # add son to u0
                         e_v.parent = u0
-                        self.vertices[v].sons[lbl] = e_v
+                        self.vertices[u0].sons[lbl] = e_v
+                        # new edge
+                        e_v.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
+                
+                # another new edges
+                for lbl in only_u0_sons:
+                    self.vertices[u0].sons[lbl].knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
                 
                 # clear pointers to edges
                 self.vertices[v].sons.clear()
@@ -658,6 +717,7 @@ class Graph(object):
         common_vertices.add(0)
         vertices_pairs_help = set()
         
+        was = set()
         q = deque([(0, 0)])
         # go over the whole graph to find common vertices and edges
         while len(q):
@@ -671,26 +731,35 @@ class Graph(object):
                 s0 = e0.son
                 s1 = e1.son
                 if s0 != 0 and s1 != 0:
-                    q.append((s0, s1))
-                    common_vertices.add(s0)
-                    common_vertices.add(s1)
+                    if not (s0, s1) in was:
+                        q.append((s0, s1))
+                        common_vertices.add(s0)
+                        common_vertices.add(s1)
+                        was.add((s0, s1))
+        
+        # print 'vertices_pairs_help', vertices_pairs_help
         
         # find vertices that needs to be merged
         d0 = dict()
         d1 = dict()
-        was_y = set()
         for (y, x) in vertices_pairs_help:
-            if y not in was_y:
-                vertices_pairs.add((y, x))
-            was_y.add(y)
-            
             d0[y] = d0.get(y, []) + [x]
             d1[x] = d1.get(x, []) + [y]
         
+        presentors = dict()
         h0 = set()
         for y0 in d0.keys():
             if len(d0[y0]) > 1:
                 h0.add(tuple(d0[y0]))
+                pres = tuple(d0[y0])[0]
+                for a in tuple(d0[y0])[1:]:
+                    presentors[a] = pres
+        
+        was_y = set()
+        for (y, x) in vertices_pairs_help:
+            if y not in was_y:
+                vertices_pairs.add((y, presentors.get(x, x)))
+            was_y.add(y)
         
         h1 = set()
         for x0 in d1.keys():
@@ -704,8 +773,13 @@ class Graph(object):
         # * merge of all_parents. mutual parents (with respect to edge label) cannot exist
         # * merge of all sons. if mutual sons exists- lub the knowledge of the edges, and
         #   lub the vertices
+        
+        # print 'h0', h0
+        # print 'h1', h1
+        
         self._merge_vertices(h0)
         other._merge_vertices(h1)
+        
         
         for tup in h0:
             for (u,v) in itertools.combinations(tup, 2):
@@ -715,6 +789,45 @@ class Graph(object):
             for (u,v) in itertools.combinations(tup, 2):
                 other_merged[u] = other_merged.get(u, []) + [v]
                 other_merged[v] = other_merged.get(v, []) + [u]
+        
+        self_clos = self._transitive_closure(self_merged)
+        for v in self_merged.keys():
+            self_merged[v] = self_clos[v]
+            
+        other_clos = self._transitive_closure(other_merged)
+        for v in other_merged.keys():
+            other_merged[v] = other_clos[v]
+    
+    @staticmethod
+    def _transitive_closure(d):
+        """
+        transitive closure of a mapping using BFS
+        """
+        res = dict()
+        waiting = deque(d.keys())
+        was = set()
+        while len(waiting):
+            u = waiting.popleft()
+            if u in was:
+                continue
+            
+            q = deque()
+            s = set()
+            q.append(u)
+            was.add(u)
+            while len(q) > 0:
+                u = q.popleft()
+                s.add(u)
+                for v in d[u]:
+                    if v in was:
+                        continue
+                    q.append(v)
+                    was.add(v)
+            
+            for v in s:
+                res[v] = set(s)
+        
+        return res
     
     def _merge_cons(self, other):
         """
@@ -763,12 +876,13 @@ class Graph(object):
                         # by this point, vertices had already been renamed
                         # check if this vertex exists also in self graph
                         if self.vertices[e.parent].sons.has_key(e.label):
-                            if self.vertices[e.parent].sons[e.label].son != e.son and \
-                            e.son not in self_merged.get(self.vertices[e.parent].sons[e.label].son, []):
-                            # if self.vertices[e.parent].sons[e.label].son != e.son:
-                                print 'assert false because %d != %d' %(self.vertices[e.parent].sons[e.label].son, e.son)
-                                print 'but self_merged[%d] = %s' %(e.son, self_merged[e.son])
-                                print 'but self_merged[%d] = %s' %(self.vertices[e.parent].sons[e.label].son, self_merged[self.vertices[e.parent].sons[e.label].son])
+                            s1 = self.vertices[e.parent].sons[e.label].son
+                            s2 = e.son
+                            if s1 != s2 and s2 not in self_merged.get(s1, []):
+                                print 'assert false because %d != %d' %(s1, s2)
+                                print 'but self_merged[%d] = %s' %(s2, self_merged[s2])
+                                print 'but self_merged[%d] = %s' %(s1, self_merged[s1])
+                                print 'self_merged', self_merged
                                 print 'problematic edge'
                                 print e
                                 print 'self parent'
@@ -808,8 +922,11 @@ class Graph(object):
                     edge_is_new = True
                     # check if this edge exists in other graph
                     # the two endpoints should exists, and there should be a label connecting them
+                    # print 'checking edge', e
                     if e.son in common_vertices and e.parent in common_vertices:
+                        # print 'both in common'
                         if other.vertices[e.parent].sons.has_key(e.label):
+                            # print 'other'
                             s1 = other.vertices[e.parent].sons[e.label].son
                             s2 = e.son
                             if  s1 != s2 and s2 not in other_merged.get(s1, []):
@@ -820,6 +937,8 @@ class Graph(object):
                                 assert False
                             edge_is_new = False
                             
+                    # print 'new?', edge_is_new
+                    
                     if edge_is_new:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
     
@@ -886,10 +1005,14 @@ class Graph(object):
         due to TOP of its father
         """
         
-        q = deque([(0, 0)])
+        was = set()
+        q = deque([(0, 0, 0)])
         # go over the whole graph to find common vertices and edges
         while len(q):
-            (x, y) = q.popleft()
+            (x, y, depth) = q.popleft()
+            # limit depth
+            if depth > 10:
+                continue
             x_sons = set(self.vertices[x].sons.keys())
             y_sons = set(other.vertices[y].sons.keys())
             
@@ -907,7 +1030,10 @@ class Graph(object):
                     elif can_have == SonKnowledge.CONST or can_have == SonKnowledge.MAYBE_CONST:    
                         other.propagate_const_to_son(father_ind, basename)
                     
-                    q.append((self.vertices[x].sons[only_x].son, var_ind))
+                    to_add = (self.vertices[x].sons[only_x].son, var_ind, depth + 1)
+                    if to_add[:2] not in was:
+                        q.append(to_add)
+                        was.add(to_add[:2])
             
             # do the same, but for the opposite graphs role
             for only_y in y_sons.difference(x_sons):
@@ -922,14 +1048,20 @@ class Graph(object):
                     elif can_have == SonKnowledge.CONST or can_have == SonKnowledge.MAYBE_CONST:
                         self.propagate_const_to_son(father_ind, basename)
                     
-                    q.append((var_ind, other.vertices[y].sons[only_y].son))
+                    to_add = (var_ind, other.vertices[y].sons[only_y].son, depth + 1)
+                    if to_add[:2] not in was:
+                        q.append(to_add)
+                        was.add(to_add[:2])
 
             common = x_sons.intersection(y_sons)
             for c in common:
                 s0 = self.vertices[x].sons[c].son
                 s1 = other.vertices[y].sons[c].son
                 if s0 != 0 and s1 != 0:
-                    q.append((s0, s1))
+                    to_add = (s0, s1, depth + 1)
+                    if to_add[:2] not in was:
+                        q.append(to_add)
+                        was.add(to_add[:2])
     
     def get_main_vars(self):
         """

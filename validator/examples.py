@@ -298,7 +298,8 @@ class A(object):
 
 class B(object):
     def __init__(self, x):
-        self.a = x
+        # self.a = x
+        self.a = 1
         self.b = 1
 
 a = A()
@@ -320,7 +321,8 @@ class A(object):
 
 class B(object):
     def __init__(self, x):
-        self.a = x
+        # self.a = x
+        self.a = 1
         self.b = 1
 
 a1 = A()
@@ -439,7 +441,7 @@ examples.append(
             'Finally - LUB all the abstract states into an abstract state that represent the entire block.')
 )
 
-code17 = """
+code18 = """
 class A(object):
     pass
 
@@ -477,7 +479,7 @@ a.h
 a.i
 """
 examples.append(
-    Example(code17,
+    Example(code18,
             'Advanced try-except-finally example.'
             'a.a should exists in any case because it will be added in the try part or in the except part.'
             'a.g should exists because is will be added in the finally part.'
@@ -485,7 +487,7 @@ examples.append(
             'any other attribute may not exists. It depends where the exception raised (if any).')
 )
 
-code18 = """
+code19 = """
 class A(object):
     pass
 
@@ -497,11 +499,11 @@ adding_a(a)
 a.a
 """
 examples.append(
-    Example(code18,
+    Example(code19,
             'Calling static functions examples, moving the variables between scopes')
 )
 
-code19 = """
+code20 = """
 class A(object):
     def __init__(self, x):
         self.a = x
@@ -528,12 +530,12 @@ a.a.b
 a.a.c
 """
 examples.append(
-    Example(code19,
+    Example(code20,
             'Polymorphism example. a.a.foo exists (no matter if we initialized the object with "b" or "c"),'
             'a.a.b and a.a.c may exists, depends on the boolean expression.')
 )
 
-code20 = """
+code21 = """
 class A(object):
     def __init__(self, x):
         self.a = x
@@ -550,8 +552,34 @@ aa.a
 aa.b
 """
 examples.append(
-    Example(code20,
+    Example(code21,
             'Return value example - get_a should return object of type A with two attributes - a and b')
+)
+
+code22 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+
+class B(object):
+    def __init__(self, x):
+        self.a = x
+        self.b = 1
+
+a1 = A()
+a2 = A()
+l = [a1, a2]
+l.append(B(a1))
+
+for x in l:
+    x.a
+    x.b
+    x.c
+"""
+examples.append(
+    Example(code22,
+            'Same example as 13 and 14, but now attribute a has another attribute. Here a weakness of '
+            'our abstraction is shown, and we receive an alert for attribute a.')
 )
 
 import ast
@@ -574,7 +602,27 @@ def main():
     raw_input('Hit any key to start')
     print
 
-    for example in examples:
+    ind = -1
+    while True:
+        s = raw_input('Press any key to the next example, number to jump to an example, q to quit ')
+        print
+        if s.lower() == 'q':
+            break
+        try:
+            s_ind = int(s)
+            if s_ind == 0:
+                break
+            if s_ind <= 0 or s_ind > len(examples):
+                print 'No such example. Enter a number between 1 and %d' %len(examples)
+                continue
+            ind = s_ind - 1
+        except ValueError:
+            ind += 1
+            if ind >= len(examples):
+                break
+        
+        example = examples[ind]
+        print 'Example No. %d' %(ind + 1)
         print example.desc
         print 'Orignal Code:'
         print '============='
@@ -594,8 +642,7 @@ def main():
         for i in xrange(len(visitor.table)):
             visitor.table.pop()
 
-        raw_input('Press any key to the next example')
-        print
+        
 
     print 'Thank you'
 
