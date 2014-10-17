@@ -271,7 +271,6 @@ class CallVisitor(ast.NodeVisitor):
                     logging.debug(
                         'Validation {level} in method {method}'.format(level=errors[0][0], method=errors[0][1]))
 
-                # FIXME: why do we clone and never lub back abstract_state_clean?
                 abstract_state_clean = self.abstract_state.clone()
                 table.append([id(self.abstract_state), "Clone state", None, id(abstract_state_clean), []])
                 cumulative_lub = None
@@ -293,8 +292,6 @@ class CallVisitor(ast.NodeVisitor):
                         cumulative_lub = abstract_state_cpy
                     else:
                         cumulative_lub.lub(abstract_state_cpy)
-
-                        # self.abstract_state.lub(abstract_state_cpy)
 
                 if cumulative_lub is not None:
                     self.abstract_state.set_to_state(cumulative_lub)
