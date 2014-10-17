@@ -6,7 +6,8 @@ from state_exceptions import *
 from lattice import LatticeElement as LE
 from validator.util import pretty_var_path
 
-
+# AVIEL TESTING
+logging.basicConfig(level=logging.DEBUG)
 
 ROOT_VERTEX = 0
 
@@ -338,8 +339,6 @@ class AbstractState(object):
         """
         logging.debug('[lub]')
         
-        # print 'LUB' * 5
-        
         self.graph.fill_graphs(other.graph)
         
         # this is a good point to get rid of unused vertices and constants
@@ -349,9 +348,6 @@ class AbstractState(object):
         # rename the vertices and constant names, so that vertex at index 1 
         # and constant at index 0 will be next vertex/constant of other/self
         self.rename_indices(other)
-        
-        # print 'self foo', self._get_var_index('root#a.a.foo', False)
-        # print 'other foo', other._get_var_index('root#a.a.foo', False)
         
         self.graph.lub(other.graph)
     
