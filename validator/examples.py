@@ -297,13 +297,12 @@ class A(object):
         self.a = 1
 
 class B(object):
-    def __init__(self, x):
-        # self.a = x
+    def __init__(self):
         self.a = 1
         self.b = 1
 
 a = A()
-b = B(a)
+b = B()
 for x in [a, a, b]:
     x.a
     x.b
@@ -320,15 +319,14 @@ class A(object):
         self.a = 1
 
 class B(object):
-    def __init__(self, x):
-        # self.a = x
+    def __init__(self):
         self.a = 1
         self.b = 1
 
 a1 = A()
 a2 = A()
 l = [a1, a2]
-l.append(B(a1))
+l.append(B())
 
 for x in l:
     x.a
