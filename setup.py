@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(name='PythonValidator',
       version='1.0',
       description='Python Attributes Validator',
       author='Tomer G, Aviel A, Oded E',
-      packages=['validator'],
+      packages=find_packages(),
 
       install_requires=[
           'astor',
