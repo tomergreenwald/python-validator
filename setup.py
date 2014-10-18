@@ -8,7 +8,8 @@ setup(name='PythonValidator',
 
       install_requires=[
           'astor',
-          'codegen'
+          'codegen',
+          'tabulate'
       ],
 
       entry_points={'console_scripts': [
