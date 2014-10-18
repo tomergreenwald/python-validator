@@ -36,7 +36,7 @@ a.c
 examples.append(
     Example(code2,
             'Creates object of type A with attribute a. '
-            'The call to a.a should raise no error since the attribute exists. '
+            'The call to a.a should be valid since the attribute exists. '
             'The second assignment should state that "a" does not have attribute "c"'
     )
 )
@@ -54,7 +54,7 @@ a.c
 """
 examples.append(
     Example(code9,
-            'This example demonstrates the power of the validator in adding attributes during the fly.'
+            'This example demonstrates the power of the validator in adding attributes during the fly. '
             'Objects of type A initialized with no attributes. '
             'We add the attribute "m" from the "main" scope, using dot operator, and call to a method that adds attribute '
             '"c" using "self" reference'
@@ -89,13 +89,13 @@ b.b.c
 examples.append(
     Example(code3,
             'This is the first example we are using the simpler. '
-            'As you can see it simples combined expressions into small and compact ones.'
-            'This allows us to focus our efforts in the semantics and not in the syntactics.'
-            'In this example we create object "a" of type A and object "b" of type B that holds "a" in the attribute "b".'
-            'All the calls in the first group are valid, since all the attributes exists.'
+            'As you can see it simples combined expressions into small and compact ones. '
+            'This allows us to focus our efforts in the semantics and not in the syntactics. '
+            'In this example we create object "a" of type A and object "b" of type B that holds "a" in the attribute "b". '
+            'All the calls in the first group are valid, since all the attributes exists. '
             'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
             'since in the abstract world we have added attribute b to b.b (as stated in the previous examples), '
-            'and "a" and "b.b" are the same object, the call to a.b is legal.'
+            'and "a" and "b.b" are the same object, the call to a.b is legal. '
             'In the third group, we add attribute c to a.c, so the validator states that b.b.c exists.'
     )
 )
@@ -125,7 +125,7 @@ c.c.d
 """
 examples.append(
     Example(code4,
-            'We create two objects - "b" and "c" that shares the same object "a".'
+            'We create two objects - "b" and "c" that shares the same object "a". '
             'After we add to "a" attribute "d" using b.b.d, that attribute exists in c.c.d as well.'
     )
 )
@@ -157,8 +157,8 @@ a.b.isalpha()
 """
 examples.append(
     Example(code6,
-            'Creates object of type A having two attributes, "a" is a string and "b" is a int.'
-            'The method isalpha() is a builtin method for strings only.'
+            'Creates object of type A having two attributes, "a" is a string and "b" is a int. '
+            'The method isalpha() is a builtin method for strings only. '
             'Therefore the first call should be legal and the second should state that the method does not exists.'
     )
 )
@@ -256,7 +256,7 @@ c.a
 examples.append(
     Example(code11,
             'Inheritance example 2. When we initialized "b" the ctor calls to the super ctor, '
-            'therefore both b.a and b.b exists.'
+            'therefore both b.a and b.b exists. '
             'C does not have a ctor. In this case the super ctor automatically called, therefore c.a exists ')
 )
 
@@ -287,7 +287,7 @@ for x in [A(), A(), A()]:
 """
 examples.append(
     Example(code12,
-            'List example. The list represented in the abstract world as LUB of the elements,'
+            'List example. The list represented in the abstract world as LUB of the elements, '
             'Easy to see that x.a should be fine and x.b does not exists.')
 )
 
@@ -400,7 +400,7 @@ a.f
 """
 examples.append(
     Example(code151,
-            'Advanced If-Else example.'
+            'Advanced If-Else example. '
             'a.a and a.b exists in all the paths, '
             'others may exists depends on the boolean expressions results.')
 )
@@ -427,16 +427,16 @@ a.d
 examples.append(
     Example(code17,
             'Try-Except-Finally example.'
-            'a.a should exists in any case because it will be added in the try part or in the except part.'
-            'a.d should exists because it will be added in the finally part.'
-            'a.b will be added just if the try part did not raised an exception.'
-            'a.c will be added just if the try part raised an exception.'
+            'a.a should exists in any case because it will be added in the try part or in the except part. '
+            'a.d should exists because it will be added in the finally part. '
+            'a.b will be added just if the try part did not raised an exception. '
+            'a.c will be added just if the try part raised an exception. '
             'The logic "behind the scene"- '
-            'First, evaluate the try block, it is consistent with a state where no exception raised.'
-            'Second, evaluate only the except block, it is consistent with a state where the exception thrown raised in the first expression of the try block.'
+            'First, evaluate the try block, it is consistent with a state where no exception raised. '
+            'Second, evaluate only the except block, it is consistent with a state where the exception thrown raised in the first expression of the try block. '
             'Third, evaluate just the first expression of the try block and the except block, '
             'the first two expressions of the try block and the except block, and so on. '
-            'It is consistent with exception raised in any line.'
+            'It is consistent with exception raised in any line. '
             'In any case, evaluate the finally part. '
             'Finally - LUB all the abstract states into an abstract state that represent the entire block.')
 )
@@ -480,9 +480,9 @@ a.i
 """
 examples.append(
     Example(code18,
-            'Advanced try-except-finally example.'
-            'a.a should exists in any case because it will be added in the try part or in the except part.'
-            'a.g should exists because is will be added in the finally part.'
+            'Advanced try-except-finally example. '
+            'a.a should exists in any case because it will be added in the try part or in the except part. '
+            'a.g should exists because is will be added in the finally part. '
             'a.i is added in the finally of the finally part in the try-finally'
             'any other attribute may not exists. It depends where the exception raised (if any).')
 )
@@ -531,7 +531,7 @@ a.a.c
 """
 examples.append(
     Example(code20,
-            'Polymorphism example. a.a.foo exists (no matter if we initialized the object with "b" or "c"),'
+            'Polymorphism example. a.a.foo exists (no matter if we initialized the object with "b" or "c"), '
             'a.a.b and a.a.c may exists, depends on the boolean expression.')
 )
 
