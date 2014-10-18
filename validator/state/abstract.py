@@ -1,5 +1,5 @@
 import logging
-
+import copy
 from graph import Graph, SonKnowledge
 from utils import *
 from lattice import LatticeElement as LE
