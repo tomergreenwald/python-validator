@@ -18,9 +18,9 @@ a.a
 a.a
 """
 examples.append(
-    Example(code1, 'Basic example, creates object of type A and state that the object does not have attribute a.'
+    Example(code1, 'Basic example, creates object of type A and state that the object does not have attribute a. '
                    'After the first call to a.a, the validator adds the attribute "a" to the abstract state of the object, '
-                   '(We restricting the error to it"s first occurrence). Therefore, the second call should raise no error'
+                   '(We restricting the error to the first occurrence). Therefore, the second call should be valid'
     )
 )
 
@@ -623,13 +623,16 @@ def main():
         
         example = examples[ind]
         print 'Example No. %d' %(ind + 1)
+        print '=============='
+        print
         print example.desc
+        print
         print 'Orignal Code:'
         print '============='
         print example.code
         print
         simple = simpler.make_simple(example.code)
-        print 'After simpler:'
+        print 'After the simpling process:'
         print '=============='
         print simple
         print

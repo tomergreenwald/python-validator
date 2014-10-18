@@ -322,8 +322,8 @@ class AbstractState(object):
         self.graph.make_parent(var1_ind, father0_ind, basename)
 
         return errors
-
-    def collect_garbage(self):
+            
+    def _collect_garbage(self):
         """
         remove unused vertices from the graph
         """
@@ -338,16 +338,16 @@ class AbstractState(object):
         self.graph.fill_graphs(other.graph)
 
         # this is a good point to get rid of unused vertices and constants
-        self.collect_garbage()
-        other.collect_garbage()
-
+        self._collect_garbage()
+        other._collect_garbage()
+        
         # rename the vertices and constant names, so that vertex at index 1 
         # and constant at index 0 will be next vertex/constant of other/self
-        self.rename_indices(other)
-
+        self._rename_indices(other)
+        
         self.graph.lub(other.graph)
-
-    def rename_indices(self, other):
+    
+    def _rename_indices(self, other):
         """
         rename vertices and constants indices of self and other,
         so there will be no mutual indices
@@ -376,8 +376,8 @@ class AbstractState(object):
         # prepare to merge the two graphs...
         self.collect_garbage()
         other.collect_garbage()
-        self.rename_indices(other)
-
+        self._rename_indices(other)
+        
         self.graph.add_graph(other.graph)
 
     def register_method_metadata(self, var_name, method_name, metadata):
