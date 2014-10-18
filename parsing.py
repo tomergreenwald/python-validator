@@ -1,71 +1,33 @@
 import ast
-
+from tabulate import tabulate
 from validator.visitors.Visitors import ProgramVisitor
 from validator.simplers import  simpler
 
 
 code = """
 class A(object):
-    def __init__(self, a):
-        self.a = a
+    def __init__(self, x):
+        self.a = x
 
-class B(object):
-    def __init__(self, b):
-        self.b = b
+    def get_a(self):
+        self.a.b = 2
+        return self.a
 
-a = A(1)
-b = B(a)
+a = A(2)
+b = A(a)
 
-# First group
-a.a
-b.b
-b.b.a
-
-# Second group
-b.b.b
-a.b
-
-# Third group
-a.c = 2
-b.b.c
+aa = b.get_a()
+aa.a
+aa.b
 """
 
-code_simple_functions = """
-class A(object):
-    def __init__(self):
-        self.x = 1
-        self.y = 2
-
-    def foo_x(self):
-        self.x = self.x + self.y
-        self.z = self.x + self.y
-        self.w = self.z + self.y + self.x
-
-    def foo_z(self):
-        # self.x = self.x + self.y + self.z
-        self.need_int = self.w
-        self.need_top = self.y * self.x
-
-a = A()
-a.foo_x()
-a.foo_z()
-# a.foo_y()
-"""
-
-code = """
-class A(object):
-    def __init__(self):
-        self.a = 1
-
-for x in [A(), A(), A()]:
-    x.a
-
-for x in [A(), A(), A()]:
-     x.b
-"""
 
 simple = simpler.make_simple(code)
 print simple
 ast_tree = ast.parse(simple)
 visitor = ProgramVisitor()
 visitor.visit(ast_tree)
+headers = ["State #", "Action", "From", "To", "Errors"]
+print tabulate(visitor.table, headers,tablefmt="grid")
+for i in xrange(len(visitor.table)):
+    visitor.table.pop()
