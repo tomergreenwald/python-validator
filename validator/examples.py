@@ -580,6 +580,80 @@ examples.append(
             'our abstraction is shown, and we receive an alert for attribute a.')
 )
 
+
+code23 = """
+class A(object):
+    def __init__(self):
+        self.a = 1
+
+a1 = A()
+a2 = a1.foo()
+
+a2.x
+a1.x
+a1.x.x
+"""
+examples.append(
+    Example(code23,
+            'Here is a demonstration for handling unknown functions. We don\'t know what is the '
+            'implementation of function "foo", so we return TOP. All possible attributes '
+            'of a2 will be legal. After query for a1.x was failed, it is considered as TOP.')
+)
+
+code24 = """
+class T(object):
+    pass
+
+class A(object):
+    def __init__(self):
+        self.a = 1
+    
+    def x(self):
+        return 1
+    
+    def y(self):
+        return "a"
+
+class B(object):
+    def __init__(self):
+        self.x = 1
+        self.a = 2
+    
+    def y(self):
+        return 4
+    
+class C(object):
+    def __init__(self):
+        self.a = T()
+        
+
+a = A()
+b = B()
+c = C()
+
+if True:
+    x = a
+elif True:
+    x = b
+else:
+    x = c
+
+x.x()
+y = x.y()
+y.real
+x.a.ttt = 5
+x.a.rrr = 6
+
+"""
+examples.append(
+    Example(code24,
+            'This exmaple shows the handling of callability and mutability. '
+            'x.x() might now exist, and might not be callable. Then, x.y() can return int, '
+            'which has attribute "real", or str which hasn\'t attribute "real". '
+            'x.a always exists, but might be unmutable. After alert for ttt was '
+            'reported, an alert for rrr is not reported (adaptivity of state).')
+)
+
 import ast
 
 from validator.visitors.Visitors import ProgramVisitor
@@ -594,8 +668,8 @@ def main():
 
     Note that we only demonstrate some core features. Full description of the validator capacity is in the doc.
 
-    There are 22 examples. Have fun! :)
-    """
+    There are %d examples. Have fun! :)
+    """ %len(examples)
     print greetings
     raw_input('Hit any key to start')
     print
