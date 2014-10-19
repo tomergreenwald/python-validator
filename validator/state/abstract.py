@@ -79,7 +79,6 @@ class AbstractState(object):
     def has_var(self, var):
         """
         returns True if var exists or may exists
-        TODO different behaviour for existence and maybe existence
         """
         return self._get_var_index(var, False)[0] >= 0
 

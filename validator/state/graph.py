@@ -6,13 +6,6 @@ from lattice import LatticeElement as LE
 from utils import is_primitive, is_callable, TopFunction, IntFunction, is_top_func, \
     INT_FUNCS, BOOL_FUNCS
 
-
-"""
-TODO
-(maybe) need to solve the problem where a constant refers to itself
-"""
-
-
 class SonKnowledge(object):
     FALSE = -1
     TOP = 0
@@ -226,7 +219,7 @@ class Graph(object):
         vertex.callable = LE(LE.L_TOP)
         vertex.metadata.clear()
         vertex.metadata.add(TopFunction.get(2))
-        # TODO do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
+        # do we want to mark all its sons edges to L_MAY_HAVE? currently not, becuase
         # this function is called only on new vertices, and on vertices that are lubbed,
         # so the edges handling is done by someone else. but we need to reconsider this
 
@@ -314,7 +307,7 @@ class Graph(object):
                         self._consolidate_metadata(self.vertices[son_ind])
                     else:
                         self.vertices[son_ind].metadata.add(
-                            TopFunction.get(30))  # TODO try instead of 30 arguments use *args
+                            TopFunction.get(30))  # maximum of 30 arguments
                         self._consolidate_metadata(self.vertices[son_ind])
 
             except:
@@ -509,14 +502,10 @@ class Graph(object):
         for v in self.vertices.keys():
             for ee in self.vertices[v].all_parents.values():
                 for e in ee:
-                    # print 'before', e
                     if e.parent > 0:
                         e.parent = mapping.get(e.parent, e.parent)
                     if e.son > 0:
                         e.son = mapping.get(e.son, e.son)
-                        # print 'after', e
-
-        # print 'vertex 7', self.vertices.get(7, None)
 
         new_vertices = dict()
         for v in self.vertices.keys():
@@ -562,10 +551,6 @@ class Graph(object):
                                     e_set.add(gp)
                                 else:
                                     self._handle_common_edges([(e_ind_to_edge[gp.parent], gp)])
-
-
-                                    # TODO what if the vertex already exists ?
-                                    # new_vertices[mapping.get(v, v)] = gv
 
         self.vertices = new_vertices
         self.next_ind = max(self.vertices.keys()) + 1
@@ -748,8 +733,6 @@ class Graph(object):
                         common_vertices.add(s1)
                         was.add((s0, s1))
 
-        # print 'vertices_pairs_help', vertices_pairs_help
-
         # find vertices that needs to be merged
         d0 = dict()
         d1 = dict()
@@ -784,9 +767,6 @@ class Graph(object):
         # * merge of all_parents. mutual parents (with respect to edge label) cannot exist
         # * merge of all sons. if mutual sons exists- lub the knowledge of the edges, and
         # lub the vertices
-
-        # print 'h0', h0
-        # print 'h1', h1
 
         self._merge_vertices(h0)
         other._merge_vertices(h1)
@@ -932,11 +912,8 @@ class Graph(object):
                     edge_is_new = True
                     # check if this edge exists in other graph
                     # the two endpoints should exists, and there should be a label connecting them
-                    # print 'checking edge', e
                     if e.son in common_vertices and e.parent in common_vertices:
-                        # print 'both in common'
                         if other.vertices[e.parent].sons.has_key(e.label):
-                            # print 'other'
                             s1 = other.vertices[e.parent].sons[e.label].son
                             s2 = e.son
                             if s1 != s2 and s2 not in other_merged.get(s1, []):
@@ -946,8 +923,6 @@ class Graph(object):
                                 print 'other_merged %s' % other_merged
                                 assert False
                             edge_is_new = False
-
-                    # print 'new?', edge_is_new
 
                     if edge_is_new:
                         e.knowledge.inplace_lub(LE(LE.L_MAY_HAVE))
@@ -1105,13 +1080,13 @@ class Graph(object):
 
     def add_metadata(self, vertex_ind, metadata):
         """
-        TODO
+        add metadata to a vertex
         """
         self.vertices[vertex_ind].metadata = set([metadata])
 
     def get_metadata(self, vertex_ind):
         """
-        TODO
+        receive vertex metadata
         """
         return self.vertices[vertex_ind].metadata
 
