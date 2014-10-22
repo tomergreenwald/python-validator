@@ -2,9 +2,10 @@ import logging
 logging.basicConfig(level = logging.CRITICAL)
 from tabulate import tabulate
 class Example(object):
-    def __init__(self, code, description):
+    def __init__(self, code, description, brief):
         self.code = code
         self.desc = description
+        self.brief = brief
 
 
 examples = []
@@ -20,7 +21,8 @@ a.a
 examples.append(
     Example(code1, 'Basic example, creates object of type A and state that the object does not have attribute a. '
                    'After the first call to a.a, the validator adds the attribute "a" to the abstract state of the object, '
-                   '(We restricting the error to the first occurrence). Therefore, the second call should be valid'
+                   '(We restricting the error to the first occurrence). Therefore, the second call should be valid', \
+                   'Basic adaptive attribute'
     )
 )
 
@@ -37,7 +39,8 @@ examples.append(
     Example(code2,
             'Creates object of type A with attribute a. '
             'The call to a.a should be valid since the attribute exists. '
-            'The second assignment should state that "a" does not have attribute "c"'
+            'The second assignment should state that "a" does not have attribute "c"', \
+            'Basic attribute error'
     )
 )
 
@@ -57,7 +60,9 @@ examples.append(
             'This example demonstrates the power of the validator in adding attributes during the fly. '
             'Objects of type A initialized with no attributes. '
             'We add the attribute "m" from the "main" scope, using dot operator, and call to a method that adds attribute '
-            '"c" using "self" reference'
+            '"c" using "self" reference', \
+            'Dynamic attributes'
+            
     )
 )
 
@@ -96,7 +101,8 @@ examples.append(
             'In the second group, b.b.b does not exists, so it should raise error. After this statement, '
             'since in the abstract world we have added attribute b to b.b (as stated in the previous examples), '
             'and "a" and "b.b" are the same object, the call to a.b is legal. '
-            'In the third group, we add attribute c to a.c, so the validator states that b.b.c exists.'
+            'In the third group, we add attribute c to a.c, so the validator states that b.b.c exists.', \
+            'Simpler in use'
     )
 )
 
@@ -126,7 +132,8 @@ c.c.d
 examples.append(
     Example(code4,
             'We create two objects - "b" and "c" that shares the same object "a". '
-            'After we add to "a" attribute "d" using b.b.d, that attribute exists in c.c.d as well.'
+            'After we add to "a" attribute "d" using b.b.d, that attribute exists in c.c.d as well.', \
+            'Complex variables'
     )
 )
 
@@ -141,7 +148,8 @@ a.a + a.b
 """
 examples.append(
     Example(code5,
-            'The validator should conclude that a.a and a.b are ints, so the addition operator is valid.'
+            'The validator should conclude that a.a and a.b are ints, so the addition operator is valid.', \
+            'Addition between numbers'
     )
 )
 
@@ -159,7 +167,8 @@ examples.append(
     Example(code6,
             'Creates object of type A having two attributes, "a" is a string and "b" is a int. '
             'The method isalpha() is a builtin method for strings only. '
-            'Therefore the first call should be legal and the second should state that the method does not exists.'
+            'Therefore the first call should be legal and the second should state that the method does not exists.', \
+            'Another builtin functions'
     )
 )
 
@@ -185,7 +194,8 @@ examples.append(
             'Creates object of type A, a.foo_a() is a legal call and all the used attributes are legal. '
             'Note that the validator knows that "self" reference "a". '
             'a.foo_c() should state that "a" does not have attribute c. '
-            'a.foo_b() should state that "a" does not have method foo_b'
+            'a.foo_b() should state that "a" does not have method foo_b', \
+            'Method calls and builtin functions'
     )
 )
 
@@ -210,7 +220,8 @@ a.a.a
 """
 examples.append(
     Example(code8,
-            'Demonstrates call from one method to another in the same object.'
+            'Demonstrates call from one method to another in the same object.', \
+            'Function call inside function call'
     )
 )
 
@@ -230,7 +241,9 @@ b.a
 examples.append(
     Example(code10,
             'Inheritance example - although B extends A, since B did not call to the super ctor, '
-            'b.a does not exists')
+            'b.a does not exists', \
+            'Simple inheritance'
+    )
 )
 
 code11 = """
@@ -257,7 +270,9 @@ examples.append(
     Example(code11,
             'Inheritance example 2. When we initialized "b" the ctor calls to the super ctor, '
             'therefore both b.a and b.b exists. '
-            'C does not have a ctor. In this case the super ctor automatically called, therefore c.a exists ')
+            'C does not have a ctor. In this case the super ctor automatically called, therefore c.a exists', \
+            'Simple inheritance 2'
+    )
 )
 
 code111 = """
@@ -288,7 +303,9 @@ for x in [A(), A(), A()]:
 examples.append(
     Example(code12,
             'List example. The list represented in the abstract world as LUB of the elements, '
-            'Easy to see that x.a should be fine and x.b does not exists.')
+            'Easy to see that x.a should be fine and x.b does not exists.', \
+            'Simple list'
+    )
 )
 
 code13 = """
@@ -310,7 +327,9 @@ for x in [a, a, b]:
 """
 examples.append(
     Example(code13,
-            'List example 2. x.b raised Alert since it does not exists for all the elements, x.c is an error.')
+            'List example 2. x.b raised Alert since it does not exists for all the elements, x.c is an error.', \
+            'Simple list 2'
+    )
 )
 
 code14 = """
@@ -337,7 +356,9 @@ examples.append(
     Example(code14,
             'Same example but using append to create the list. '
             'In this case we create the first refer to the list as LUB of "a1" and "a2", '
-            'when we call to "append" we LUB the list with B(a1)')
+            'when we call to "append" we LUB the list with B(a1)', \
+            'List with append'
+    )
 )
 
 code15 = """
@@ -356,7 +377,9 @@ a.b
 examples.append(
     Example(code15,
             'If-Else example, we LUBing the IF evaluation with the ELSE evaluation. The result is that a.a always exists. '
-            'a.b exists just for the else therefore it alert us')
+            'a.b exists just for the else therefore it alert us', \
+            'If-Else'
+    )
 )
 
 code151 = """
@@ -400,7 +423,9 @@ examples.append(
     Example(code151,
             'Advanced If-Else example. '
             'a.a and a.b exists in all the paths, '
-            'others may exists depends on the boolean expressions results.')
+            'others may exists depends on the boolean expressions results.', \
+            'Advanced If-Else'
+    )
 )
 
 code17 = """
@@ -436,7 +461,9 @@ examples.append(
             'the first two expressions of the try block and the except block, and so on. '
             'It is consistent with exception raised in any line. '
             'In any case, evaluate the finally part. '
-            'Finally - LUB all the abstract states into an abstract state that represent the entire block.')
+            'Finally - LUB all the abstract states into an abstract state that represent the entire block.', \
+            'Try-Except-Finally'
+    )
 )
 
 code18 = """
@@ -482,7 +509,9 @@ examples.append(
             'a.a should exists in any case because it will be added in the try part or in the except part. '
             'a.g should exists because is will be added in the finally part. '
             'a.i is added in the finally of the finally part in the try-finally'
-            'any other attribute may not exists. It depends where the exception raised (if any).')
+            'any other attribute may not exists. It depends where the exception raised (if any).', \
+            'Advanced Try-Except-Finally'
+    )
 )
 
 code19 = """
@@ -498,7 +527,9 @@ a.a
 """
 examples.append(
     Example(code19,
-            'Calling static functions examples, moving the variables between scopes')
+            'Calling static functions examples, moving the variables between scopes', \
+            'Static function calls'
+    )
 )
 
 code20 = """
@@ -530,7 +561,9 @@ a.a.c
 examples.append(
     Example(code20,
             'Polymorphism example. a.a.foo exists (no matter if we initialized the object with "b" or "c"), '
-            'a.a.b and a.a.c may exists, depends on the boolean expression.')
+            'a.a.b and a.a.c may exists, depends on the boolean expression.', \
+            'Polymorphism'
+    )
 )
 
 code21 = """
@@ -551,7 +584,9 @@ aa.b
 """
 examples.append(
     Example(code21,
-            'Return value example - get_a should return object of type A with two attributes - a and b')
+            'Return value example - get_a should return object of type A with two attributes - a and b', \
+            'Return value of function'
+    )
 )
 
 code22 = """
@@ -577,7 +612,8 @@ for x in l:
 examples.append(
     Example(code22,
             'Same example as 13 and 14, but now attribute a has another attribute. Here a weakness of '
-            'our abstraction is shown, and we receive an alert for attribute a.')
+            'our abstraction is shown, and we receive an alert for attribute a.', \
+            'Complex list with weakness')
 )
 
 
@@ -597,7 +633,9 @@ examples.append(
     Example(code23,
             'Here is a demonstration for handling unknown functions. We don\'t know what is the '
             'implementation of function "foo", so we return TOP. All possible attributes '
-            'of a2 will be legal. After query for a1.x was failed, it is considered as TOP.')
+            'of a2 will be legal. After query for a1.x was failed, it is considered as TOP.', \
+            'Unknown function calls'
+    )
 )
 
 code24 = """
@@ -651,7 +689,8 @@ examples.append(
             'x.x() might now exist, and might not be callable. Then, x.y() can return int, '
             'which has attribute "real", or str which hasn\'t attribute "real". '
             'x.a always exists, but might be unmutable. After alert for ttt was '
-            'reported, an alert for rrr is not reported (adaptivity of state).')
+            'reported, an alert for rrr is not reported (adaptivity of state).', \
+            'Callability, mutability and adaptivity')
 )
 
 import ast
@@ -676,10 +715,13 @@ def main():
 
     ind = -1
     while True:
-        s = raw_input('Press any key to the next example, number to jump to an example, q to quit ')
+        s = raw_input('Press any key to the next example, jmp to (n)th example, (q)uit, (h)elp ')
         print
         if s.lower() == 'q':
             break
+        elif s.lower() == 'h':
+            print '\n'.join(['%d:\t%s' %(x + 1, examples[x].brief) for x in xrange(len(examples))])
+            continue
         try:
             s_ind = int(s)
             if s_ind == 0:
