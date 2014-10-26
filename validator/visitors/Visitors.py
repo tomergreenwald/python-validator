@@ -9,6 +9,8 @@ from validator.util import pretty_var_path
 
 table = []
 
+MAX_STACK_SIZE = 50
+
 
 class Frame(object):
     def __init__(self, frame_name):
@@ -31,6 +33,8 @@ class Stack(object):
         self.frames = [Frame("root")]
 
     def insert(self, frame):
+        if len(self.frames) > MAX_STACK_SIZE:
+            raise "Max stack depth reached. You may have a recursive call."
         self.frames.append(frame)
 
     def pop(self, abstract_state):
