@@ -275,20 +275,6 @@ examples.append(
     )
 )
 
-code111 = """
-class A(object):
-    def foo_a(self):
-        self.a = 2
-
-class B(A):
-    pass
-
-b = B()
-b.foo_a()
-
-b.a
-"""
-
 code12 = """
 class A(object):
     def __init__(self):
